@@ -279,6 +279,10 @@ rtfm_path_bar_button_clicked (RtfmPathBar     *self,
                               "position", GTK_POS_BOTTOM,
                               NULL);
       gtk_popover_bind_model (popover, G_MENU_MODEL (menu), NULL);
+      g_signal_connect (popover,
+                        "closed",
+                        G_CALLBACK (gtk_widget_destroy),
+                        NULL);
       gtk_widget_show (GTK_WIDGET (popover));
     }
 
