@@ -36,38 +36,38 @@ struct _RtfmProviderInterface
 {
   GTypeInterface parent;
 
-  void      (*load)                 (RtfmProvider         *self,
-                                     RtfmLibrary          *library);
-  void      (*unload)               (RtfmProvider         *self,
-                                     RtfmLibrary          *library);
-  void      (*load_children_async)  (RtfmProvider         *self,
-                                     RtfmItem             *item,
-                                     RtfmCollection       *collection,
-                                     GCancellable         *cancellable,
-                                     GAsyncReadyCallback   callback,
-                                     gpointer              user_data);
-  gboolean  (*load_children_finish) (RtfmProvider         *self,
-                                     GAsyncResult         *result,
-                                     GError              **error);
-  void      (*search_async)         (RtfmProvider         *self,
-                                     RtfmSearchSettings   *search_settings,
-                                     RtfmCollection       *collection,
-                                     GCancellable         *cancellable,
-                                     GAsyncReadyCallback   callback,
-                                     gpointer              user_data);
-  gboolean  (*search_finish)        (RtfmProvider         *self,
-                                     GAsyncResult         *result,
-                                     GError              **error);
-  void      (*extend_item_async)    (RtfmProvider         *self,
-                                     RtfmItem             *item,
-                                     GCancellable         *cancellable,
-                                     GAsyncReadyCallback   callback,
-                                     gpointer              user_data);
-  gboolean  (*extend_item_finish)   (RtfmProvider         *self,
-                                     GAsyncResult         *result,
-                                     GError              **error);
-  RtfmItem *(*load_item)            (RtfmProvider         *self,
-                                     const gchar          *id);
+  void       (*load)                 (RtfmProvider         *self,
+                                      RtfmLibrary          *library);
+  void       (*unload)               (RtfmProvider         *self,
+                                      RtfmLibrary          *library);
+  void       (*load_children_async)  (RtfmProvider         *self,
+                                      RtfmItem             *item,
+                                      RtfmCollection       *collection,
+                                      GCancellable         *cancellable,
+                                      GAsyncReadyCallback   callback,
+                                      gpointer              user_data);
+  gboolean   (*load_children_finish) (RtfmProvider         *self,
+                                      GAsyncResult         *result,
+                                      GError              **error);
+  void       (*search_async)         (RtfmProvider         *self,
+                                      RtfmSearchSettings   *search_settings,
+                                      RtfmCollection       *collection,
+                                      GCancellable         *cancellable,
+                                      GAsyncReadyCallback   callback,
+                                      gpointer              user_data);
+  gboolean   (*search_finish)        (RtfmProvider         *self,
+                                      GAsyncResult         *result,
+                                      GError              **error);
+  void       (*extend_item_async)    (RtfmProvider         *self,
+                                      RtfmItem             *item,
+                                      GCancellable         *cancellable,
+                                      GAsyncReadyCallback   callback,
+                                      gpointer              user_data);
+  gboolean   (*extend_item_finish)   (RtfmProvider         *self,
+                                      GAsyncResult         *result,
+                                      GError              **error);
+  RtfmItem  *(*load_item)            (RtfmProvider         *self,
+                                      const gchar          *id);
 };
 
 void      rtfm_provider_load                 (RtfmProvider         *self,
