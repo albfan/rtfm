@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<gresources>
+  <gresource prefix="/org/gnome/rtfm">
+    <!-- Automatic GTK resources -->
+    <!-- file>gtk/menus.ui</file-->
+
+    <!-- UI Files -->
+    <file compressed="true">ui/rtfm-sidebar.ui</file>
+    <file compressed="true">ui/rtfm-sidebar-row.ui</file>
+    <file compressed="true">ui/rtfm-window.ui</file>
+    <file compressed="true">ui/rtfm-view.ui</file>
+    <file compressed="true">ui/rtfm-view-group.ui</file>
+
+    <!-- CSS Files -->
+    <file compressed="true">css/rtfm-path-bar.css</file>
+    <file compressed="true">css/rtfm-sidebar.css</file>
+    <file compressed="true">css/rtfm-view.css</file>
+    <file compressed="true">css/rtfm-view-group.css</file>
+    <file compressed="true">css/rtfm-window.css</file>
+
+    <!-- Icons -->
+    <file compressed="true">icons/scalable/actions/lang-class-symbolic.svg</file>
+    <file compressed="true">icons/scalable/actions/lang-define-symbolic.svg</file>
+    <file compressed="true">icons/scalable/actions/lang-enum-symbolic.svg</file>
+    <file compressed="true">icons/scalable/actions/lang-enum-value-symbolic.svg</file>
+    <file compressed="true">icons/scalable/actions/lang-function-symbolic.svg</file>
+    <file compressed="true">icons/scalable/actions/lang-include-symbolic.svg</file>
+    <file compressed="true">icons/scalable/actions/lang-method-symbolic.svg</file>
+    <file compressed="true">icons/scalable/actions/lang-namespace-symbolic.svg</file>
+    <file compressed="true">icons/scalable/actions/lang-property-symbolic.svg</file>
+    <file compressed="true">icons/scalable/actions/lang-struct-field-symbolic.svg</file>
+    <file compressed="true">icons/scalable/actions/lang-struct-symbolic.svg</file>
+    <file compressed="true">icons/scalable/actions/lang-typedef-symbolic.svg</file>
+    <file compressed="true">icons/scalable/actions/lang-union-symbolic.svg</file>
+    <file compressed="true">icons/scalable/actions/lang-variable-symbolic.svg</file>
+  </gresource>
+</gresources>

@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<interface>
+  <template class="RtfmView" parent="GtkBin">
+    <child>
+      <object class="GtkBox" id="box">
+        <property name="halign">center</property>
+        <property name="orientation">vertical</property>
+        <property name="spacing">18</property>
+        <property name="visible">true</property>
+        <child>
+          <object class="GtkLabel" id="title">
+            <property name="visible">true</property>
+            <property name="xalign">0</property>
+            <style>
+              <class name="h1"/>
+            </style>
+          </object>
+        </child>
+      </object>
+    </child>
+  </template>
+</interface>

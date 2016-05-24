@@ -1,0 +1,8 @@
+rtfmviewgroup list row {
+  padding: 6px;
+  border-bottom: 1px solid alpha(@borders, 0.4);
+}
+
+rtfmviewgroup list row:last-child {
+  border-bottom: none;
+}

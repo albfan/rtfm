@@ -1,0 +1,3 @@
+window > paned.titlebar > separator {
+  background: linear-gradient(180deg, @theme_bg_color, @borders);
+}

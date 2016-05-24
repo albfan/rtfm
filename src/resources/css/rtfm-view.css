@@ -1,0 +1,19 @@
+rtfmview label.h1 {
+  font-size: 1.8em;
+  font-weight: bold;
+}
+
+rtfmview label.h2 {
+  font-size: 1.4em;
+  font-weight: bold;
+  opacity: 0.8;
+}
+
+rtfmview {
+  background-color: mix(@content_view_bg, @theme_bg_color, 0.25);
+}
+
+rtfmview > box {
+  min-width: 600px;
+  padding: 18px;
+}

@@ -1,0 +1,26 @@
+
+rtfmpathview button {
+  background: none;
+  border: none;
+  box-shadow: none;
+  border-radius: 0px;
+  border-top: 2px solid transparent;
+  border-bottom: 2px solid transparent;
+  opacity: 0.75;
+  padding: 3px 3px 0px 3px;
+}
+
+rtfmpathview label.separator {
+  font-size: 0.83333em;
+}
+
+rtfmpathview button:checked {
+  border-bottom: 2px solid @theme_selected_bg_color;
+  font-weight: bold;
+  opacity: 1;
+}
+
+rtfmpathview button:hover {
+  opacity: 0.9;
+  border-bottom-color: @borders;
+}
