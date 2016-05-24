@@ -127,7 +127,8 @@ rtfm_path_bar_class_init (RtfmPathBarClass *klass)
     g_signal_new ("element-selected",
                   G_TYPE_FROM_CLASS (klass),
                   G_SIGNAL_RUN_LAST,
-                  NULL, NULL, NULL, NULL,
+                  0,
+                  NULL, NULL, NULL,
                   G_TYPE_NONE, 2, RTFM_TYPE_PATH, RTFM_TYPE_PATH_ELEMENT);
 
   signals [POPULATE_MENU] =
