@@ -227,6 +227,9 @@ class DummyProvider(GObject.Object, Rtfm.Provider):
         #print("%s %r" % (id, ret))
         return ret
 
+    def do_get_languages(self):
+        return ['C', 'JavaScript', 'Lua', 'Python']
+
 class BasicRow(Gtk.ListBoxRow):
     def __init__(self, title):
         super().__init__()
