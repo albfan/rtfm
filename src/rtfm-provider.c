@@ -265,3 +265,22 @@ rtfm_provider_load_item (RtfmProvider *self,
 
   return NULL;
 }
+
+/**
+ * rtfm_provider_get_languages:
+ *
+ * Gets a list of languages supported by the provider. This is used
+ * to populate the language list.
+ *
+ * Returns: (transfer full): An array of strings.
+ */
+gchar **
+rtfm_provider_get_languages (RtfmProvider *self)
+{
+  g_return_val_if_fail (RTFM_IS_PROVIDER (self), NULL);
+
+  if (RTFM_PROVIDER_GET_IFACE (self)->get_languages)
+    return RTFM_PROVIDER_GET_IFACE (self)->get_languages (self);
+
+  return NULL;
+}

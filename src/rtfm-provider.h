@@ -68,6 +68,7 @@ struct _RtfmProviderInterface
                                       GError              **error);
   RtfmItem  *(*load_item)            (RtfmProvider         *self,
                                       const gchar          *id);
+  gchar    **(*get_languages)       (RtfmProvider         *self);
 };
 
 void      rtfm_provider_load                 (RtfmProvider         *self,
@@ -102,6 +103,7 @@ void      rtfm_provider_extend_item_async    (RtfmProvider         *self,
 gboolean  rtfm_provider_extend_item_finish   (RtfmProvider         *self,
                                               GAsyncResult         *result,
                                               GError              **error);
+gchar   **rtfm_provider_get_languages        (RtfmProvider         *self);
 
 G_END_DECLS
 
