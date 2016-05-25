@@ -31,6 +31,7 @@ RtfmItem     *rtfm_library_get_item_by_id  (RtfmLibrary           *self,
                                             const gchar           *id);
 RtfmProvider *rtfm_library_get_provider    (RtfmLibrary           *self,
                                             const gchar           *id);
+RtfmItem     *rtfm_library_get_root        (RtfmLibrary           *self);
 void          rtfm_library_populate_async  (RtfmLibrary           *self,
                                             RtfmCollection        *collection,
                                             GCancellable          *cancellable,

@@ -18,8 +18,9 @@
 
 #define G_LOG_DOMAIN "rtfm-library"
 
-#include <libpeas/peas.h>
+#include <glib/gi18n.h>
 #include <gtk/gtk.h>
+#include <libpeas/peas.h>
 
 #include "rtfm-collection.h"
 #include "rtfm-item.h"
@@ -27,12 +28,34 @@
 #include "rtfm-library-private.h"
 #include "rtfm-provider.h"
 
+/**
+ * SECTION:rtfm-library
+ * @title: RtfmLibrary
+ * @short_description: The documentation library
+ *
+ * The #RtfmLibrary class represents a loaded library. It manages the plugins
+ * to build and modify the library as well as the library contents itself.
+ * It trys to avoid having the entire documentation tree loaded at once to
+ * save on memory footprint.
+ *
+ * The documentation is tracked as a tree and allows for plugins to populate
+ * tree nodes as well reorder the tree as necessary. For example, a GObject
+ * Introspection plugin might add all of the repositories it knows about,
+ * but another plugin might adjust those into categories.
+ *
+ * The tree is populated with #RtfmItem instances. This encapsulates what
+ * will be displayed to the screen. Before the items are displayed, then
+ * will allow plugins to annotate the item and add ancillary information
+ * such as external links, source code references, and other useful data.
+ */
+
 struct _RtfmLibrary
 {
   GObject           parent_instance;
 
   PeasEngine       *engine;
   PeasExtensionSet *providers;
+  RtfmItem         *root;
 };
 
 typedef struct
@@ -44,6 +67,14 @@ typedef struct
 } PopulateState;
 
 G_DEFINE_TYPE (RtfmLibrary, rtfm_library, G_TYPE_OBJECT)
+
+enum {
+  PROP_0,
+  PROP_ROOT,
+  N_PROPS
+};
+
+static GParamSpec *properties [N_PROPS];
 
 static void
 populate_state_free (gpointer data)
@@ -57,26 +88,19 @@ populate_state_free (gpointer data)
   g_slice_free (PopulateState, state);
 }
 
-RtfmLibrary *
-rtfm_library_new (void)
+static void
+rtfm_library_reset (RtfmLibrary *self)
 {
-  return g_object_new (RTFM_TYPE_LIBRARY, NULL);
-}
+  g_assert (RTFM_IS_LIBRARY (self));
 
-/**
- * rtfm_library_get_default:
- *
- * Returns: (transfer none): An #RtfmLibrary.
- */
-RtfmLibrary *
-rtfm_library_get_default (void)
-{
-  static RtfmLibrary *instance;
+  g_clear_object (&self->root);
+  self->root = g_object_new (RTFM_TYPE_ITEM,
+                             "id", "root",
+                             "icon-name", "help-contents-symbolic",
+                             "title", _("Developer Library"),
+                             NULL);
 
-  if (g_once_init_enter (&instance))
-    g_once_init_leave (&instance, rtfm_library_new ());
-
-  return instance;
+  g_object_notify_by_pspec (G_OBJECT (self), properties [PROP_ROOT]);
 }
 
 static void
@@ -94,6 +118,7 @@ rtfm_library_provider_added (PeasExtensionSet *set,
   g_assert (RTFM_IS_LIBRARY (self));
 
   rtfm_provider_initialize (provider, self);
+  rtfm_library_reset (self);
 }
 
 static void
@@ -111,6 +136,7 @@ rtfm_library_provider_removed (PeasExtensionSet *set,
   g_assert (RTFM_IS_LIBRARY (self));
 
   rtfm_provider_shutdown (provider, self);
+  rtfm_library_reset (self);
 }
 
 static void
@@ -162,10 +188,30 @@ rtfm_library_finalize (GObject *object)
 {
   RtfmLibrary *self = (RtfmLibrary *)object;
 
+  g_clear_object (&self->root);
   g_clear_object (&self->providers);
   g_clear_object (&self->engine);
 
   G_OBJECT_CLASS (rtfm_library_parent_class)->finalize (object);
+}
+
+static void
+rtfm_library_get_property (GObject    *object,
+                           guint       prop_id,
+                           GValue     *value,
+                           GParamSpec *pspec)
+{
+  RtfmLibrary *self = RTFM_LIBRARY (object);
+
+  switch (prop_id)
+    {
+    case PROP_ROOT:
+      g_value_set_object (value, rtfm_library_get_root (self));
+      break;
+
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+    }
 }
 
 static void
@@ -177,6 +223,7 @@ rtfm_library_class_init (RtfmLibraryClass *klass)
 
   object_class->constructed = rtfm_library_constructed;
   object_class->finalize = rtfm_library_finalize;
+  object_class->get_property = rtfm_library_get_property;
 
   if (NULL != (screen = gdk_screen_get_default ()) &&
       NULL != (icon_theme = gtk_icon_theme_get_default ()))
@@ -186,6 +233,7 @@ rtfm_library_class_init (RtfmLibraryClass *klass)
 static void
 rtfm_library_init (RtfmLibrary *self)
 {
+  rtfm_library_reset (self);
 }
 
 static void
@@ -416,4 +464,48 @@ rtfm_library_get_provider (RtfmLibrary *self,
                               &lookup);
 
   return lookup.provider;
+}
+
+RtfmLibrary *
+rtfm_library_new (void)
+{
+  return g_object_new (RTFM_TYPE_LIBRARY, NULL);
+}
+
+/**
+ * rtfm_library_get_default:
+ *
+ * Returns: (transfer none): An #RtfmLibrary.
+ */
+RtfmLibrary *
+rtfm_library_get_default (void)
+{
+  static RtfmLibrary *instance;
+
+  if (g_once_init_enter (&instance))
+    g_once_init_leave (&instance, rtfm_library_new ());
+
+  return instance;
+}
+
+/**
+ * rtfm_library_get_root:
+ * @self: An #RtfmLibrary
+ *
+ * Gets the root node of the library.
+ *
+ * The library is tracked as a tree of #RtfmItem. The items are periodically built by the
+ * various plugins and pruned when possible. These items are used to nativate the
+ * documentation by the viewer.
+ *
+ * Plugins can re-arrange the item tree as they see fit.
+ *
+ * Returns: (transfer none): An #RtfmItem.
+ */
+RtfmItem *
+rtfm_library_get_root (RtfmLibrary *self)
+{
+  g_return_val_if_fail (RTFM_IS_LIBRARY (self), NULL);
+
+  return self->root;
 }
