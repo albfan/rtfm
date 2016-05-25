@@ -72,7 +72,10 @@ librtfm_@API_VERSION@_la_LDFLAGS = \
 rtfm_SOURCES = \
 	main.c \
 	$(NULL)
-rtfm_LDADD = librtfm-@API_VERSION@.la
+rtfm_LDADD = \
+	$(RTFM_LIBS) \
+	librtfm-@API_VERSION@.la \
+	$(NULL)
 rtfm_LDFLAGS = $(WARN_LDFLAGS)
 rtfm_CFLAGS = \
 	$(RTFM_CFLAGS) \
