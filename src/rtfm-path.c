@@ -151,3 +151,22 @@ rtfm_path_is_empty (RtfmPath *self)
 
   return self->elements->length == 0;
 }
+
+/**
+ * rtfm_path_get_element:
+ *
+ * Gets the path element found at @index.
+ *
+ * Indexes start from zero.
+ *
+ * Returns: (nullable) (transfer none): An #RtfmPathElement.
+ */
+RtfmPathElement *
+rtfm_path_get_element (RtfmPath *self,
+                       guint     index)
+{
+  g_return_val_if_fail (RTFM_IS_PATH (self), NULL);
+  g_return_val_if_fail (index < self->elements->length, NULL);
+
+  return g_queue_peek_nth (self->elements, index);
+}

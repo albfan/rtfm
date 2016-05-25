@@ -29,15 +29,17 @@ G_BEGIN_DECLS
 
 G_DECLARE_FINAL_TYPE (RtfmPath, rtfm_path, RTFM, PATH, GObject)
 
-RtfmPath *rtfm_path_new          (void);
-void      rtfm_path_push_element (RtfmPath        *self,
-                                  RtfmPathElement *element);
-GList    *rtfm_path_get_elements (RtfmPath        *self);
-gboolean  rtfm_path_has_prefix   (RtfmPath        *self,
-                                  RtfmPath        *prefix);
-guint     rtfm_path_get_length   (RtfmPath        *self);
-gchar    *rtfm_path_printf       (RtfmPath        *self);
-gboolean  rtfm_path_is_empty     (RtfmPath        *self);
+RtfmPath        *rtfm_path_new          (void);
+void             rtfm_path_push_element (RtfmPath        *self,
+                                         RtfmPathElement *element);
+GList           *rtfm_path_get_elements (RtfmPath        *self);
+gboolean         rtfm_path_has_prefix   (RtfmPath        *self,
+                                         RtfmPath        *prefix);
+guint            rtfm_path_get_length   (RtfmPath        *self);
+RtfmPathElement *rtfm_path_get_element  (RtfmPath        *self,
+                                         guint            index);
+gchar           *rtfm_path_printf       (RtfmPath        *self);
+gboolean         rtfm_path_is_empty     (RtfmPath        *self);
 
 G_END_DECLS
 
