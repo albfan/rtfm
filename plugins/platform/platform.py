@@ -57,6 +57,11 @@ _MAPPING = {
     'dummy:GstSdp-1.0':          'platform:multimedia',
     'dummy:GstTag-1.0':          'platform:multimedia',
     'dummy:GstVideo-1.0':        'platform:multimedia',
+
+    'dummy:Gdk-3.0':             'platform:graphics',
+    'dummy:Gtk-3.0':             'platform:graphics',
+    'dummy:xlib-2.0':            'platform:graphics',
+    'dummy:xrandr-1.3':          'platform:graphics',
 }
 
 class Category(Rtfm.Item):
@@ -72,58 +77,24 @@ class Categorizer(GObject.Object, Rtfm.Provider):
 
     # XXX: Add cleanup phase to provider
 
-    def do_cleanup(self, path, collection):
-        # If we are in the root path, we want to move the items
-        # info our category items.
-        if path.is_empty():
-            # Create our injected category nodes
+    def do_postprocess(self, item):
+        if item.get_parent() is None:
+            # if this is the root item then we want to add our nodes to it
+            # and then move the other children into the respective categories.
             categories = {}
-            for id in _TITLES.keys():
-                category = Category(id)
-                categories[id] = category
-
-            matching = []
-
-            # Look through all the loaded items
-            for item in collection:
-                idstr = item.props.id
-                if idstr is None:
-                    continue
-
-                # If we find an item that is a dummy/gir node, then
-                # we want to possibly reorder it.
-                if idstr.startswith('dummy:') or idstr.startswith('gir:'):
-                    category_id = findCategory(idstr)
-                    if category_id in categories:
-                        categories[category_id].append(item)
-                        matching.append(item)
-
-            # Now remove any matching items
-            for item in matching:
-                collection.remove_item(item)
-
-            # Now add our categories
-            for category in categories.values():
-                collection.add(category)
-
-    def do_extend_item_async(self, item, cancellable, callback, data):
-        task = Gio.Task.new(self, cancellable, callback)
-        task.return_boolean(True)
-
-    def do_extend_item_finish(self, result):
-        return result.propagate_boolean()
-
-    def do_search_async(self, search_settings, cancellable, callback, data):
-        task = Gio.Task.new(self, cancellable, callback)
-        task.return_boolean(True)
-
-    def do_search_finish(self, result):
-        return result.propagate_boolean()
+            for child in item.get_children():
+                category = findCategory(child.props.id)
+                if category is not None:
+                    if category not in categories:
+                        categories[category] = Category(category)
+                    categories[category].append(child)
+            if categories:
+                categories = list(categories.values())
+                categories.sort(key=lambda x: x.get_title())
+                for category in categories:
+                    item.prepend(category)
 
     def do_load_item(self, id):
         if id in _TITLES:
             return Category(id)
         return None
-
-    def do_get_languages(self):
-        return []
