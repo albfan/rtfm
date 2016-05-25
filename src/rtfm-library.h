@@ -39,6 +39,8 @@ void         rtfm_library_load_children_async  (RtfmLibrary          *self,
 gboolean     rtfm_library_load_children_finish (RtfmLibrary          *self,
                                                 GAsyncResult         *result,
                                                 GError              **error);
+RtfmProvider   *rtfm_library_get_provider      (RtfmLibrary           *self,
+                                                const gchar           *id);
 
 G_END_DECLS
 

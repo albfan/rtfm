@@ -319,3 +319,53 @@ rtfm_library_get_item_by_id (RtfmLibrary *self,
 
   return get_item_by_id.result;
 }
+
+static void
+rtfm_library_get_provider_cb (PeasExtensionSet *set,
+                              PeasPluginInfo   *plugin_info,
+                              PeasExtension    *exten,
+                              gpointer          user_data)
+{
+  struct {
+    const gchar  *id;
+    RtfmProvider *provider;
+  } *lookup = user_data;
+
+  g_assert (PEAS_IS_EXTENSION_SET (set));
+  g_assert (plugin_info != NULL);
+  g_assert (RTFM_IS_PROVIDER (exten));
+  g_assert (lookup != NULL);
+  g_assert (lookup->id != NULL);
+
+  if (g_strcmp0 (lookup->id, peas_plugin_info_get_module_name (plugin_info)) == 0)
+    lookup->provider = RTFM_PROVIDER (exten);
+}
+
+/**
+ * rtfm_library_get_provider:
+ * @self: An #RtfmLibrary
+ * @id: the module id for the provider
+ *
+ * Returns the provider instance by module id.
+ *
+ * The module id is the module name used by the libpeas based plugin.
+ *
+ * Returns: (transfer none) (nullable): An #RtfmProvider.
+ */
+RtfmProvider *
+rtfm_library_get_provider (RtfmLibrary *self,
+                           const gchar *id)
+{
+  struct {
+    const gchar  *id;
+    RtfmProvider *provider;
+  } lookup = { id, NULL };
+
+  g_return_val_if_fail (RTFM_IS_LIBRARY (self), NULL);
+
+  peas_extension_set_foreach (self->providers,
+                              rtfm_library_get_provider_cb,
+                              &lookup);
+
+  return lookup.provider;
+}
