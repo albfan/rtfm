@@ -19,6 +19,7 @@
 #define G_LOG_DOMAIN "rtfm-collection"
 
 #include "rtfm-collection.h"
+#include "rtfm-path.h"
 
 struct _RtfmCollection
 {
@@ -107,6 +108,7 @@ rtfm_collection_set_property (GObject      *object,
   switch (prop_id)
     {
     case PROP_PATH:
+      g_clear_object (&self->path);
       self->path = g_value_dup_object (value);
       break;
 
@@ -138,6 +140,7 @@ static void
 rtfm_collection_init (RtfmCollection *self)
 {
   self->items = g_sequence_new (g_object_unref);
+  self->path = rtfm_path_new ();
 }
 
 static GType
@@ -183,9 +186,16 @@ list_model_iface_init (GListModelInterface *iface)
   iface->get_item = rtfm_collection_get_item;
 }
 
+/**
+ * rtfm_collection_take: (skip)
+ * @self: An #RtfmCollection
+ * @item: (transfer full): An #RtfmItem
+ *
+ * Adds @item to @collection without incrementing the reference count.
+ */
 void
-rtfm_collection_add (RtfmCollection *self,
-                     RtfmItem       *item)
+rtfm_collection_take (RtfmCollection *self,
+                      RtfmItem       *item)
 {
   guint position;
 
@@ -193,8 +203,18 @@ rtfm_collection_add (RtfmCollection *self,
   g_return_if_fail (RTFM_IS_ITEM (item));
 
   position = g_sequence_get_length (self->items);
-  g_sequence_append (self->items, g_object_ref (item));
+  g_sequence_append (self->items, item);
   g_list_model_items_changed (G_LIST_MODEL (self), position, 0, 1);
+}
+
+void
+rtfm_collection_add (RtfmCollection *self,
+                     RtfmItem       *item)
+{
+  g_return_if_fail (RTFM_IS_COLLECTION (self));
+  g_return_if_fail (RTFM_IS_ITEM (item));
+
+  rtfm_collection_take (self, g_object_ref (item));
 }
 
 void

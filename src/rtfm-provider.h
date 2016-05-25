@@ -21,16 +21,9 @@
 
 #include <gio/gio.h>
 
-#include "rtfm-collection.h"
-#include "rtfm-item.h"
-#include "rtfm-library.h"
-#include "rtfm-search-settings.h"
+#include "rtfm-types.h"
 
 G_BEGIN_DECLS
-
-#define RTFM_TYPE_PROVIDER (rtfm_provider_get_type ())
-
-G_DECLARE_INTERFACE (RtfmProvider, rtfm_provider, RTFM, PROVIDER, GObject)
 
 struct _RtfmProviderInterface
 {

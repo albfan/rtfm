@@ -19,17 +19,15 @@
 #ifndef RTFM_VIEW_GROUP_H
 #define RTFM_VIEW_GROUP_H
 
-#include <gtk/gtk.h>
+#include "rtfm-types.h"
 
 G_BEGIN_DECLS
-
-#define RTFM_TYPE_VIEW_GROUP (rtfm_view_group_get_type())
-
-G_DECLARE_DERIVABLE_TYPE (RtfmViewGroup, rtfm_view_group, RTFM, VIEW_GROUP, GtkBox)
 
 struct _RtfmViewGroupClass
 {
   GtkBoxClass parent;
+
+  gpointer padding[8];
 };
 
 GtkWidget   *rtfm_view_group_new       (void);

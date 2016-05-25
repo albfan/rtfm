@@ -18,7 +18,10 @@
 
 #define G_LOG_DOMAIN "rtfm-library"
 
+#include "rtfm-item.h"
 #include "rtfm-library.h"
+#include "rtfm-path.h"
+#include "rtfm-path-element.h"
 #include "rtfm-path-bar.h"
 #include "rtfm-sidebar.h"
 #include "rtfm-view.h"

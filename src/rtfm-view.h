@@ -19,21 +19,15 @@
 #ifndef RTFM_VIEW_H
 #define RTFM_VIEW_H
 
-#include <gtk/gtk.h>
-
-#include "rtfm-item.h"
-#include "rtfm-library.h"
-#include "rtfm-view-group.h"
+#include "rtfm-types.h"
 
 G_BEGIN_DECLS
-
-#define RTFM_TYPE_VIEW (rtfm_view_get_type())
-
-G_DECLARE_DERIVABLE_TYPE (RtfmView, rtfm_view, RTFM, VIEW, GtkBin)
 
 struct _RtfmViewClass
 {
   GtkBinClass parent;
+
+  gpointer padding[8];
 };
 
 GtkWidget   *rtfm_view_new         (void);

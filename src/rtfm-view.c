@@ -20,6 +20,7 @@
 
 #include <libpeas/peas.h>
 
+#include "rtfm-item.h"
 #include "rtfm-library-private.h"
 #include "rtfm-view.h"
 #include "rtfm-view-addin.h"

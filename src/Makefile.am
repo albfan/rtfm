@@ -25,6 +25,7 @@ librtfm_public_api = \
 	rtfm-sidebar-row.h \
 	rtfm-stack-list.c \
 	rtfm-stack-list.h \
+	rtfm-types.h \
 	rtfm-version.h \
 	rtfm-view.c \
 	rtfm-view.h \

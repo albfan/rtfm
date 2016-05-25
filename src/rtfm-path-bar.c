@@ -20,8 +20,11 @@
 
 #include <string.h>
 
+#include "rtfm-item.h"
+#include "rtfm-path.h"
 #include "rtfm-path-bar.h"
 #include "rtfm-path-bar-label.h"
+#include "rtfm-path-element.h"
 #include "rtfm-widget.h"
 
 struct _RtfmPathBar

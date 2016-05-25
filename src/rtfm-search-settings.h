@@ -19,13 +19,9 @@
 #ifndef RTFM_SEARCH_SETTINGS_H
 #define RTFM_SEARCH_SETTINGS_H
 
-#include <glib-object.h>
+#include "rtfm-types.h"
 
 G_BEGIN_DECLS
-
-#define RTFM_TYPE_SEARCH_SETTINGS (rtfm_search_settings_get_type())
-
-G_DECLARE_FINAL_TYPE (RtfmSearchSettings, rtfm_search_settings, RTFM, SEARCH_SETTINGS, GObject)
 
 RtfmSearchSettings *rtfm_search_settings_new             (void);
 const gchar        *rtfm_search_settings_get_search_text (RtfmSearchSettings *self);

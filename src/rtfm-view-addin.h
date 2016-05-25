@@ -19,15 +19,9 @@
 #ifndef RTFM_VIEW_ADDIN_H
 #define RTFM_VIEW_ADDIN_H
 
-#include <gtk/gtk.h>
-
-#include "rtfm-view.h"
+#include "rtfm-types.h"
 
 G_BEGIN_DECLS
-
-#define RTFM_TYPE_VIEW_ADDIN (rtfm_view_addin_get_type ())
-
-G_DECLARE_INTERFACE (RtfmViewAddin, rtfm_view_addin, RTFM, VIEW_ADDIN, GObject)
 
 struct _RtfmViewAddinInterface
 {

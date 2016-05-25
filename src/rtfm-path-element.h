@@ -19,13 +19,9 @@
 #ifndef RTFM_PATH_ELEMENT_H
 #define RTFM_PATH_ELEMENT_H
 
-#include <glib-object.h>
+#include "rtfm-types.h"
 
 G_BEGIN_DECLS
-
-#define RTFM_TYPE_PATH_ELEMENT (rtfm_path_element_get_type())
-
-G_DECLARE_FINAL_TYPE (RtfmPathElement, rtfm_path_element, RTFM, PATH_ELEMENT, GObject)
 
 RtfmPathElement *rtfm_path_element_new           (const gchar     *id,
                                                   const gchar     *icon_name,

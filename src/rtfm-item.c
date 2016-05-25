@@ -19,6 +19,8 @@
 #define G_LOG_DOMAIN "rtfm-item"
 
 #include "rtfm-item.h"
+#include "rtfm-path.h"
+#include "rtfm-path-element.h"
 
 typedef struct
 {

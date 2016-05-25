@@ -24,6 +24,7 @@
 G_BEGIN_DECLS
 
 #define RTFM_INSIDE
+# include "rtfm-types.h"
 # include "rtfm-collection.h"
 # include "rtfm-item.h"
 # include "rtfm-library.h"

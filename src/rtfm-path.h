@@ -19,15 +19,9 @@
 #ifndef RTFM_PATH_H
 #define RTFM_PATH_H
 
-#include <gio/gio.h>
-
-#include "rtfm-path-element.h"
+#include "rtfm-types.h"
 
 G_BEGIN_DECLS
-
-#define RTFM_TYPE_PATH (rtfm_path_get_type())
-
-G_DECLARE_FINAL_TYPE (RtfmPath, rtfm_path, RTFM, PATH, GObject)
 
 RtfmPath        *rtfm_path_new          (void);
 void             rtfm_path_push_element (RtfmPath        *self,

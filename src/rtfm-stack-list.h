@@ -19,13 +19,9 @@
 #ifndef RTFM_STACK_LIST_H
 #define RTFM_STACK_LIST_H
 
-#include <gtk/gtk.h>
+#include "rtfm-types.h"
 
 G_BEGIN_DECLS
-
-#define RTFM_TYPE_STACK_LIST (rtfm_stack_list_get_type())
-
-G_DECLARE_DERIVABLE_TYPE (RtfmStackList, rtfm_stack_list, RTFM, STACK_LIST, GtkBin)
 
 struct _RtfmStackListClass
 {
@@ -35,6 +31,8 @@ struct _RtfmStackListClass
                             GtkListBoxRow *row);
   void (*header_activated) (RtfmStackList  *self,
                             GtkListBoxRow *row);
+
+  gpointer padding[8];
 };
 
 typedef GtkWidget *(*RtfmStackListCreateWidgetFunc) (gpointer item,

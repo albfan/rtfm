@@ -19,15 +19,9 @@
 #ifndef RTFM_ITEM_H
 #define RTFM_ITEM_H
 
-#include <glib-object.h>
-
-#include "rtfm-path.h"
+#include "rtfm-types.h"
 
 G_BEGIN_DECLS
-
-#define RTFM_TYPE_ITEM (rtfm_item_get_type())
-
-G_DECLARE_DERIVABLE_TYPE (RtfmItem, rtfm_item, RTFM, ITEM, GObject)
 
 struct _RtfmItemClass
 {

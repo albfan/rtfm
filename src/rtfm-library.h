@@ -21,15 +21,10 @@
 
 #include <gio/gio.h>
 
-#include "rtfm-collection.h"
-#include "rtfm-item.h"
-#include "rtfm-path.h"
+#include "rtfm-types.h"
 
 G_BEGIN_DECLS
 
-#define RTFM_TYPE_LIBRARY (rtfm_library_get_type())
-
-G_DECLARE_FINAL_TYPE (RtfmLibrary, rtfm_library, RTFM, LIBRARY, GObject)
 
 RtfmLibrary *rtfm_library_new                  (void);
 RtfmLibrary *rtfm_library_get_default          (void);

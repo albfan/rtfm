@@ -19,15 +19,9 @@
 #ifndef RTFM_SIDEBAR_H
 #define RTFM_SIDEBAR_H
 
-#include <gtk/gtk.h>
-
-#include "rtfm-library.h"
+#include "rtfm-types.h"
 
 G_BEGIN_DECLS
-
-#define RTFM_TYPE_SIDEBAR (rtfm_sidebar_get_type())
-
-G_DECLARE_DERIVABLE_TYPE (RtfmSidebar, rtfm_sidebar, RTFM, SIDEBAR, GtkBox)
 
 struct _RtfmSidebarClass
 {

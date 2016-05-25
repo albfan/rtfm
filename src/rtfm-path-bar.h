@@ -19,15 +19,9 @@
 #ifndef RTFM_PATH_BAR_H
 #define RTFM_PATH_BAR_H
 
-#include <gtk/gtk.h>
-
-#include "rtfm-path.h"
+#include "rtfm-types.h"
 
 G_BEGIN_DECLS
-
-#define RTFM_TYPE_PATH_BAR (rtfm_path_bar_get_type())
-
-G_DECLARE_FINAL_TYPE (RtfmPathBar, rtfm_path_bar, RTFM, PATH_BAR, GtkBox)
 
 GtkWidget *rtfm_path_bar_new                (void);
 RtfmPath  *rtfm_path_bar_get_path           (RtfmPathBar *self);

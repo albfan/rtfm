@@ -19,13 +19,9 @@
 #ifndef RTFM_SIDEBAR_ROW_H
 #define RTFM_SIDEBAR_ROW_H
 
-#include <gtk/gtk.h>
+#include "rtfm-types.h"
 
 G_BEGIN_DECLS
-
-#define RTFM_TYPE_SIDEBAR_ROW (rtfm_sidebar_row_get_type())
-
-G_DECLARE_FINAL_TYPE (RtfmSidebarRow, rtfm_sidebar_row, RTFM, SIDEBAR_ROW, GtkListBoxRow)
 
 GtkWidget *rtfm_sidebar_row_new        (void);
 GObject   *rtfm_sidebar_row_get_object (RtfmSidebarRow *self);

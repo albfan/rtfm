@@ -21,6 +21,8 @@
 #include <libpeas/peas.h>
 #include <gtk/gtk.h>
 
+#include "rtfm-collection.h"
+#include "rtfm-item.h"
 #include "rtfm-library.h"
 #include "rtfm-library-private.h"
 #include "rtfm-provider.h"

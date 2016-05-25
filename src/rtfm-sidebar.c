@@ -19,6 +19,9 @@
 #define G_LOG_DOMAIN "rtfm-sidebar"
 
 #include "rtfm-collection.h"
+#include "rtfm-item.h"
+#include "rtfm-library.h"
+#include "rtfm-path.h"
 #include "rtfm-sidebar.h"
 #include "rtfm-sidebar-row.h"
 #include "rtfm-stack-list.h"

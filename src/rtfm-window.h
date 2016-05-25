@@ -19,15 +19,9 @@
 #ifndef RTFM_WINDOW_H
 #define RTFM_WINDOW_H
 
-#include <gtk/gtk.h>
-
-#include "rtfm-library.h"
+#include "rtfm-types.h"
 
 G_BEGIN_DECLS
-
-#define RTFM_TYPE_WINDOW (rtfm_window_get_type())
-
-G_DECLARE_FINAL_TYPE (RtfmWindow, rtfm_window, RTFM, WINDOW, GtkApplicationWindow)
 
 GtkWidget   *rtfm_window_new         (void);
 RtfmLibrary *rtfm_window_get_library (RtfmWindow  *self);
@@ -37,4 +31,3 @@ void         rtfm_window_set_library (RtfmWindow  *self,
 G_END_DECLS
 
 #endif /* RTFM_WINDOW_H */
-
