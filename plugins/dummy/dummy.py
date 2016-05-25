@@ -50,40 +50,49 @@ class MethodItem(Rtfm.Item):
         return path_helper(self)
 
 class MethodsItem(Rtfm.Item):
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__()
-        self.props.id = 'methods'
+        self.props.id = parent+':methods'
         self.props.title = 'Methods'
         #self.props.icon_name = 'lang-function-symbolic'
 
     def get_children(self):
+        def create(title):
+            return MethodItem(id=self.props.id+':methods:'+title,
+                              title=title,
+                              icon_name='lang-function-symbolic')
         return [
-            MethodItem(id='gtk_label_get_width_chars', title='get_width_chars'),
-            MethodItem(id='gtk_label_set_width_chars', title='set_width_chars'),
+            create('get_width_chars'),
+            create('set_width_chars'),
         ]
 
     def do_get_path(self):
         return path_helper(self)
 
 class PropertiesItem(Rtfm.Item):
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__()
-        self.props.id = 'properties'
+        self.props.id = parent+':properties'
         self.props.title = 'Properties'
         #self.props.icon_name = 'lang-property-symbolic'
 
     def get_children(self):
+        def create(title):
+            return PropertyItem(id=self.props.id+':properties:'+title,
+                                title=title,
+                                icon_name='lang-property-symbolic')
+
         return [
-            PropertyItem(id='label', title='label', icon_name='lang-property-symbolic'),
-            PropertyItem(id='markup', title='markup', icon_name='lang-property-symbolic'),
-            PropertyItem(id='use-markup', title='use-markup', icon_name='lang-property-symbolic'),
-            PropertyItem(id='width-chars', title='width-chars', icon_name='lang-property-symbolic'),
-            PropertyItem(id='max-width-chars', title='max-width-chars', icon_name='lang-property-symbolic'),
-            PropertyItem(id='justification', title='justification', icon_name='lang-property-symbolic'),
-            PropertyItem(id='xalign', title='xalign', icon_name='lang-property-symbolic'),
-            PropertyItem(id='xpad', title='xpad', icon_name='lang-property-symbolic'),
-            PropertyItem(id='yalign', title='yalign', icon_name='lang-property-symbolic'),
-            PropertyItem(id='ypad', title='ypad', icon_name='lang-property-symbolic'),
+            create('label'),
+            create('markup'),
+            create('use-markup'),
+            create('width-chars'),
+            create('max-width-chars'),
+            create('justification'),
+            create('xalign'),
+            create('xpad'),
+            create('yalign'),
+            create('ypad'),
         ]
 
     def do_get_path(self):
@@ -105,8 +114,8 @@ class ClassItem(Rtfm.Item):
         self.props.icon_name = 'lang-class-symbolic'
 
     def get_children(self):
-        return [PropertiesItem(),
-                MethodsItem(),
+        return [PropertiesItem(self.props.id),
+                MethodsItem(self.props.id),
                 Rtfm.Item(title='Tasks'),
                 Rtfm.Item(title='Examples')]
 
@@ -116,8 +125,8 @@ class ClassItem(Rtfm.Item):
 class ClassesItem(Rtfm.Item):
     def __init__(self, namespace):
         super().__init__()
+        self.props.id = 'dummy:'+namespace+':classes'
         self.props.title = 'Classes'
-        #self.props.icon_name = 'lang-class-symbolic'
         self.namespace = namespace
 
     def get_children(self):
@@ -133,8 +142,9 @@ class ClassesItem(Rtfm.Item):
         return path_helper(self)
 
 class FlagsItem(Rtfm.Item):
-    def __init__(self):
+    def __init__(self, namespace):
         super().__init__()
+        self.props.id = 'dummy:'+namespace+':flags'
         self.props.title = 'Flags'
         #self.props.icon_name = 'lang-enum-symbolic'
 
@@ -145,8 +155,9 @@ class FlagsItem(Rtfm.Item):
         return path_helper(self)
 
 class EnumsItem(Rtfm.Item):
-    def __init__(self):
+    def __init__(self, namespace):
         super().__init__()
+        self.props.id = 'dummy:'+namespace+':enums'
         self.props.title = 'Enumerations'
         #self.props.icon_name = 'lang-enum-symbolic'
 
@@ -157,8 +168,9 @@ class EnumsItem(Rtfm.Item):
         return path_helper(self)
 
 class FunctionsItem(Rtfm.Item):
-    def __init__(self):
+    def __init__(self, namespace):
         super().__init__()
+        self.props.id = 'dummy:'+namespace+':functions'
         self.props.title = 'Global Functions'
         #self.props.icon_name = 'lang-function-symbolic'
 
@@ -173,9 +185,9 @@ class NamespaceItem(Rtfm.Item):
 
     def get_children(self):
         return [ClassesItem(self.props.title),
-                EnumsItem(),
-                FlagsItem(),
-                FunctionsItem(),
+                EnumsItem(self.props.title),
+                FlagsItem(self.props.title),
+                FunctionsItem(self.props.title),
                 Rtfm.Item(title='Tutorials')]
 
     def do_get_path(self):
@@ -184,8 +196,11 @@ class NamespaceItem(Rtfm.Item):
         return path
 
 class DummyProvider(GObject.Object, Rtfm.Provider):
-    def do_load_children_async(self, parent, collection, cancellable, callback, data):
-        if parent != None:
+    def do_load_children_async(self, path, collection, cancellable, callback, data):
+        if not path.is_empty():
+            index = path.get_length() - 1
+            element = path.get_element(index)
+            parent = ALL_ITEMS_BY_ID.get(element.props.id)
             if hasattr(parent, 'get_children'):
                 for child in parent.get_children():
                     child.parent = parent

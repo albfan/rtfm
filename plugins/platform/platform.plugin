@@ -1,0 +1,7 @@
+[Plugin]
+Loader=python3
+Module=platform
+Name=GNOME Platform
+Description=Categorize introspectable libraries
+Authors=Christian Hergert
+Copyright=Copyright 2016 Christian Hergert <chergert@redhat.com>

@@ -36,12 +36,19 @@ struct _RtfmProviderInterface
 {
   GTypeInterface parent;
 
+  /* Plugin initialization and shutdown */
   void       (*load)                 (RtfmProvider         *self,
                                       RtfmLibrary          *library);
   void       (*unload)               (RtfmProvider         *self,
                                       RtfmLibrary          *library);
+
+  /* Load a given item by id */
+  RtfmItem  *(*load_item)            (RtfmProvider         *self,
+                                      const gchar          *id);
+
+  /* Load children from a given path */
   void       (*load_children_async)  (RtfmProvider         *self,
-                                      RtfmItem             *item,
+                                      RtfmPath             *path,
                                       RtfmCollection       *collection,
                                       GCancellable         *cancellable,
                                       GAsyncReadyCallback   callback,
@@ -49,6 +56,8 @@ struct _RtfmProviderInterface
   gboolean   (*load_children_finish) (RtfmProvider         *self,
                                       GAsyncResult         *result,
                                       GError              **error);
+
+  /* Perform search across the provider data set */
   void       (*search_async)         (RtfmProvider         *self,
                                       RtfmSearchSettings   *search_settings,
                                       RtfmCollection       *collection,
@@ -58,6 +67,8 @@ struct _RtfmProviderInterface
   gboolean   (*search_finish)        (RtfmProvider         *self,
                                       GAsyncResult         *result,
                                       GError              **error);
+
+  /* Extend an item for ancillary information */
   void       (*extend_item_async)    (RtfmProvider         *self,
                                       RtfmItem             *item,
                                       GCancellable         *cancellable,
@@ -66,9 +77,6 @@ struct _RtfmProviderInterface
   gboolean   (*extend_item_finish)   (RtfmProvider         *self,
                                       GAsyncResult         *result,
                                       GError              **error);
-  RtfmItem  *(*load_item)            (RtfmProvider         *self,
-                                      const gchar          *id);
-  gchar    **(*get_languages)       (RtfmProvider         *self);
 };
 
 void      rtfm_provider_load                 (RtfmProvider         *self,
@@ -78,7 +86,7 @@ void      rtfm_provider_unload               (RtfmProvider         *self,
 RtfmItem *rtfm_provider_load_item            (RtfmProvider         *self,
                                               const gchar          *id);
 void      rtfm_provider_load_children_async  (RtfmProvider         *self,
-                                              RtfmItem             *item,
+                                              RtfmPath             *path,
                                               RtfmCollection       *collection,
                                               GCancellable         *cancellable,
                                               GAsyncReadyCallback   callback,
@@ -103,7 +111,6 @@ void      rtfm_provider_extend_item_async    (RtfmProvider         *self,
 gboolean  rtfm_provider_extend_item_finish   (RtfmProvider         *self,
                                               GAsyncResult         *result,
                                               GError              **error);
-gchar   **rtfm_provider_get_languages        (RtfmProvider         *self);
 
 G_END_DECLS
 

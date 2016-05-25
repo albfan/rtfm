@@ -24,7 +24,7 @@ G_DEFINE_INTERFACE (RtfmProvider, rtfm_provider, G_TYPE_OBJECT)
 
 static void
 rtfm_provider_real_load_children_async (RtfmProvider        *self,
-                                        RtfmItem            *item,
+                                        RtfmPath            *path,
                                         RtfmCollection      *collection,
                                         GCancellable        *cancellable,
                                         GAsyncReadyCallback  callback,
@@ -33,7 +33,7 @@ rtfm_provider_real_load_children_async (RtfmProvider        *self,
   g_autoptr(GTask) task = NULL;
 
   g_assert (RTFM_IS_PROVIDER (self));
-  g_assert (!item || RTFM_IS_ITEM (item));
+  g_assert (RTFM_IS_PATH (path));
   g_assert (RTFM_IS_COLLECTION (collection));
   g_assert (!cancellable || G_IS_CANCELLABLE (cancellable));
 
@@ -123,19 +123,19 @@ rtfm_provider_default_init (RtfmProviderInterface *iface)
 
 void
 rtfm_provider_load_children_async (RtfmProvider        *self,
-                                   RtfmItem            *item,
+                                   RtfmPath            *path,
                                    RtfmCollection      *collection,
                                    GCancellable        *cancellable,
                                    GAsyncReadyCallback  callback,
                                    gpointer             user_data)
 {
   g_return_if_fail (RTFM_IS_PROVIDER (self));
-  g_return_if_fail (!item || RTFM_IS_ITEM (item));
+  g_return_if_fail (RTFM_IS_PATH (path));
   g_return_if_fail (RTFM_IS_COLLECTION (collection));
   g_return_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable));
 
   RTFM_PROVIDER_GET_IFACE (self)->load_children_async (self,
-                                                       item,
+                                                       path,
                                                        collection,
                                                        cancellable,
                                                        callback,
@@ -262,25 +262,6 @@ rtfm_provider_load_item (RtfmProvider *self,
 
   if (RTFM_PROVIDER_GET_IFACE (self)->load_item)
     return RTFM_PROVIDER_GET_IFACE (self)->load_item (self, id);
-
-  return NULL;
-}
-
-/**
- * rtfm_provider_get_languages:
- *
- * Gets a list of languages supported by the provider. This is used
- * to populate the language list.
- *
- * Returns: (transfer full): An array of strings.
- */
-gchar **
-rtfm_provider_get_languages (RtfmProvider *self)
-{
-  g_return_val_if_fail (RTFM_IS_PROVIDER (self), NULL);
-
-  if (RTFM_PROVIDER_GET_IFACE (self)->get_languages)
-    return RTFM_PROVIDER_GET_IFACE (self)->get_languages (self);
 
   return NULL;
 }

@@ -202,7 +202,7 @@ rtfm_library_load_children_cb (GObject      *object,
 
 void
 rtfm_library_load_children_async (RtfmLibrary         *self,
-                                  RtfmItem            *item,
+                                  RtfmPath            *path,
                                   RtfmCollection      *collection,
                                   GCancellable        *cancellable,
                                   GAsyncReadyCallback  callback,
@@ -214,7 +214,7 @@ rtfm_library_load_children_async (RtfmLibrary         *self,
   gint *count;
 
   g_return_if_fail (RTFM_IS_LIBRARY (self));
-  g_return_if_fail (!item || RTFM_IS_ITEM (item));
+  g_return_if_fail (RTFM_IS_PATH (path));
   g_return_if_fail (RTFM_IS_COLLECTION (collection));
 
   task = g_task_new (self, cancellable, callback, user_data);
@@ -236,7 +236,7 @@ rtfm_library_load_children_async (RtfmLibrary         *self,
       RtfmProvider *provider = iter->data;
 
       rtfm_provider_load_children_async (provider,
-                                         item,
+                                         path,
                                          collection,
                                          cancellable,
                                          rtfm_library_load_children_cb,

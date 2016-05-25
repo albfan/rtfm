@@ -19,10 +19,11 @@
 #ifndef RTFM_LIBRARY_H
 #define RTFM_LIBRARY_H
 
-#include <glib-object.h>
+#include <gio/gio.h>
 
 #include "rtfm-collection.h"
 #include "rtfm-item.h"
+#include "rtfm-path.h"
 
 G_BEGIN_DECLS
 
@@ -35,7 +36,7 @@ RtfmLibrary *rtfm_library_get_default          (void);
 RtfmItem    *rtfm_library_get_item_by_id       (RtfmLibrary          *self,
                                                 const gchar          *id);
 void         rtfm_library_load_children_async  (RtfmLibrary          *self,
-                                                RtfmItem             *item,
+                                                RtfmPath             *path,
                                                 RtfmCollection       *collection,
                                                 GCancellable         *cancellable,
                                                 GAsyncReadyCallback   callback,

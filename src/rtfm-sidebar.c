@@ -82,6 +82,7 @@ rtfm_sidebar_connect (RtfmSidebar *self,
 {
   RtfmSidebarPrivate *priv = rtfm_sidebar_get_instance_private (self);
   g_autoptr(RtfmCollection) collection = NULL;
+  g_autoptr(RtfmPath) path = NULL;
   RtfmSidebarRow *row;
 
   g_assert (RTFM_IS_SIDEBAR (self));
@@ -95,10 +96,11 @@ rtfm_sidebar_connect (RtfmSidebar *self,
                       "visible", TRUE,
                       NULL);
 
+  path = rtfm_path_new ();
   collection = rtfm_collection_new ();
 
   rtfm_library_load_children_async (priv->library,
-                                    NULL,
+                                    path,
                                     collection,
                                     priv->cancellable,
                                     rtfm_sidebar_load_children_cb,
@@ -138,6 +140,7 @@ rtfm_sidebar_browse_row_activated (RtfmSidebar    *self,
 {
   RtfmSidebarPrivate *priv = rtfm_sidebar_get_instance_private (self);
   g_autoptr(RtfmCollection) collection = NULL;
+  g_autoptr(RtfmPath) path = NULL;
   GtkWidget *header;
   GObject *object;
 
@@ -156,6 +159,7 @@ rtfm_sidebar_browse_row_activated (RtfmSidebar    *self,
                          NULL);
 
   collection = rtfm_collection_new ();
+  path = rtfm_item_get_path (RTFM_ITEM (object));
 
   rtfm_stack_list_push (priv->browse,
                         header,
@@ -164,7 +168,7 @@ rtfm_sidebar_browse_row_activated (RtfmSidebar    *self,
                         self, NULL);
 
   rtfm_library_load_children_async (priv->library,
-                                    RTFM_ITEM (object),
+                                    path,
                                     collection,
                                     priv->cancellable,
                                     rtfm_sidebar_load_children_cb,
