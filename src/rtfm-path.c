@@ -143,3 +143,11 @@ rtfm_path_printf (RtfmPath *self)
 
   return g_string_free (str, FALSE);
 }
+
+gboolean
+rtfm_path_is_empty (RtfmPath *self)
+{
+  g_return_val_if_fail (RTFM_IS_PATH (self), FALSE);
+
+  return self->elements->length == 0;
+}

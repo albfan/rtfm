@@ -37,6 +37,7 @@ gboolean  rtfm_path_has_prefix   (RtfmPath        *self,
                                   RtfmPath        *prefix);
 guint     rtfm_path_get_length   (RtfmPath        *self);
 gchar    *rtfm_path_printf       (RtfmPath        *self);
+gboolean  rtfm_path_is_empty     (RtfmPath        *self);
 
 G_END_DECLS
 
