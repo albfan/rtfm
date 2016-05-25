@@ -213,7 +213,7 @@ class DummyProvider(GObject.Object, Rtfm.Provider):
             for filename in files:
                 short = filename[:-4]
                 namespace, version = short.split('-')
-                item = NamespaceItem(id='dummy:'+namespace, icon_name='lang-namespace-symbolic', title=namespace, subtitle=short)
+                item = NamespaceItem(id='dummy:'+short, icon_name='lang-namespace-symbolic', title=namespace, subtitle=short)
                 collection.add(item)
                 ALL_ITEMS_BY_ID[item.props.id] = item
 
