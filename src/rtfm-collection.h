@@ -22,6 +22,7 @@
 #include <gio/gio.h>
 
 #include "rtfm-item.h"
+#include "rtfm-path.h"
 
 G_BEGIN_DECLS
 
@@ -29,9 +30,12 @@ G_BEGIN_DECLS
 
 G_DECLARE_FINAL_TYPE (RtfmCollection, rtfm_collection, RTFM, COLLECTION, GObject)
 
-RtfmCollection *rtfm_collection_new (void);
-void            rtfm_collection_add (RtfmCollection *collection,
-                                     RtfmItem       *item);
+RtfmCollection *rtfm_collection_new         (RtfmPath       *path);
+RtfmPath       *rtfm_collection_get_path    (RtfmCollection *self);
+void            rtfm_collection_add         (RtfmCollection *collection,
+                                             RtfmItem       *item);
+void            rtfm_collection_remove_item (RtfmCollection *self,
+                                             RtfmItem       *item);
 
 G_END_DECLS
 

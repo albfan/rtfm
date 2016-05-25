@@ -97,7 +97,7 @@ rtfm_sidebar_connect (RtfmSidebar *self,
                       NULL);
 
   path = rtfm_path_new ();
-  collection = rtfm_collection_new ();
+  collection = rtfm_collection_new (path);
 
   rtfm_library_load_children_async (priv->library,
                                     path,
@@ -158,8 +158,8 @@ rtfm_sidebar_browse_row_activated (RtfmSidebar    *self,
                          "visible", TRUE,
                          NULL);
 
-  collection = rtfm_collection_new ();
   path = rtfm_item_get_path (RTFM_ITEM (object));
+  collection = rtfm_collection_new (path);
 
   rtfm_stack_list_push (priv->browse,
                         header,
