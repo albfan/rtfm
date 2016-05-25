@@ -359,10 +359,24 @@ rtfm_item_get_metadata_string (RtfmItem    *self,
 RtfmPath *
 rtfm_item_get_path (RtfmItem *self)
 {
+  RtfmItemPrivate *priv = rtfm_item_get_instance_private (self);
+  RtfmPath *ret = NULL;
+
   g_return_val_if_fail (RTFM_IS_ITEM (self), NULL);
 
   if (RTFM_ITEM_GET_CLASS (self)->get_path)
-    return RTFM_ITEM_GET_CLASS (self)->get_path (self);
+    ret = RTFM_ITEM_GET_CLASS (self)->get_path (self);
 
-  return NULL;
+  if (ret == NULL)
+    {
+      g_autoptr(RtfmPathElement) element = NULL;
+
+      ret = rtfm_path_new ();
+      element = rtfm_path_element_new (priv->id,
+                                       priv->icon_name,
+                                       priv->title);
+      rtfm_path_push_element (ret, element);
+    }
+
+  return ret;
 }
