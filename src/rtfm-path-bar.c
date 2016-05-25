@@ -316,12 +316,14 @@ rtfm_path_bar_create_element (RtfmPathBar     *self,
                       "orientation", GTK_ORIENTATION_HORIZONTAL,
                       "spacing", 12,
                       "visible", TRUE,
+                      "valign", GTK_ALIGN_BASELINE,
                       NULL);
 
   button = g_object_new (GTK_TYPE_TOGGLE_BUTTON,
                          "active", is_last == TRUE,
                          "focus-on-click", FALSE,
                          "visible", TRUE,
+                         "valign", GTK_ALIGN_BASELINE,
                          NULL);
   g_object_set_data_full (G_OBJECT (button),
                           "RTFM_PATH_ELEMENT",
@@ -336,6 +338,7 @@ rtfm_path_bar_create_element (RtfmPathBar     *self,
 
   slash = g_object_new (GTK_TYPE_LABEL,
                         "label", "/",
+                        "valign", GTK_ALIGN_BASELINE,
                         "visible", is_last == FALSE,
                         NULL);
   gtk_style_context_add_class (gtk_widget_get_style_context (GTK_WIDGET (slash)), "separator");
@@ -344,6 +347,7 @@ rtfm_path_bar_create_element (RtfmPathBar     *self,
   box2 = g_object_new (GTK_TYPE_BOX,
                        "orientation", GTK_ORIENTATION_HORIZONTAL,
                        "spacing", 6,
+                       "valign", GTK_ALIGN_BASELINE,
                        "visible", TRUE,
                        NULL);
   gtk_container_add (GTK_CONTAINER (button), GTK_WIDGET (box2));
@@ -353,6 +357,7 @@ rtfm_path_bar_create_element (RtfmPathBar     *self,
       image = g_object_new (GTK_TYPE_IMAGE,
                             "icon-name", icon_name,
                             "pixel-size", 16,
+                            "valign", GTK_ALIGN_BASELINE,
                             "visible", TRUE,
                             NULL);
       gtk_container_add (GTK_CONTAINER (box2), GTK_WIDGET (image));
@@ -360,6 +365,7 @@ rtfm_path_bar_create_element (RtfmPathBar     *self,
 
   label = g_object_new (RTFM_TYPE_PATH_BAR_LABEL,
                         "label", title,
+                        "valign", GTK_ALIGN_BASELINE,
                         "visible", TRUE,
                         NULL);
   gtk_container_add (GTK_CONTAINER (box2), GTK_WIDGET (label));

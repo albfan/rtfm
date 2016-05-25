@@ -11,6 +11,7 @@ rtfmpathbar button {
 
 rtfmpathbar label.separator {
   font-size: 0.83333em;
+  opacity: 0.55;
 }
 
 rtfmpathbar button:checked {
