@@ -28,6 +28,8 @@ struct _RtfmItemClass
   GObjectClass parent;
 
   RtfmPath *(*get_path) (RtfmItem *self);
+
+  gpointer padding[8];
 };
 
 RtfmItem    *rtfm_item_new                 (void);
@@ -54,6 +56,21 @@ void         rtfm_item_set_metadata        (RtfmItem    *self,
                                             const gchar *key,
                                             GVariant    *value);
 RtfmPath    *rtfm_item_get_path            (RtfmItem    *self);
+
+
+GList       *rtfm_item_get_children        (RtfmItem    *self);
+RtfmItem    *rtfm_item_get_parent          (RtfmItem    *self);
+void         rtfm_item_append              (RtfmItem    *self,
+                                            RtfmItem    *child);
+void         rtfm_item_prepend             (RtfmItem    *self,
+                                            RtfmItem    *child);
+void         rtfm_item_insert_after        (RtfmItem    *self,
+                                            RtfmItem    *sibling,
+                                            RtfmItem    *child);
+void         rtfm_item_insert_before       (RtfmItem    *self,
+                                            RtfmItem    *sibling,
+                                            RtfmItem    *child);
+void         rtfm_item_remove_all          (RtfmItem    *self);
 
 G_END_DECLS
 

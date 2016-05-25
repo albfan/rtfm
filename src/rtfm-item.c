@@ -19,19 +19,44 @@
 #define G_LOG_DOMAIN "rtfm-item"
 
 #include "rtfm-item.h"
+#include "rtfm-item-private.h"
 #include "rtfm-path.h"
 #include "rtfm-path-element.h"
 
+#define GET_PRIVATE(t) ((RtfmItemPrivate *)rtfm_item_get_instance_private(t))
+
 typedef struct
 {
-  gchar *id;
-  gchar *title;
-  gchar *subtitle;
-  gchar *icon_name;
+  /*
+   * Basic information about the item.
+   */
+  gchar      *id;
+  gchar      *title;
+  gchar      *subtitle;
+  gchar      *icon_name;
   GHashTable *metadata;
+
+  /*
+   * Item tree pointers.
+   */
+  RtfmItem   *parent;
+  RtfmItem   *next;
+  RtfmItem   *prev;
+  RtfmItem   *first_child;
+  RtfmItem   *last_child;
+
+  guint       populated : 1;
 } RtfmItemPrivate;
 
-G_DEFINE_TYPE_WITH_PRIVATE (RtfmItem, rtfm_item, G_TYPE_OBJECT)
+static void list_model_iface_init (GListModelInterface *iface);
+static void rtfm_item_unparent    (RtfmItem            *self);
+static void rtfm_item_foreach     (RtfmItem            *self,
+                                   GFunc                callback,
+                                   gpointer             user_data);
+
+G_DEFINE_TYPE_EXTENDED (RtfmItem, rtfm_item, G_TYPE_OBJECT, 0,
+                        G_ADD_PRIVATE (RtfmItem)
+                        G_IMPLEMENT_INTERFACE (G_TYPE_LIST_MODEL, list_model_iface_init))
 
 enum {
   PROP_0,
@@ -43,6 +68,18 @@ enum {
 };
 
 static GParamSpec *properties [N_PROPS];
+
+static void
+rtfm_item_dispose (GObject *object)
+{
+  RtfmItem *self = (RtfmItem *)object;
+  RtfmItemPrivate *priv = rtfm_item_get_instance_private (self);
+
+  if (priv->first_child != NULL)
+    rtfm_item_remove_all (self);
+
+  G_OBJECT_CLASS (rtfm_item_parent_class)->dispose (object);
+}
 
 static void
 rtfm_item_finalize (GObject *object)
@@ -125,6 +162,7 @@ rtfm_item_class_init (RtfmItemClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
+  object_class->dispose = rtfm_item_dispose;
   object_class->finalize = rtfm_item_finalize;
   object_class->get_property = rtfm_item_get_property;
   object_class->set_property = rtfm_item_set_property;
@@ -381,4 +419,319 @@ rtfm_item_get_path (RtfmItem *self)
     }
 
   return ret;
+}
+
+/**
+ * rtfm_item_get_parent:
+ *
+ * Returns: (transfer none) (nullable): An #RtfmItem or %NULL.
+ */
+RtfmItem *
+rtfm_item_get_parent (RtfmItem *self)
+{
+  RtfmItemPrivate *priv = rtfm_item_get_instance_private (self);
+
+  g_return_val_if_fail (RTFM_IS_ITEM (self), NULL);
+
+  return priv->parent;
+}
+
+static void
+rtfm_item_unparent (RtfmItem *self)
+{
+  RtfmItemPrivate *priv = rtfm_item_get_instance_private (self);
+
+  g_assert (RTFM_IS_ITEM (self));
+  g_assert (priv->prev == NULL || priv->parent != NULL);
+  g_assert (priv->next == NULL || priv->parent != NULL);
+
+  if (priv->parent != NULL)
+    {
+      if (priv->prev != NULL)
+        GET_PRIVATE (priv->prev)->next = priv->next;
+      else
+        GET_PRIVATE (priv->parent)->first_child = priv->next;
+
+      if (priv->next != NULL)
+        GET_PRIVATE (priv->next)->prev = priv->prev;
+      else
+        GET_PRIVATE (priv->parent)->last_child = priv->prev;
+
+      priv->prev = NULL;
+      priv->next = NULL;
+      priv->parent = NULL;
+
+      /* The parent holds a reference to the child, so now we can release it
+       * since we've cleaned up the parent.
+       */
+      g_object_unref (self);
+    }
+}
+
+void
+rtfm_item_append (RtfmItem *self,
+                  RtfmItem *child)
+{
+  RtfmItemPrivate *priv = rtfm_item_get_instance_private (self);
+  RtfmItemPrivate *childpriv = rtfm_item_get_instance_private (child);
+
+  g_return_if_fail (RTFM_IS_ITEM (self));
+  g_return_if_fail (RTFM_IS_ITEM (child));
+
+  g_object_ref (child);
+  rtfm_item_unparent (child);
+  childpriv->parent = self;
+
+  childpriv->prev = priv->last_child;
+  priv->last_child = child;
+  if (priv->first_child == NULL)
+    priv->first_child = child;
+}
+
+void
+rtfm_item_prepend (RtfmItem *self,
+                   RtfmItem *child)
+{
+  RtfmItemPrivate *priv = rtfm_item_get_instance_private (self);
+  RtfmItemPrivate *childpriv = rtfm_item_get_instance_private (child);
+
+  g_return_if_fail (RTFM_IS_ITEM (self));
+  g_return_if_fail (RTFM_IS_ITEM (child));
+
+  g_object_ref (child);
+  rtfm_item_unparent (child);
+  childpriv->parent = self;
+
+  childpriv->next = priv->first_child;
+  priv->first_child = child;
+  if (priv->last_child == NULL)
+    priv->last_child = child;
+}
+
+void
+rtfm_item_insert_after (RtfmItem *self,
+                        RtfmItem *sibling,
+                        RtfmItem *child)
+{
+  RtfmItemPrivate *priv = rtfm_item_get_instance_private (self);
+  RtfmItemPrivate *siblingpriv = rtfm_item_get_instance_private (sibling);
+  RtfmItemPrivate *childpriv = rtfm_item_get_instance_private (child);
+
+  g_return_if_fail (RTFM_IS_ITEM (self));
+  g_return_if_fail (RTFM_IS_ITEM (sibling));
+  g_return_if_fail (RTFM_IS_ITEM (child));
+  g_return_if_fail (siblingpriv->parent == self);
+
+  g_object_ref (child);
+  rtfm_item_unparent (child);
+  childpriv->parent = self;
+
+  childpriv->prev = sibling;
+  childpriv->next = siblingpriv->next;
+  siblingpriv->next = child;
+
+  if (childpriv->next == NULL)
+    priv->last_child = child;
+}
+
+void
+rtfm_item_insert_before (RtfmItem *self,
+                         RtfmItem *sibling,
+                         RtfmItem *child)
+{
+  RtfmItemPrivate *priv = rtfm_item_get_instance_private (self);
+  RtfmItemPrivate *siblingpriv = rtfm_item_get_instance_private (sibling);
+  RtfmItemPrivate *childpriv = rtfm_item_get_instance_private (child);
+
+  g_return_if_fail (RTFM_IS_ITEM (self));
+  g_return_if_fail (RTFM_IS_ITEM (sibling));
+  g_return_if_fail (RTFM_IS_ITEM (child));
+  g_return_if_fail (siblingpriv->parent == self);
+
+  g_object_ref (child);
+  rtfm_item_unparent (child);
+  childpriv->parent = self;
+
+  childpriv->next = sibling;
+  childpriv->prev = siblingpriv->prev;
+  siblingpriv->prev = child;
+
+  if (childpriv->prev == NULL)
+    priv->first_child = child;
+}
+
+/**
+ * rtfm_item_get_children:
+ * @self: An #RtfmItem
+ *
+ * Gets the children of an item.
+ *
+ * Returns: (transfer container) (element-type Rtfm.Item): Retreives the
+ *   children of the item as a #GList.
+ */
+GList *
+rtfm_item_get_children (RtfmItem *self)
+{
+  RtfmItemPrivate *priv = rtfm_item_get_instance_private (self);
+  RtfmItem *iter;
+  GList *list = NULL;
+
+  g_return_val_if_fail (RTFM_IS_ITEM (self), NULL);
+
+  for (iter = priv->last_child; iter != NULL; iter = GET_PRIVATE (iter)->prev)
+    list = g_list_prepend (list, iter);
+
+  return list;
+}
+
+static void
+rtfm_item_foreach (RtfmItem *self,
+                   GFunc     callback,
+                   gpointer  user_data)
+{
+  RtfmItem *iter;
+
+  g_return_if_fail (RTFM_IS_ITEM (self));
+  g_return_if_fail (callback != NULL);
+
+  for (iter = GET_PRIVATE (self)->first_child;
+       iter != NULL;
+       iter = GET_PRIVATE (iter)->next)
+    callback (iter, user_data);
+}
+
+static GType
+rtfm_item_get_item_type (GListModel *model)
+{
+  return RTFM_TYPE_ITEM;
+}
+
+static void
+count_items (gpointer data,
+             gpointer user_data)
+{
+  guint *count = user_data;
+
+  (*count)++;
+}
+
+static guint
+rtfm_item_get_n_items (GListModel *model)
+{
+  RtfmItem *self = (RtfmItem *)model;
+  guint count = 0;
+
+  g_return_val_if_fail (RTFM_IS_ITEM (self), 0);
+
+  rtfm_item_foreach (self, count_items, &count);
+
+  return count;
+}
+
+static void
+lookup_index (gpointer data,
+              gpointer user_data)
+{
+  RtfmItem *child = data;
+  struct {
+    RtfmItem *child;
+    guint     offset;
+  } *lookup = user_data;
+
+  g_assert (RTFM_IS_ITEM (child));
+  g_assert (lookup != NULL);
+
+  if (lookup->child == NULL)
+    {
+      if (lookup->offset == 0)
+        lookup->child = child;
+      else
+        lookup->offset--;
+    }
+}
+
+static gpointer
+rtfm_item_get_item (GListModel *model,
+                    guint       index)
+{
+  RtfmItem *self = (RtfmItem *)model;
+  struct {
+    RtfmItem *child;
+    guint     offset;
+  } lookup = { NULL, index };
+
+  g_return_val_if_fail (RTFM_IS_ITEM (self), NULL);
+
+  rtfm_item_foreach (self, lookup_index, &lookup);
+
+  return g_object_ref (lookup.child);
+}
+
+static void
+list_model_iface_init (GListModelInterface *iface)
+{
+  iface->get_item_type = rtfm_item_get_item_type;
+  iface->get_n_items = rtfm_item_get_n_items;
+  iface->get_item = rtfm_item_get_item;
+}
+
+void
+rtfm_item_remove_all (RtfmItem *self)
+{
+  RtfmItemPrivate *priv = rtfm_item_get_instance_private (self);
+  RtfmItem *chain;
+  RtfmItem *iter;
+  RtfmItem *next = NULL;
+  GList *list = NULL;
+  guint count = 0;
+
+  g_assert (RTFM_IS_ITEM (self));
+
+  if (priv->first_child == NULL)
+    return;
+
+  chain = priv->first_child;
+
+  priv->first_child = NULL;
+  priv->last_child = NULL;
+
+  for (iter = chain; iter != NULL; iter = next)
+    {
+      RtfmItemPrivate *iterpriv = rtfm_item_get_instance_private (iter);
+
+      next = iterpriv->next;
+
+      iterpriv->parent = NULL;
+      iterpriv->prev = NULL;
+      iterpriv->next = NULL;
+
+      list = g_list_prepend (list, iter);
+
+      count++;
+    }
+
+  g_list_model_items_changed (G_LIST_MODEL (self), 0, count, 0);
+
+  g_list_free_full (list, g_object_unref);
+}
+
+gboolean
+_rtfm_item_get_populated (RtfmItem *self)
+{
+  RtfmItemPrivate *priv = rtfm_item_get_instance_private (self);
+
+  g_return_val_if_fail (RTFM_IS_ITEM (self), FALSE);
+
+  return priv->populated;
+}
+
+void
+_rtfm_item_set_populated (RtfmItem *self,
+                          gboolean  populated)
+{
+  RtfmItemPrivate *priv = rtfm_item_get_instance_private (self);
+
+  g_return_if_fail (RTFM_IS_ITEM (self));
+
+  priv->populated = !!populated;
 }

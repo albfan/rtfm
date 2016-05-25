@@ -43,6 +43,7 @@ librtfm_@API_VERSION@_la_SOURCES = \
 	rtfm-animation.h \
 	rtfm-frame-source.c \
 	rtfm-frame-source.h \
+	rtfm-item-private.h \
 	rtfm-library-private.h \
 	rtfm-path-bar-label.c \
 	rtfm-path-bar-label.h \
