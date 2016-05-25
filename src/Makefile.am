@@ -68,6 +68,8 @@ librtfm_@API_VERSION@_la_LIBADD = \
 
 librtfm_@API_VERSION@_la_LDFLAGS = \
 	$(WARN_LDFLAGS) \
+	-no-undefined \
+	-export-symbols-regex '^rtfm_.*' \
 	$(NULL)
 
 rtfm_SOURCES = \
