@@ -137,7 +137,7 @@ rtfm_path_bar_class_init (RtfmPathBarClass *klass)
                   0, NULL, NULL, NULL,
                   G_TYPE_NONE, 3, RTFM_TYPE_PATH, RTFM_TYPE_PATH_ELEMENT, G_TYPE_MENU);
 
-  gtk_widget_class_set_css_name (widget_class, "rtfmpathview");
+  gtk_widget_class_set_css_name (widget_class, "rtfmpathbar");
 
   rtfm_gtk_widget_class_set_css_from_resource (widget_class,
                                                NULL,

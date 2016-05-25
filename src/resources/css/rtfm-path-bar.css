@@ -1,5 +1,4 @@
-
-rtfmpathview button {
+rtfmpathbar button {
   background: none;
   border: none;
   box-shadow: none;
@@ -10,17 +9,21 @@ rtfmpathview button {
   padding: 3px 3px 0px 3px;
 }
 
-rtfmpathview label.separator {
+rtfmpathbar label.separator {
   font-size: 0.83333em;
 }
 
-rtfmpathview button:checked {
+rtfmpathbar button:checked {
   border-bottom: 2px solid @theme_selected_bg_color;
   font-weight: bold;
   opacity: 1;
 }
 
-rtfmpathview button:hover {
+rtfmpathbar button:checked:backdrop {
+  border-bottom-color: alpha(@borders,.75);
+}
+
+rtfmpathbar button:hover {
   opacity: 0.9;
   border-bottom-color: @borders;
 }
