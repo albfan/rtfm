@@ -25,22 +25,20 @@
 
 G_BEGIN_DECLS
 
-
-RtfmLibrary *rtfm_library_new                  (void);
-RtfmLibrary *rtfm_library_get_default          (void);
-RtfmItem    *rtfm_library_get_item_by_id       (RtfmLibrary          *self,
-                                                const gchar          *id);
-void         rtfm_library_load_children_async  (RtfmLibrary          *self,
-                                                RtfmPath             *path,
-                                                RtfmCollection       *collection,
-                                                GCancellable         *cancellable,
-                                                GAsyncReadyCallback   callback,
-                                                gpointer              user_data);
-gboolean     rtfm_library_load_children_finish (RtfmLibrary          *self,
-                                                GAsyncResult         *result,
-                                                GError              **error);
-RtfmProvider   *rtfm_library_get_provider      (RtfmLibrary           *self,
-                                                const gchar           *id);
+RtfmLibrary  *rtfm_library_new             (void);
+RtfmLibrary  *rtfm_library_get_default     (void);
+RtfmItem     *rtfm_library_get_item_by_id  (RtfmLibrary           *self,
+                                            const gchar           *id);
+RtfmProvider *rtfm_library_get_provider    (RtfmLibrary           *self,
+                                            const gchar           *id);
+void          rtfm_library_populate_async  (RtfmLibrary           *self,
+                                            RtfmCollection        *collection,
+                                            GCancellable          *cancellable,
+                                            GAsyncReadyCallback    callback,
+                                            gpointer               user_data);
+gboolean      rtfm_library_populate_finish (RtfmLibrary           *self,
+                                            GAsyncResult          *result,
+                                            GError               **error);
 
 G_END_DECLS
 

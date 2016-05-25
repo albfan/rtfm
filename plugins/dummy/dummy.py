@@ -196,7 +196,9 @@ class NamespaceItem(Rtfm.Item):
         return path
 
 class DummyProvider(GObject.Object, Rtfm.Provider):
-    def do_load_children_async(self, path, collection, cancellable, callback, data):
+    def do_populate_async(self, collection, cancellable, callback, data):
+        path = collection.get_path()
+
         if not path.is_empty():
             index = path.get_length() - 1
             element = path.get_element(index)
@@ -220,30 +222,13 @@ class DummyProvider(GObject.Object, Rtfm.Provider):
         task = Gio.Task.new(self, cancellable, callback)
         task.return_boolean(True)
 
-    def do_load_children_finish(self, result):
-        return result.propagate_boolean()
-
-    def do_extend_item_async(self, item, cancellable, callback, data):
-        task = Gio.Task.new(self, cancellable, callback)
-        task.return_boolean(True)
-
-    def do_extend_item_finish(self, result):
-        return result.propagate_boolean()
-
-    def do_search_async(self, search_settings, cancellable, callback, data):
-        task = Gio.Task.new(self, cancellable, callback)
-        task.return_boolean(True)
-
-    def do_search_finish(self, result):
+    def do_populate_finish(self, result):
         return result.propagate_boolean()
 
     def do_load_item(self, id):
         ret = ALL_ITEMS_BY_ID.get(id, None)
         #print("%s %r" % (id, ret))
         return ret
-
-    def do_get_languages(self):
-        return ['C', 'JavaScript', 'Lua', 'Python']
 
 class BasicRow(Gtk.ListBoxRow):
     def __init__(self, title):

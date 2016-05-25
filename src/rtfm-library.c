@@ -35,7 +35,27 @@ struct _RtfmLibrary
   PeasExtensionSet *providers;
 };
 
+typedef struct
+{
+  RtfmCollection *destination;
+  RtfmCollection *source;
+  GList          *providers;
+  guint           active;
+} PopulateState;
+
 G_DEFINE_TYPE (RtfmLibrary, rtfm_library, G_TYPE_OBJECT)
+
+static void
+populate_state_free (gpointer data)
+{
+  PopulateState *state = data;
+
+  g_clear_object (&state->source);
+  g_clear_object (&state->destination);
+  g_list_free_full (state->providers, g_object_unref);
+  state->providers = NULL;
+  g_slice_free (PopulateState, state);
+}
 
 RtfmLibrary *
 rtfm_library_new (void)
@@ -73,7 +93,7 @@ rtfm_library_provider_added (PeasExtensionSet *set,
   g_assert (RTFM_IS_PROVIDER (provider));
   g_assert (RTFM_IS_LIBRARY (self));
 
-  rtfm_provider_load (provider, self);
+  rtfm_provider_initialize (provider, self);
 }
 
 static void
@@ -90,7 +110,7 @@ rtfm_library_provider_removed (PeasExtensionSet *set,
   g_assert (RTFM_IS_PROVIDER (provider));
   g_assert (RTFM_IS_LIBRARY (self));
 
-  rtfm_provider_unload (provider, self);
+  rtfm_provider_shutdown (provider, self);
 }
 
 static void
@@ -176,48 +196,73 @@ collect_providers (PeasExtensionSet *set,
 {
   GList **list = user_data;
 
-  *list = g_list_prepend (*list, exten);
+  *list = g_list_prepend (*list, g_object_ref (exten));
 }
 
 static void
-rtfm_library_load_children_cb (GObject      *object,
-                               GAsyncResult *result,
-                               gpointer      user_data)
+rtfm_library_populate_cb (GObject      *object,
+                          GAsyncResult *result,
+                          gpointer      user_data)
 {
   RtfmProvider *provider = (RtfmProvider *)object;
   g_autoptr(GTask) task = user_data;
   g_autoptr(GError) error = NULL;
-  gint *count;
+  PopulateState *state;
 
   g_assert (RTFM_IS_PROVIDER (provider));
   g_assert (G_IS_TASK (task));
 
-  count = g_task_get_task_data (task);
-  (*count)--;
+  state = g_task_get_task_data (task);
+  state->active--;
 
-  if (!rtfm_provider_load_children_finish (provider, result, &error))
+  if (!rtfm_provider_populate_finish (provider, result, &error))
     g_debug ("%s", error->message);
 
-  if (*count == 0)
-    g_task_return_boolean (task, TRUE);
+  if (state->active == 0)
+    {
+      GList *iter;
+      guint n_items;
+      guint i;
+
+      /* Allow providers to post-process the list */
+      for (iter = state->providers; iter != NULL; iter = iter->next)
+        {
+          provider = iter->data;
+
+          rtfm_provider_postprocess (provider, state->source);
+        }
+
+      /* Now copy into our destination model */
+      n_items = g_list_model_get_n_items (G_LIST_MODEL (state->source));
+
+      for (i = 0; i < n_items; i++)
+        {
+          RtfmItem *item;
+
+          item = g_list_model_get_item (G_LIST_MODEL (state->source), i);
+          rtfm_collection_take (state->destination, item);
+        }
+
+      g_task_return_boolean (task, TRUE);
+    }
 }
 
 void
-rtfm_library_load_children_async (RtfmLibrary         *self,
-                                  RtfmPath            *path,
-                                  RtfmCollection      *collection,
-                                  GCancellable        *cancellable,
-                                  GAsyncReadyCallback  callback,
-                                  gpointer             user_data)
+rtfm_library_populate_async (RtfmLibrary         *self,
+                             RtfmCollection      *collection,
+                             GCancellable        *cancellable,
+                             GAsyncReadyCallback  callback,
+                             gpointer             user_data)
 {
   g_autoptr(GTask) task = NULL;
+  PopulateState *state;
+  RtfmPath *path;
   GList *providers = NULL;
   GList *iter;
-  gint *count;
 
   g_return_if_fail (RTFM_IS_LIBRARY (self));
-  g_return_if_fail (RTFM_IS_PATH (path));
   g_return_if_fail (RTFM_IS_COLLECTION (collection));
+  g_return_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable));
 
   task = g_task_new (self, cancellable, callback, user_data);
 
@@ -229,29 +274,32 @@ rtfm_library_load_children_async (RtfmLibrary         *self,
       return;
     }
 
-  count = g_new0 (gint, 1);
-  *count = g_list_length (providers);
-  g_task_set_task_data (task, count, g_free);
+  path = rtfm_collection_get_path (collection);
+
+  state = g_slice_new0 (PopulateState);
+  state->source = rtfm_collection_new (path);
+  state->destination = g_object_ref (collection);
+  state->active = g_list_length (providers);
+  state->providers = providers;
+
+  g_task_set_task_data (task, state, populate_state_free);
 
   for (iter = providers; iter != NULL; iter = iter->next)
     {
       RtfmProvider *provider = iter->data;
 
-      rtfm_provider_load_children_async (provider,
-                                         path,
-                                         collection,
-                                         cancellable,
-                                         rtfm_library_load_children_cb,
-                                         g_object_ref (task));
+      rtfm_provider_populate_async (provider,
+                                    state->source,
+                                    cancellable,
+                                    rtfm_library_populate_cb,
+                                    g_object_ref (task));
     }
-
-  g_list_free (providers);
 }
 
 gboolean
-rtfm_library_load_children_finish (RtfmLibrary   *self,
-                                   GAsyncResult  *result,
-                                   GError       **error)
+rtfm_library_populate_finish (RtfmLibrary   *self,
+                              GAsyncResult  *result,
+                              GError       **error)
 {
   g_return_val_if_fail (RTFM_IS_LIBRARY (self), FALSE);
   g_return_val_if_fail (G_IS_TASK (result), FALSE);

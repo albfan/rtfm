@@ -23,17 +23,15 @@
 G_DEFINE_INTERFACE (RtfmProvider, rtfm_provider, G_TYPE_OBJECT)
 
 static void
-rtfm_provider_real_load_children_async (RtfmProvider        *self,
-                                        RtfmPath            *path,
-                                        RtfmCollection      *collection,
-                                        GCancellable        *cancellable,
-                                        GAsyncReadyCallback  callback,
-                                        gpointer             user_data)
+rtfm_provider_real_populate_async (RtfmProvider        *self,
+                                   RtfmCollection      *collection,
+                                   GCancellable        *cancellable,
+                                   GAsyncReadyCallback  callback,
+                                   gpointer             user_data)
 {
   g_autoptr(GTask) task = NULL;
 
   g_assert (RTFM_IS_PROVIDER (self));
-  g_assert (RTFM_IS_PATH (path));
   g_assert (RTFM_IS_COLLECTION (collection));
   g_assert (!cancellable || G_IS_CANCELLABLE (cancellable));
 
@@ -42,9 +40,9 @@ rtfm_provider_real_load_children_async (RtfmProvider        *self,
 }
 
 static gboolean
-rtfm_provider_real_load_children_finish (RtfmProvider  *self,
-                                         GAsyncResult  *result,
-                                         GError       **error)
+rtfm_provider_real_populate_finish (RtfmProvider  *self,
+                                    GAsyncResult  *result,
+                                    GError       **error)
 {
   g_return_val_if_fail (RTFM_IS_PROVIDER (self), FALSE);
   g_return_val_if_fail (G_IS_TASK (result), FALSE);
@@ -83,11 +81,11 @@ rtfm_provider_real_search_finish (RtfmProvider  *self,
 }
 
 static void
-rtfm_provider_real_extend_item_async (RtfmProvider        *self,
-                                      RtfmItem            *item,
-                                      GCancellable        *cancellable,
-                                      GAsyncReadyCallback  callback,
-                                      gpointer             user_data)
+rtfm_provider_real_annotate_async (RtfmProvider        *self,
+                                   RtfmItem            *item,
+                                   GCancellable        *cancellable,
+                                   GAsyncReadyCallback  callback,
+                                   gpointer             user_data)
 {
   g_autoptr(GTask) task = NULL;
 
@@ -100,7 +98,7 @@ rtfm_provider_real_extend_item_async (RtfmProvider        *self,
 }
 
 static gboolean
-rtfm_provider_real_extend_item_finish (RtfmProvider  *self,
+rtfm_provider_real_annotate_finish (RtfmProvider  *self,
                                        GAsyncResult  *result,
                                        GError       **error)
 {
@@ -113,44 +111,37 @@ rtfm_provider_real_extend_item_finish (RtfmProvider  *self,
 static void
 rtfm_provider_default_init (RtfmProviderInterface *iface)
 {
-  iface->load_children_async = rtfm_provider_real_load_children_async;
-  iface->load_children_finish = rtfm_provider_real_load_children_finish;
+  iface->populate_async = rtfm_provider_real_populate_async;
+  iface->populate_finish = rtfm_provider_real_populate_finish;
   iface->search_async = rtfm_provider_real_search_async;
   iface->search_finish = rtfm_provider_real_search_finish;
-  iface->extend_item_async = rtfm_provider_real_extend_item_async;
-  iface->extend_item_finish = rtfm_provider_real_extend_item_finish;
+  iface->annotate_async = rtfm_provider_real_annotate_async;
+  iface->annotate_finish = rtfm_provider_real_annotate_finish;
 }
 
 void
-rtfm_provider_load_children_async (RtfmProvider        *self,
-                                   RtfmPath            *path,
-                                   RtfmCollection      *collection,
-                                   GCancellable        *cancellable,
-                                   GAsyncReadyCallback  callback,
-                                   gpointer             user_data)
+rtfm_provider_populate_async (RtfmProvider        *self,
+                              RtfmCollection      *collection,
+                              GCancellable        *cancellable,
+                              GAsyncReadyCallback  callback,
+                              gpointer             user_data)
 {
   g_return_if_fail (RTFM_IS_PROVIDER (self));
-  g_return_if_fail (RTFM_IS_PATH (path));
   g_return_if_fail (RTFM_IS_COLLECTION (collection));
   g_return_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable));
 
-  RTFM_PROVIDER_GET_IFACE (self)->load_children_async (self,
-                                                       path,
-                                                       collection,
-                                                       cancellable,
-                                                       callback,
-                                                       user_data);
+  RTFM_PROVIDER_GET_IFACE (self)->populate_async (self, collection, cancellable, callback, user_data);
 }
 
 gboolean
-rtfm_provider_load_children_finish (RtfmProvider  *self,
-                                    GAsyncResult  *result,
-                                    GError       **error)
+rtfm_provider_populate_finish (RtfmProvider  *self,
+                               GAsyncResult  *result,
+                               GError       **error)
 {
   g_return_val_if_fail (RTFM_IS_PROVIDER (self), FALSE);
   g_return_val_if_fail (G_IS_ASYNC_RESULT (result), FALSE);
 
-  return RTFM_PROVIDER_GET_IFACE (self)->load_children_finish (self, result, error);
+  return RTFM_PROVIDER_GET_IFACE (self)->populate_finish (self, result, error);
 }
 
 void
@@ -166,12 +157,7 @@ rtfm_provider_search_async (RtfmProvider        *self,
   g_return_if_fail (RTFM_IS_COLLECTION (collection));
   g_return_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable));
 
-  RTFM_PROVIDER_GET_IFACE (self)->search_async (self,
-                                                search_settings,
-                                                collection,
-                                                cancellable,
-                                                callback,
-                                                user_data);
+  RTFM_PROVIDER_GET_IFACE (self)->search_async (self, search_settings, collection, cancellable, callback, user_data);
 }
 
 gboolean
@@ -186,7 +172,7 @@ rtfm_provider_search_finish (RtfmProvider  *self,
 }
 
 void
-rtfm_provider_extend_item_async (RtfmProvider        *self,
+rtfm_provider_annotate_async (RtfmProvider        *self,
                                  RtfmItem            *item,
                                  GCancellable        *cancellable,
                                  GAsyncReadyCallback  callback,
@@ -196,44 +182,40 @@ rtfm_provider_extend_item_async (RtfmProvider        *self,
   g_return_if_fail (RTFM_IS_ITEM (item));
   g_return_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable));
 
-  RTFM_PROVIDER_GET_IFACE (self)->extend_item_async (self,
-                                                     item,
-                                                     cancellable,
-                                                     callback,
-                                                     user_data);
+  RTFM_PROVIDER_GET_IFACE (self)->annotate_async (self, item, cancellable, callback, user_data);
 }
 
 gboolean
-rtfm_provider_extend_item_finish (RtfmProvider  *self,
-                                  GAsyncResult  *result,
-                                  GError       **error)
+rtfm_provider_annotate_finish (RtfmProvider  *self,
+                               GAsyncResult  *result,
+                               GError       **error)
 {
   g_return_val_if_fail (RTFM_IS_PROVIDER (self), FALSE);
   g_return_val_if_fail (G_IS_ASYNC_RESULT (result), FALSE);
 
-  return RTFM_PROVIDER_GET_IFACE (self)->extend_item_finish (self, result, error);
+  return RTFM_PROVIDER_GET_IFACE (self)->annotate_finish (self, result, error);
 }
 
 void
-rtfm_provider_load (RtfmProvider *self,
-                    RtfmLibrary  *library)
+rtfm_provider_initialize (RtfmProvider *self,
+                          RtfmLibrary  *library)
 {
   g_return_if_fail (RTFM_IS_PROVIDER (self));
   g_return_if_fail (RTFM_IS_LIBRARY (library));
 
-  if (RTFM_PROVIDER_GET_IFACE (self)->load)
-    return RTFM_PROVIDER_GET_IFACE (self)->load (self, library);
+  if (RTFM_PROVIDER_GET_IFACE (self)->initialize)
+    return RTFM_PROVIDER_GET_IFACE (self)->initialize (self, library);
 }
 
 void
-rtfm_provider_unload (RtfmProvider *self,
-                      RtfmLibrary  *library)
+rtfm_provider_shutdown (RtfmProvider *self,
+                        RtfmLibrary  *library)
 {
   g_return_if_fail (RTFM_IS_PROVIDER (self));
   g_return_if_fail (RTFM_IS_LIBRARY (library));
 
-  if (RTFM_PROVIDER_GET_IFACE (self)->unload)
-    return RTFM_PROVIDER_GET_IFACE (self)->unload (self, library);
+  if (RTFM_PROVIDER_GET_IFACE (self)->shutdown)
+    return RTFM_PROVIDER_GET_IFACE (self)->shutdown (self, library);
 }
 
 /**
@@ -264,4 +246,15 @@ rtfm_provider_load_item (RtfmProvider *self,
     return RTFM_PROVIDER_GET_IFACE (self)->load_item (self, id);
 
   return NULL;
+}
+
+void
+rtfm_provider_postprocess (RtfmProvider   *self,
+                           RtfmCollection *collection)
+{
+  g_return_if_fail (RTFM_IS_PROVIDER (self));
+  g_return_if_fail (RTFM_IS_COLLECTION (collection));
+
+  if (RTFM_PROVIDER_GET_IFACE (self)->postprocess)
+    RTFM_PROVIDER_GET_IFACE (self)->postprocess (self, collection);
 }

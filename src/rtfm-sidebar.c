@@ -66,9 +66,9 @@ rtfm_sidebar_create_row (gpointer item,
 }
 
 static void
-rtfm_sidebar_load_children_cb (GObject      *object,
-                               GAsyncResult *result,
-                               gpointer      user_data)
+rtfm_sidebar_populate_cb (GObject      *object,
+                          GAsyncResult *result,
+                          gpointer      user_data)
 {
   g_autoptr(RtfmSidebar) self = user_data;
   RtfmLibrary *library = (RtfmLibrary *)object;
@@ -76,7 +76,7 @@ rtfm_sidebar_load_children_cb (GObject      *object,
   g_assert (RTFM_IS_SIDEBAR (self));
   g_assert (RTFM_IS_LIBRARY (library));
 
-  rtfm_library_load_children_finish (library, result, NULL);
+  rtfm_library_populate_finish (library, result, NULL);
 }
 
 static void
@@ -84,8 +84,8 @@ rtfm_sidebar_connect (RtfmSidebar *self,
                       RtfmLibrary *library)
 {
   RtfmSidebarPrivate *priv = rtfm_sidebar_get_instance_private (self);
-  g_autoptr(RtfmCollection) collection = NULL;
   g_autoptr(RtfmPath) path = NULL;
+  g_autoptr(RtfmCollection) collection = NULL;
   RtfmSidebarRow *row;
 
   g_assert (RTFM_IS_SIDEBAR (self));
@@ -102,12 +102,16 @@ rtfm_sidebar_connect (RtfmSidebar *self,
   path = rtfm_path_new ();
   collection = rtfm_collection_new (path);
 
-  rtfm_library_load_children_async (priv->library,
-                                    path,
-                                    collection,
-                                    priv->cancellable,
-                                    rtfm_sidebar_load_children_cb,
-                                    g_object_ref (self));
+  /* OK, so what we are doing here is to populate the collection,
+   * but the library will use an intermediary collection first so
+   * that we can reduce the set.
+   */
+
+  rtfm_library_populate_async (priv->library,
+                               collection,
+                               priv->cancellable,
+                               rtfm_sidebar_populate_cb,
+                               g_object_ref (self));
 
   rtfm_stack_list_push (RTFM_STACK_LIST (priv->browse),
                         GTK_WIDGET (row),
@@ -170,12 +174,11 @@ rtfm_sidebar_browse_row_activated (RtfmSidebar    *self,
                         rtfm_sidebar_create_row,
                         self, NULL);
 
-  rtfm_library_load_children_async (priv->library,
-                                    path,
-                                    collection,
-                                    priv->cancellable,
-                                    rtfm_sidebar_load_children_cb,
-                                    g_object_ref (self));
+  rtfm_library_populate_async (priv->library,
+                               collection,
+                               priv->cancellable,
+                               rtfm_sidebar_populate_cb,
+                               g_object_ref (self));
 
   if (RTFM_IS_ITEM (object))
     g_signal_emit (self, signals [ITEM_ACTIVATED], 0, object);
