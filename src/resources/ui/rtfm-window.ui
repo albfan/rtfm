@@ -26,6 +26,9 @@
               </packing>
             </child>
           </object>
+          <packing>
+            <property name="shrink">false</property>
+          </packing>
         </child>
         <child>
           <object class="GtkHeaderBar" id="header_bar">
@@ -50,6 +53,9 @@
               </packing>
             </child>
           </object>
+          <packing>
+            <property name="shrink">false</property>
+          </packing>
         </child>
       </object>
     </child>
