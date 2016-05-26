@@ -38,6 +38,7 @@ _TITLES = collections.OrderedDict([
     ('platform:languages',  _("Languages")),
     ('platform:networking', _("Networking")),
     ('platform:os',         _("Operating System")),
+    ('platform:pkg',        _("Packaging")),
     ('platform:plugins',    _("Plugins")),
     ('platform:graphics',   _("Graphics")),
     ('platform:security',   _("Security")),
@@ -56,7 +57,6 @@ _MAPPING = {
 
     'dummy:Ggit-1.0':                'platform:devel',
     'dummy:Gladeui-2.0':             'platform:devel',
-    'dummy:AppStream-1.0':           'platform:devel',
     'dummy:Vte-2.91':                'platform:devel',
 
     'dummy:GtkSource-3.0':           'platform:text',
@@ -129,10 +129,14 @@ _MAPPING = {
 
     'dummy:GSystem-1.0':             'platform:os',
     'dummy:OSTree-1.0':              'platform:os',
-    'dummy:XdgApp-1.0':              'platform:os',
-    'dummy:Flatpak-1.0':             'platform:os',
     'dummy:win32-1.0':               'platform:os',
     'dummy:GUdev-1.0':               'platform:os',
+
+    'dummy:XdgApp-1.0':              'platform:pkg',
+    'dummy:Flatpak-1.0':             'platform:pkg',
+    'dummy:AppStream-1.0':           'platform:pkg',
+    'dummy:AppStreamBuilder-1.0':    'platform:pkg',
+    'dummy:AppStreamGlib-1.0':       'platform:pkg',
 }
 
 class Category(Rtfm.Item):
