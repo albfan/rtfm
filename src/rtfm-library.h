@@ -33,7 +33,7 @@ RtfmProvider *rtfm_library_get_provider    (RtfmLibrary           *self,
                                             const gchar           *id);
 RtfmItem     *rtfm_library_get_root        (RtfmLibrary           *self);
 void          rtfm_library_populate_async  (RtfmLibrary           *self,
-                                            RtfmCollection        *collection,
+                                            RtfmItem              *item,
                                             GCancellable          *cancellable,
                                             GAsyncReadyCallback    callback,
                                             gpointer               user_data);

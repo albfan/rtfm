@@ -24,6 +24,7 @@
 
 #include "rtfm-collection.h"
 #include "rtfm-item.h"
+#include "rtfm-item-private.h"
 #include "rtfm-library.h"
 #include "rtfm-library-private.h"
 #include "rtfm-provider.h"
@@ -35,8 +36,6 @@
  *
  * The #RtfmLibrary class represents a loaded library. It manages the plugins
  * to build and modify the library as well as the library contents itself.
- * It trys to avoid having the entire documentation tree loaded at once to
- * save on memory footprint.
  *
  * The documentation is tracked as a tree and allows for plugins to populate
  * tree nodes as well reorder the tree as necessary. For example, a GObject
@@ -60,7 +59,7 @@ struct _RtfmLibrary
 
 typedef struct
 {
-  RtfmCollection *destination;
+  RtfmItem       *destination;
   RtfmCollection *source;
   GList          *providers;
   guint           active;
@@ -94,11 +93,14 @@ rtfm_library_reset (RtfmLibrary *self)
   g_assert (RTFM_IS_LIBRARY (self));
 
   g_clear_object (&self->root);
+
   self->root = g_object_new (RTFM_TYPE_ITEM,
                              "id", "root",
                              "icon-name", "help-contents-symbolic",
                              "title", _("Developer Library"),
                              NULL);
+
+  _rtfm_item_set_is_root (self->root, TRUE);
 
   g_object_notify_by_pspec (G_OBJECT (self), properties [PROP_ROOT]);
 }
@@ -225,6 +227,15 @@ rtfm_library_class_init (RtfmLibraryClass *klass)
   object_class->finalize = rtfm_library_finalize;
   object_class->get_property = rtfm_library_get_property;
 
+  properties [PROP_ROOT] =
+    g_param_spec_object ("root",
+                         "Root",
+                         "The root of the documentation tree.",
+                         RTFM_TYPE_ITEM,
+                         (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+
+  g_object_class_install_properties (object_class, N_PROPS, properties);
+
   if (NULL != (screen = gdk_screen_get_default ()) &&
       NULL != (icon_theme = gtk_icon_theme_get_default ()))
     gtk_icon_theme_add_resource_path (icon_theme, "/org/gnome/rtfm/icons/");
@@ -245,6 +256,18 @@ collect_providers (PeasExtensionSet *set,
   GList **list = user_data;
 
   *list = g_list_prepend (*list, g_object_ref (exten));
+}
+
+static void
+rtfm_library_copy_into (RtfmItem *item,
+                        gpointer  user_data)
+{
+  RtfmItem *parent = user_data;
+
+  g_assert (RTFM_IS_ITEM (item));
+  g_assert (RTFM_IS_ITEM (parent));
+
+  rtfm_item_append (parent, item);
 }
 
 static void
@@ -269,8 +292,6 @@ rtfm_library_populate_cb (GObject      *object,
   if (state->active == 0)
     {
       GList *iter;
-      guint n_items;
-      guint i;
 
       /* Allow providers to post-process the list */
       for (iter = state->providers; iter != NULL; iter = iter->next)
@@ -280,16 +301,9 @@ rtfm_library_populate_cb (GObject      *object,
           rtfm_provider_postprocess (provider, state->source);
         }
 
-      /* Now copy into our destination model */
-      n_items = g_list_model_get_n_items (G_LIST_MODEL (state->source));
-
-      for (i = 0; i < n_items; i++)
-        {
-          RtfmItem *item;
-
-          item = g_list_model_get_item (G_LIST_MODEL (state->source), i);
-          rtfm_collection_take (state->destination, item);
-        }
+      rtfm_collection_foreach (state->source,
+                               rtfm_library_copy_into,
+                               state->destination);
 
       g_task_return_boolean (task, TRUE);
     }
@@ -297,7 +311,7 @@ rtfm_library_populate_cb (GObject      *object,
 
 void
 rtfm_library_populate_async (RtfmLibrary         *self,
-                             RtfmCollection      *collection,
+                             RtfmItem            *item,
                              GCancellable        *cancellable,
                              GAsyncReadyCallback  callback,
                              gpointer             user_data)
@@ -309,10 +323,16 @@ rtfm_library_populate_async (RtfmLibrary         *self,
   GList *iter;
 
   g_return_if_fail (RTFM_IS_LIBRARY (self));
-  g_return_if_fail (RTFM_IS_COLLECTION (collection));
+  g_return_if_fail (RTFM_IS_ITEM (item));
   g_return_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable));
 
   task = g_task_new (self, cancellable, callback, user_data);
+
+  if (_rtfm_item_get_populated (item))
+    {
+      g_task_return_boolean (task, TRUE);
+      return;
+    }
 
   peas_extension_set_foreach (self->providers, collect_providers, &providers);
 
@@ -322,11 +342,11 @@ rtfm_library_populate_async (RtfmLibrary         *self,
       return;
     }
 
-  path = rtfm_collection_get_path (collection);
+  path = rtfm_item_get_path (item);
 
   state = g_slice_new0 (PopulateState);
   state->source = rtfm_collection_new (path);
-  state->destination = g_object_ref (collection);
+  state->destination = g_object_ref (item);
   state->active = g_list_length (providers);
   state->providers = providers;
 
