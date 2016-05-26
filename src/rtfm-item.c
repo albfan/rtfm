@@ -50,11 +50,12 @@ typedef struct
   guint       is_root : 1;
 } RtfmItemPrivate;
 
-static void list_model_iface_init (GListModelInterface *iface);
-static void rtfm_item_unparent    (RtfmItem            *self);
-static void rtfm_item_foreach     (RtfmItem            *self,
-                                   GFunc                callback,
-                                   gpointer             user_data);
+static void list_model_iface_init  (GListModelInterface *iface);
+static void rtfm_item_unparent     (RtfmItem            *self);
+static void rtfm_item_foreach      (RtfmItem            *self,
+                                    GFunc                callback,
+                                    gpointer             user_data);
+static void rtfm_item_assert_valid (RtfmItem            *self);
 
 G_DEFINE_TYPE_EXTENDED (RtfmItem, rtfm_item, G_TYPE_OBJECT, 0,
                         G_ADD_PRIVATE (RtfmItem)
@@ -441,6 +442,46 @@ rtfm_item_get_parent (RtfmItem *self)
 }
 
 static void
+rtfm_item_assert_valid (RtfmItem *self)
+{
+#ifndef G_DISABLE_ASSERT
+  RtfmItemPrivate *priv = rtfm_item_get_instance_private (self);
+  RtfmItem *iter;
+  guint count = 0;
+
+  g_assert (RTFM_IS_ITEM (self));
+
+  /*
+   * This method is meant to perform a consistency check of the item and it's
+   * children nodes. It validates that all the child pointers are correct
+   * (as much as it can) and that the first/last items of the chain are correct.
+   *
+   * It should not be checked in the common case, but used for debugging and
+   * assertions at development time.
+   */
+
+  g_assert (priv->first_child == NULL || GET_PRIVATE (priv->first_child)->prev == NULL);
+  g_assert (priv->last_child == NULL || GET_PRIVATE (priv->last_child)->next == NULL);
+  g_assert (priv->first_child == NULL || priv->last_child != NULL);
+  g_assert (priv->last_child == NULL || priv->first_child != NULL);
+
+  for (iter = priv->first_child;
+       iter != NULL;
+       iter = GET_PRIVATE (iter)->next)
+    {
+      RtfmItemPrivate *iterpriv = rtfm_item_get_instance_private (iter);
+
+      count++;
+
+      g_assert (iterpriv->next != NULL || priv->last_child == iter);
+      g_assert (iterpriv->parent == self);
+    }
+
+  g_assert_cmpint (count, ==, priv->n_items);
+#endif
+}
+
+static void
 rtfm_item_unparent (RtfmItem *self)
 {
   RtfmItemPrivate *priv = rtfm_item_get_instance_private (self);
@@ -478,6 +519,8 @@ rtfm_item_unparent (RtfmItem *self)
 
       g_list_model_items_changed (G_LIST_MODEL (parent), position, 1, 0);
 
+      rtfm_item_assert_valid (self);
+
       /* The parent holds a reference to the child, so now we can release it
        * since we've cleaned up the parent.
        */
@@ -496,17 +539,29 @@ rtfm_item_append (RtfmItem *self,
   g_return_if_fail (RTFM_IS_ITEM (self));
   g_return_if_fail (RTFM_IS_ITEM (child));
 
-  g_object_ref (child);
-  rtfm_item_unparent (child);
-  childpriv->parent = self;
+  g_print ("Appending %s to %s with %d children \n",
+           rtfm_item_get_id (child),
+           rtfm_item_get_id (self),
+           priv->n_items);
 
+  g_object_ref (child);
+
+  rtfm_item_unparent (child);
+
+  childpriv->parent = self;
+  childpriv->next = NULL;
   childpriv->prev = priv->last_child;
+
+  if (childpriv->prev != NULL)
+    GET_PRIVATE (childpriv->prev)->next = child;
+
   priv->last_child = child;
   if (priv->first_child == NULL)
     priv->first_child = child;
 
   position = priv->n_items;
   priv->n_items++;
+
   g_list_model_items_changed (G_LIST_MODEL (self), position, 0, 1);
 }
 
@@ -521,15 +576,22 @@ rtfm_item_prepend (RtfmItem *self,
   g_return_if_fail (RTFM_IS_ITEM (child));
 
   g_object_ref (child);
-  rtfm_item_unparent (child);
-  childpriv->parent = self;
 
+  rtfm_item_unparent (child);
+
+  childpriv->parent = self;
+  childpriv->prev = NULL;
   childpriv->next = priv->first_child;
+
+  if (childpriv->next)
+    GET_PRIVATE (childpriv->next)->prev = child;
+
   priv->first_child = child;
   if (priv->last_child == NULL)
     priv->last_child = child;
 
   priv->n_items++;
+
   g_list_model_items_changed (G_LIST_MODEL (self), 0, 0, 1);
 }
 
@@ -559,6 +621,8 @@ rtfm_item_insert_after (RtfmItem *self,
 
   if (childpriv->next == NULL)
     priv->last_child = child;
+  else
+    GET_PRIVATE (childpriv->next)->prev = child;
 
   priv->n_items++;
 
@@ -596,6 +660,8 @@ rtfm_item_insert_before (RtfmItem *self,
 
   if (childpriv->prev == NULL)
     priv->first_child = child;
+  else
+    GET_PRIVATE (childpriv->prev)->next = child;
 
   priv->n_items++;
 
@@ -691,14 +757,26 @@ rtfm_item_get_item (GListModel *model,
                     guint       index)
 {
   RtfmItem *self = (RtfmItem *)model;
+  RtfmItemPrivate *priv = rtfm_item_get_instance_private (self);
   struct {
     RtfmItem *child;
     guint     offset;
   } lookup = { NULL, index };
 
   g_return_val_if_fail (RTFM_IS_ITEM (self), NULL);
+  g_return_val_if_fail (index < priv->n_items, NULL);
+
+  rtfm_item_assert_valid (self);
+
+#if 0
+  /* Shortcut for common case of last item */
+  if (index == priv->n_items - 1)
+    return g_object_ref (priv->last_child);
+#endif
 
   rtfm_item_foreach (self, lookup_at_index, &lookup);
+
+  g_assert (lookup.child != NULL);
 
   return g_object_ref (lookup.child);
 }
