@@ -206,7 +206,7 @@ class DummyProvider(GObject.Object, Rtfm.Provider):
             if hasattr(parent, 'get_children'):
                 for child in parent.get_children():
                     child.parent = parent
-                    collection.add(child)
+                    collection.append(child)
                     ALL_ITEMS_BY_ID[child.props.id] = child
         else:
             files = os.listdir('/usr/share/gir-1.0')
@@ -216,7 +216,7 @@ class DummyProvider(GObject.Object, Rtfm.Provider):
                 short = filename[:-4]
                 namespace, version = short.split('-')
                 item = NamespaceItem(id='dummy:'+short, icon_name='lang-namespace-symbolic', title=namespace, subtitle=short)
-                collection.add(item)
+                collection.append(item)
                 ALL_ITEMS_BY_ID[item.props.id] = item
 
         task = Gio.Task.new(self, cancellable, callback)
