@@ -80,13 +80,55 @@ rtfm_sidebar_populate_cb (GObject      *object,
 }
 
 static void
+rtfm_sidebar_library_notify_root (RtfmSidebar *self,
+                                  GParamSpec  *pspec,
+                                  RtfmLibrary *library)
+{
+  RtfmSidebarPrivate *priv = rtfm_sidebar_get_instance_private (self);
+  RtfmSidebarRow *row;
+  RtfmItem *root;
+
+  g_assert (RTFM_IS_SIDEBAR (self));
+  g_assert (RTFM_IS_LIBRARY (library));
+
+  /*
+   * If the library reloaded it will notify from root and we need to
+   * rebuild our stacklist starting from the new root node.
+   */
+  rtfm_stack_list_clear (priv->browse);
+
+  /*
+   * OK, so what we are doing here is to populate the root item
+   * but the library will use an intermediary collection first so
+   * that we can allow plugins to tweak the final result set.
+   */
+
+  root = rtfm_library_get_root (priv->library);
+
+  row = g_object_new (RTFM_TYPE_SIDEBAR_ROW,
+                      "object", root,
+                      "visible", TRUE,
+                      NULL);
+
+  rtfm_library_populate_async (priv->library,
+                               root,
+                               priv->cancellable,
+                               rtfm_sidebar_populate_cb,
+                               g_object_ref (self));
+
+  rtfm_stack_list_push (RTFM_STACK_LIST (priv->browse),
+                        GTK_WIDGET (row),
+                        G_LIST_MODEL (root),
+                        rtfm_sidebar_create_row,
+                        self,
+                        NULL);
+}
+
+static void
 rtfm_sidebar_connect (RtfmSidebar *self,
                       RtfmLibrary *library)
 {
   RtfmSidebarPrivate *priv = rtfm_sidebar_get_instance_private (self);
-  g_autoptr(RtfmPath) path = NULL;
-  g_autoptr(RtfmCollection) collection = NULL;
-  RtfmSidebarRow *row;
 
   g_assert (RTFM_IS_SIDEBAR (self));
   g_assert (RTFM_IS_LIBRARY (library));
@@ -94,31 +136,13 @@ rtfm_sidebar_connect (RtfmSidebar *self,
   priv->library = g_object_ref (library);
   priv->cancellable = g_cancellable_new ();
 
-  row = g_object_new (RTFM_TYPE_SIDEBAR_ROW,
-                      "object", library,
-                      "visible", TRUE,
-                      NULL);
+  g_signal_connect_object (priv->library,
+                           "notify::root",
+                           G_CALLBACK (rtfm_sidebar_library_notify_root),
+                           self,
+                           G_CONNECT_SWAPPED);
 
-  path = rtfm_path_new ();
-  collection = rtfm_collection_new (path);
-
-  /* OK, so what we are doing here is to populate the collection,
-   * but the library will use an intermediary collection first so
-   * that we can reduce the set.
-   */
-
-  rtfm_library_populate_async (priv->library,
-                               collection,
-                               priv->cancellable,
-                               rtfm_sidebar_populate_cb,
-                               g_object_ref (self));
-
-  rtfm_stack_list_push (RTFM_STACK_LIST (priv->browse),
-                        GTK_WIDGET (row),
-                        G_LIST_MODEL (collection),
-                        rtfm_sidebar_create_row,
-                        self,
-                        NULL);
+  rtfm_sidebar_library_notify_root (self, NULL, library);
 }
 
 static void
@@ -146,8 +170,6 @@ rtfm_sidebar_browse_row_activated (RtfmSidebar    *self,
                                    RtfmStackList  *stack_list)
 {
   RtfmSidebarPrivate *priv = rtfm_sidebar_get_instance_private (self);
-  g_autoptr(RtfmCollection) collection = NULL;
-  g_autoptr(RtfmPath) path = NULL;
   GtkWidget *header;
   GObject *object;
 
@@ -165,17 +187,14 @@ rtfm_sidebar_browse_row_activated (RtfmSidebar    *self,
                          "visible", TRUE,
                          NULL);
 
-  path = rtfm_item_get_path (RTFM_ITEM (object));
-  collection = rtfm_collection_new (path);
-
   rtfm_stack_list_push (priv->browse,
                         header,
-                        G_LIST_MODEL (collection),
+                        G_LIST_MODEL (object),
                         rtfm_sidebar_create_row,
                         self, NULL);
 
   rtfm_library_populate_async (priv->library,
-                               collection,
+                               RTFM_ITEM (object),
                                priv->cancellable,
                                rtfm_sidebar_populate_cb,
                                g_object_ref (self));
