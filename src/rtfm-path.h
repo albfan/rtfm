@@ -24,7 +24,9 @@
 G_BEGIN_DECLS
 
 RtfmPath        *rtfm_path_new          (void);
-void             rtfm_path_push_element (RtfmPath        *self,
+void             rtfm_path_prepend      (RtfmPath        *self,
+                                         RtfmPathElement *element);
+void             rtfm_path_append       (RtfmPath        *self,
                                          RtfmPathElement *element);
 GList           *rtfm_path_get_elements (RtfmPath        *self);
 gboolean         rtfm_path_has_prefix   (RtfmPath        *self,

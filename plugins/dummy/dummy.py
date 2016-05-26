@@ -20,24 +20,6 @@ import os
 # used for path lookups
 ALL_ITEMS_BY_ID = {}
 
-def path_helper(self):
-    parent = self
-    parts = []
-    while parent is not None:
-        parts.append(parent)
-        parent = parent.parent
-    parts.reverse()
-
-    path = Rtfm.Path()
-    for part in parts:
-        id = part.props.id or ''
-        if not id.startswith('dummy:'):
-            id = 'dummy:' + id
-        element = Rtfm.PathElement.new(id, part.props.icon_name, part.props.title)
-        path.push_element(element)
-
-    return path
-
 class MethodItem(Rtfm.Item):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -45,9 +27,6 @@ class MethodItem(Rtfm.Item):
 
     def get_children(self):
         return []
-
-    def do_get_path(self):
-        return path_helper(self)
 
 class MethodsItem(Rtfm.Item):
     def __init__(self, parent):
@@ -65,9 +44,6 @@ class MethodsItem(Rtfm.Item):
             create('get_width_chars'),
             create('set_width_chars'),
         ]
-
-    def do_get_path(self):
-        return path_helper(self)
 
 class PropertiesItem(Rtfm.Item):
     def __init__(self, parent):
@@ -95,15 +71,9 @@ class PropertiesItem(Rtfm.Item):
             create('ypad'),
         ]
 
-    def do_get_path(self):
-        return path_helper(self)
-
 class PropertyItem(Rtfm.Item):
     def get_children(self):
         return []
-
-    def do_get_path(self):
-        return path_helper(self)
 
 class ClassItem(Rtfm.Item):
     def __init__(self, namespace, title):
@@ -118,9 +88,6 @@ class ClassItem(Rtfm.Item):
                 MethodsItem(self.props.id),
                 Rtfm.Item(title='Tasks'),
                 Rtfm.Item(title='Examples')]
-
-    def do_get_path(self):
-        return path_helper(self)
 
 class ClassesItem(Rtfm.Item):
     def __init__(self, namespace):
@@ -138,9 +105,6 @@ class ClassesItem(Rtfm.Item):
                 ClassItem(self.namespace, 'Widget'),
                 ClassItem(self.namespace, 'Window')]
 
-    def do_get_path(self):
-        return path_helper(self)
-
 class FlagsItem(Rtfm.Item):
     def __init__(self, namespace):
         super().__init__()
@@ -150,9 +114,6 @@ class FlagsItem(Rtfm.Item):
 
     def get_children(self):
         return []
-
-    def do_get_path(self):
-        return path_helper(self)
 
 class EnumsItem(Rtfm.Item):
     def __init__(self, namespace):
@@ -164,9 +125,6 @@ class EnumsItem(Rtfm.Item):
     def get_children(self):
         return []
 
-    def do_get_path(self):
-        return path_helper(self)
-
 class FunctionsItem(Rtfm.Item):
     def __init__(self, namespace):
         super().__init__()
@@ -177,9 +135,6 @@ class FunctionsItem(Rtfm.Item):
     def get_children(self):
         return []
 
-    def do_get_path(self):
-        return path_helper(self)
-
 class NamespaceItem(Rtfm.Item):
     parent = None
 
@@ -189,11 +144,6 @@ class NamespaceItem(Rtfm.Item):
                 FlagsItem(self.props.title),
                 FunctionsItem(self.props.title),
                 Rtfm.Item(title='Tutorials')]
-
-    def do_get_path(self):
-        path = Rtfm.Path()
-        path.push_element(Rtfm.PathElement.new(self.props.id, 'lang-namespace-symbolic', self.props.title))
-        return path
 
 class DummyProvider(GObject.Object, Rtfm.Provider):
     def do_populate_async(self, collection, cancellable, callback, data):

@@ -27,8 +27,6 @@ struct _RtfmItemClass
 {
   GObjectClass parent;
 
-  RtfmPath *(*get_path) (RtfmItem *self);
-
   gpointer padding[8];
 };
 

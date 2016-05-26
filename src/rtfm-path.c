@@ -74,13 +74,23 @@ rtfm_path_new (void)
 }
 
 void
-rtfm_path_push_element (RtfmPath        *self,
-                        RtfmPathElement *element)
+rtfm_path_append (RtfmPath        *self,
+                  RtfmPathElement *element)
 {
   g_return_if_fail (RTFM_IS_PATH (self));
   g_return_if_fail (RTFM_IS_PATH_ELEMENT (element));
 
   g_queue_push_tail (self->elements, g_object_ref (element));
+}
+
+void
+rtfm_path_prepend (RtfmPath        *self,
+                   RtfmPathElement *element)
+{
+  g_return_if_fail (RTFM_IS_PATH (self));
+  g_return_if_fail (RTFM_IS_PATH_ELEMENT (element));
+
+  g_queue_push_head (self->elements, g_object_ref (element));
 }
 
 gboolean

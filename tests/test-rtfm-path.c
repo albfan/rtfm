@@ -29,7 +29,7 @@ test_path_basic (void)
   { \
     g_autoptr(RtfmPathElement) element = NULL; \
     element = rtfm_path_element_new (id, NULL, title); \
-    rtfm_path_push_element (path, element); \
+    rtfm_path_append (path, element); \
   }
 
   path1 = rtfm_path_new ();

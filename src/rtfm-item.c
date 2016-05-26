@@ -402,28 +402,27 @@ rtfm_item_get_metadata_string (RtfmItem    *self,
 RtfmPath *
 rtfm_item_get_path (RtfmItem *self)
 {
-  RtfmItemPrivate *priv = rtfm_item_get_instance_private (self);
-  RtfmPath *ret = NULL;
+  RtfmPath *path = NULL;
+  RtfmItem *iter;
 
   g_return_val_if_fail (RTFM_IS_ITEM (self), NULL);
 
-  if (RTFM_ITEM_GET_CLASS (self)->get_path)
-    ret = RTFM_ITEM_GET_CLASS (self)->get_path (self);
+  path = rtfm_path_new ();
 
-  if (ret == NULL)
+  for (iter = self;
+       iter != NULL && !GET_PRIVATE (iter)->is_root;
+       iter = GET_PRIVATE (iter)->parent)
     {
-      ret = rtfm_path_new ();
+      RtfmItemPrivate *iterpriv = rtfm_item_get_instance_private (iter);
+      g_autoptr(RtfmPathElement) element = NULL;
 
-      if (!priv->is_root)
-        {
-          g_autoptr(RtfmPathElement) element = NULL;
-
-          element = rtfm_path_element_new (priv->id, priv->icon_name, priv->title);
-          rtfm_path_push_element (ret, element);
-        }
+      element = rtfm_path_element_new (iterpriv->id,
+                                       iterpriv->icon_name,
+                                       iterpriv->title);
+      rtfm_path_prepend (path, element);
     }
 
-  return ret;
+  return path;
 }
 
 /**
