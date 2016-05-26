@@ -47,6 +47,7 @@ typedef struct
   guint       n_items;
 
   guint       populated : 1;
+  guint       is_root : 1;
 } RtfmItemPrivate;
 
 static void list_model_iface_init (GListModelInterface *iface);
@@ -410,13 +411,15 @@ rtfm_item_get_path (RtfmItem *self)
 
   if (ret == NULL)
     {
-      g_autoptr(RtfmPathElement) element = NULL;
-
       ret = rtfm_path_new ();
-      element = rtfm_path_element_new (priv->id,
-                                       priv->icon_name,
-                                       priv->title);
-      rtfm_path_push_element (ret, element);
+
+      if (!priv->is_root)
+        {
+          g_autoptr(RtfmPathElement) element = NULL;
+
+          element = rtfm_path_element_new (priv->id, priv->icon_name, priv->title);
+          rtfm_path_push_element (ret, element);
+        }
     }
 
   return ret;
@@ -767,4 +770,15 @@ _rtfm_item_set_populated (RtfmItem *self,
   g_return_if_fail (RTFM_IS_ITEM (self));
 
   priv->populated = !!populated;
+}
+
+void
+_rtfm_item_set_is_root (RtfmItem *self,
+                        gboolean  is_root)
+{
+  RtfmItemPrivate *priv = rtfm_item_get_instance_private (self);
+
+  g_return_if_fail (RTFM_IS_ITEM (self));
+
+  priv->is_root = !!is_root;
 }

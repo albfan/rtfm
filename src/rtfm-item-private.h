@@ -23,6 +23,8 @@
 
 G_BEGIN_DECLS
 
+void     _rtfm_item_set_is_root   (RtfmItem *self,
+                                   gboolean  is_root);
 gboolean _rtfm_item_get_populated (RtfmItem *self);
 void     _rtfm_item_set_populated (RtfmItem *self,
                                    gboolean  populated);
