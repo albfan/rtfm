@@ -539,10 +539,12 @@ rtfm_item_append (RtfmItem *self,
   g_return_if_fail (RTFM_IS_ITEM (self));
   g_return_if_fail (RTFM_IS_ITEM (child));
 
+#if 0
   g_print ("Appending %s to %s with %d children \n",
            rtfm_item_get_id (child),
            rtfm_item_get_id (self),
            priv->n_items);
+#endif
 
   g_object_ref (child);
 
