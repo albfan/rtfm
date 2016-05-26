@@ -334,6 +334,8 @@ rtfm_library_populate_async (RtfmLibrary         *self,
       return;
     }
 
+  _rtfm_item_set_populated (item, TRUE);
+
   peas_extension_set_foreach (self->providers, collect_providers, &providers);
 
   if (providers == NULL)
