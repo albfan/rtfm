@@ -23,6 +23,9 @@ rtfmsidebar stacklist list.stack-header row:last-child {
   border-bottom: 1px solid @borders;
   color: @theme_fg_color;
 }
+rtfmsidebar list.stack-header row {
+  border-bottom: 1px solid alpha(@borders,.15);
+}
 rtfmsidebar stacklist row image {
   margin: 6px;
   min-width: 16px;
