@@ -25,14 +25,21 @@
 
 G_BEGIN_DECLS
 
-RtfmCollection *rtfm_collection_new         (RtfmPath       *path);
-RtfmPath       *rtfm_collection_get_path    (RtfmCollection *self);
-void            rtfm_collection_add         (RtfmCollection *collection,
-                                             RtfmItem       *item);
-void            rtfm_collection_take        (RtfmCollection *self,
-                                             RtfmItem       *item);
-void            rtfm_collection_remove_item (RtfmCollection *self,
-                                             RtfmItem       *item);
+typedef void (*RtfmCollectionCallback) (RtfmItem *item,
+                                        gpointer  user_data);
+
+RtfmCollection *rtfm_collection_new         (RtfmPath               *path);
+RtfmPath       *rtfm_collection_get_path    (RtfmCollection         *self);
+void            rtfm_collection_foreach     (RtfmCollection         *self,
+                                             RtfmCollectionCallback  callback,
+                                             gpointer                user_data);
+void            rtfm_collection_prepend     (RtfmCollection         *self,
+                                             RtfmItem               *item);
+void            rtfm_collection_append      (RtfmCollection         *self,
+                                             RtfmItem               *item);
+void            rtfm_collection_remove_item (RtfmCollection         *self,
+                                             RtfmItem               *item);
+GPtrArray      *rtfm_collection_to_array    (RtfmCollection         *self);
 
 G_END_DECLS
 

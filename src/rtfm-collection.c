@@ -186,16 +186,9 @@ list_model_iface_init (GListModelInterface *iface)
   iface->get_item = rtfm_collection_get_item;
 }
 
-/**
- * rtfm_collection_take: (skip)
- * @self: An #RtfmCollection
- * @item: (transfer full): An #RtfmItem
- *
- * Adds @item to @collection without incrementing the reference count.
- */
 void
-rtfm_collection_take (RtfmCollection *self,
-                      RtfmItem       *item)
+rtfm_collection_append (RtfmCollection *self,
+                        RtfmItem       *item)
 {
   guint position;
 
@@ -203,18 +196,19 @@ rtfm_collection_take (RtfmCollection *self,
   g_return_if_fail (RTFM_IS_ITEM (item));
 
   position = g_sequence_get_length (self->items);
-  g_sequence_append (self->items, item);
+  g_sequence_append (self->items, g_object_ref (item));
   g_list_model_items_changed (G_LIST_MODEL (self), position, 0, 1);
 }
 
 void
-rtfm_collection_add (RtfmCollection *self,
-                     RtfmItem       *item)
+rtfm_collection_prepend (RtfmCollection *self,
+                         RtfmItem       *item)
 {
   g_return_if_fail (RTFM_IS_COLLECTION (self));
   g_return_if_fail (RTFM_IS_ITEM (item));
 
-  rtfm_collection_take (self, g_object_ref (item));
+  g_sequence_prepend (self->items, g_object_ref (item));
+  g_list_model_items_changed (G_LIST_MODEL (self), 0, 0, 1);
 }
 
 void
@@ -247,4 +241,59 @@ rtfm_collection_remove_item (RtfmCollection *self,
           return;
         }
     }
+}
+
+/**
+ * rtfm_collection_foreach:
+ * @self: A #RtfmCollection.
+ * @callback: (scope call): A callback for each item
+ * @user_data: user data for @callback
+ *
+ * Calls @callback for each item in @self.
+ */
+void
+rtfm_collection_foreach (RtfmCollection         *self,
+                         RtfmCollectionCallback  callback,
+                         gpointer                user_data)
+{
+  GSequenceIter *iter;
+  GSequenceIter *next = NULL;
+
+  g_return_if_fail (RTFM_IS_COLLECTION (self));
+  g_return_if_fail (callback != NULL);
+
+  for (iter = g_sequence_get_begin_iter (self->items);
+       !g_sequence_iter_is_end (iter);
+       iter = next)
+    {
+      next = g_sequence_iter_next (iter);
+      callback (g_sequence_get (iter), user_data);
+    }
+}
+
+/**
+ * rtfm_collection_to_array:
+ *
+ * This function is mostly useful for language bindings and likely should
+ * not be used from C code.
+ *
+ * Returns: (transfer container) (element-type Rtfm.Item): A #GPtrArray of
+ *   #RtfmItem instances.
+ */
+GPtrArray *
+rtfm_collection_to_array (RtfmCollection *self)
+{
+  GSequenceIter *iter;
+  GPtrArray *ar;
+
+  g_return_val_if_fail (RTFM_IS_COLLECTION (self), NULL);
+
+  ar = g_ptr_array_new ();
+
+  for (iter = g_sequence_get_begin_iter (self->items);
+       !g_sequence_iter_is_end (iter);
+       iter = g_sequence_iter_next (iter))
+    g_ptr_array_add (ar, g_sequence_get (iter));
+
+  return ar;
 }
