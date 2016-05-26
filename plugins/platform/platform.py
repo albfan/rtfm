@@ -77,12 +77,15 @@ class Categorizer(GObject.Object, Rtfm.Provider):
 
     # XXX: Add cleanup phase to provider
 
-    def do_postprocess(self, item):
-        if item.get_parent() is None:
-            # if this is the root item then we want to add our nodes to it
-            # and then move the other children into the respective categories.
+    def do_postprocess(self, collection):
+        path = collection.get_path()
+
+        # if this is the root item then we want to add our nodes to it
+        # and then move the other children into the respective categories.
+        if path.is_empty():
             categories = {}
-            for child in item.get_children():
+            # Requires https://bugzilla.gnome.org/show_bug.cgi?id=766907
+            for child in collection:
                 category = findCategory(child.props.id)
                 if category is not None:
                     if category not in categories:
@@ -92,7 +95,7 @@ class Categorizer(GObject.Object, Rtfm.Provider):
                 categories = list(categories.values())
                 categories.sort(key=lambda x: x.get_title())
                 for category in categories:
-                    item.prepend(category)
+                    collection.prepend(category)
 
     def do_load_item(self, id):
         if id in _TITLES:
