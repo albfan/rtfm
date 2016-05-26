@@ -662,8 +662,8 @@ rtfm_item_get_n_items (GListModel *model)
 }
 
 static void
-lookup_index (gpointer data,
-              gpointer user_data)
+lookup_at_index (gpointer data,
+                 gpointer user_data)
 {
   RtfmItem *child = data;
   struct {
@@ -695,7 +695,7 @@ rtfm_item_get_item (GListModel *model,
 
   g_return_val_if_fail (RTFM_IS_ITEM (self), NULL);
 
-  rtfm_item_foreach (self, lookup_index, &lookup);
+  rtfm_item_foreach (self, lookup_at_index, &lookup);
 
   return g_object_ref (lookup.child);
 }
