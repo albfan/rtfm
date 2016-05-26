@@ -36,14 +36,15 @@ typedef struct
   gchar      *icon_name;
   GHashTable *metadata;
 
-  /*
-   * Item tree pointers.
-   */
+  /* Item tree pointers. */
   RtfmItem   *parent;
   RtfmItem   *next;
   RtfmItem   *prev;
   RtfmItem   *first_child;
   RtfmItem   *last_child;
+
+  /* Cached number of children */
+  guint       n_items;
 
   guint       populated : 1;
 } RtfmItemPrivate;
@@ -447,19 +448,32 @@ rtfm_item_unparent (RtfmItem *self)
 
   if (priv->parent != NULL)
     {
+      RtfmItem *parent = priv->parent;
+      RtfmItem *iter;
+      guint position = 0;
+
       if (priv->prev != NULL)
         GET_PRIVATE (priv->prev)->next = priv->next;
       else
-        GET_PRIVATE (priv->parent)->first_child = priv->next;
+        GET_PRIVATE (parent)->first_child = priv->next;
 
       if (priv->next != NULL)
         GET_PRIVATE (priv->next)->prev = priv->prev;
       else
-        GET_PRIVATE (priv->parent)->last_child = priv->prev;
+        GET_PRIVATE (parent)->last_child = priv->prev;
+
+      GET_PRIVATE (parent)->n_items--;
 
       priv->prev = NULL;
       priv->next = NULL;
       priv->parent = NULL;
+
+      for (iter = GET_PRIVATE (parent)->first_child;
+           iter != NULL && iter != self;
+           iter = GET_PRIVATE (iter)->next)
+        position++;
+
+      g_list_model_items_changed (G_LIST_MODEL (parent), position, 1, 0);
 
       /* The parent holds a reference to the child, so now we can release it
        * since we've cleaned up the parent.
@@ -474,6 +488,7 @@ rtfm_item_append (RtfmItem *self,
 {
   RtfmItemPrivate *priv = rtfm_item_get_instance_private (self);
   RtfmItemPrivate *childpriv = rtfm_item_get_instance_private (child);
+  guint position;
 
   g_return_if_fail (RTFM_IS_ITEM (self));
   g_return_if_fail (RTFM_IS_ITEM (child));
@@ -486,6 +501,10 @@ rtfm_item_append (RtfmItem *self,
   priv->last_child = child;
   if (priv->first_child == NULL)
     priv->first_child = child;
+
+  position = priv->n_items;
+  priv->n_items++;
+  g_list_model_items_changed (G_LIST_MODEL (self), position, 0, 1);
 }
 
 void
@@ -506,6 +525,9 @@ rtfm_item_prepend (RtfmItem *self,
   priv->first_child = child;
   if (priv->last_child == NULL)
     priv->last_child = child;
+
+  priv->n_items++;
+  g_list_model_items_changed (G_LIST_MODEL (self), 0, 0, 1);
 }
 
 void
@@ -516,6 +538,8 @@ rtfm_item_insert_after (RtfmItem *self,
   RtfmItemPrivate *priv = rtfm_item_get_instance_private (self);
   RtfmItemPrivate *siblingpriv = rtfm_item_get_instance_private (sibling);
   RtfmItemPrivate *childpriv = rtfm_item_get_instance_private (child);
+  RtfmItem *iter;
+  guint position = 0;
 
   g_return_if_fail (RTFM_IS_ITEM (self));
   g_return_if_fail (RTFM_IS_ITEM (sibling));
@@ -532,6 +556,15 @@ rtfm_item_insert_after (RtfmItem *self,
 
   if (childpriv->next == NULL)
     priv->last_child = child;
+
+  priv->n_items++;
+
+  for (iter = priv->first_child;
+       iter != NULL && iter != child;
+       iter = GET_PRIVATE (iter)->next)
+    position++;
+
+  g_list_model_items_changed (G_LIST_MODEL (self), position, 0, 1);
 }
 
 void
@@ -542,6 +575,8 @@ rtfm_item_insert_before (RtfmItem *self,
   RtfmItemPrivate *priv = rtfm_item_get_instance_private (self);
   RtfmItemPrivate *siblingpriv = rtfm_item_get_instance_private (sibling);
   RtfmItemPrivate *childpriv = rtfm_item_get_instance_private (child);
+  RtfmItem *iter;
+  guint position = 0;
 
   g_return_if_fail (RTFM_IS_ITEM (self));
   g_return_if_fail (RTFM_IS_ITEM (sibling));
@@ -558,6 +593,15 @@ rtfm_item_insert_before (RtfmItem *self,
 
   if (childpriv->prev == NULL)
     priv->first_child = child;
+
+  priv->n_items++;
+
+  for (iter = priv->first_child;
+       iter != NULL && iter != child;
+       iter = GET_PRIVATE (iter)->next)
+    position++;
+
+  g_list_model_items_changed (G_LIST_MODEL (self), position, 0, 1);
 }
 
 /**
@@ -606,26 +650,15 @@ rtfm_item_get_item_type (GListModel *model)
   return RTFM_TYPE_ITEM;
 }
 
-static void
-count_items (gpointer data,
-             gpointer user_data)
-{
-  guint *count = user_data;
-
-  (*count)++;
-}
-
 static guint
 rtfm_item_get_n_items (GListModel *model)
 {
   RtfmItem *self = (RtfmItem *)model;
-  guint count = 0;
+  RtfmItemPrivate *priv = rtfm_item_get_instance_private (self);
 
   g_return_val_if_fail (RTFM_IS_ITEM (self), 0);
 
-  rtfm_item_foreach (self, count_items, &count);
-
-  return count;
+  return priv->n_items;
 }
 
 static void
