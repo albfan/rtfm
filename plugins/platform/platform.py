@@ -83,6 +83,7 @@ class Categorizer(GObject.Object, Rtfm.Provider):
         # if this is the root item then we want to add our nodes to it
         # and then move the other children into the respective categories.
         if path.is_empty():
+            matched = []
             categories = {}
             # Requires https://bugzilla.gnome.org/show_bug.cgi?id=766907
             for child in collection:
@@ -91,6 +92,9 @@ class Categorizer(GObject.Object, Rtfm.Provider):
                     if category not in categories:
                         categories[category] = Category(category)
                     categories[category].append(child)
+                    matched.append(child)
+            for match in matched:
+                collection.remove_item(match)
             if categories:
                 categories = list(categories.values())
                 categories.sort(key=lambda x: x.get_title())
