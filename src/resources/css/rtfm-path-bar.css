@@ -9,6 +9,10 @@ rtfmpathbar button {
   padding: 3px 3px 0px 3px;
 }
 
+rtfmpathbar button image {
+  color: alpha(currentColor, 0.8);
+}
+
 rtfmpathbar label.separator {
   font-size: 0.83333em;
   opacity: 0.55;
