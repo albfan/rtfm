@@ -316,6 +316,9 @@ rtfm_sidebar_init (RtfmSidebar *self)
 
   gtk_widget_init_template (GTK_WIDGET (self));
 
+  gtk_style_context_add_class (gtk_widget_get_style_context (GTK_WIDGET (self)),
+                               "sidebar");
+
   g_signal_connect_object (priv->browse,
                            "row-activated",
                            G_CALLBACK (rtfm_sidebar_browse_row_activated),
