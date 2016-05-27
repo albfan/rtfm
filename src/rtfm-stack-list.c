@@ -152,14 +152,6 @@ rtfm_stack_list__overlay__get_child_position (RtfmStackList *self,
   if (rect->height < min.height)
     rect->height = min.height;
 
-  /* TODO:
-   *
-   * This makes the animation a bit smoother based on our CSS sytling.
-   * We need to figure out where to determine these values dynamically.
-   */
-  rect->x += 2;
-  rect->y += 3;
-
   return TRUE;
 }
 
