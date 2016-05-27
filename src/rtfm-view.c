@@ -31,12 +31,9 @@ typedef struct
   PeasExtensionSet *addins;
   RtfmItem         *item;
   RtfmLibrary      *library;
-
-  GtkBox           *box;
-  GtkLabel         *title;
 } RtfmViewPrivate;
 
-G_DEFINE_TYPE_WITH_PRIVATE (RtfmView, rtfm_view, GTK_TYPE_BIN)
+G_DEFINE_TYPE_WITH_PRIVATE (RtfmView, rtfm_view, GTK_TYPE_BOX)
 
 enum {
   PROP_0,
@@ -129,96 +126,6 @@ rtfm_view_unrealize (GtkWidget *widget)
 }
 
 static void
-border_sum (GtkBorder       *one,
-            const GtkBorder *two)
-{
-  one->top += two->top;
-  one->right += two->right;
-  one->bottom += two->bottom;
-  one->left += two->left;
-}
-
-static gboolean
-rtfm_view_draw (GtkWidget *widget,
-                cairo_t   *cr)
-{
-  GtkStyleContext *style_context;
-  GtkStateFlags state;
-  GtkAllocation alloc;
-  GtkBorder border;
-  GtkBorder padding;
-  GtkWidget *child;
-
-  g_assert (GTK_IS_WIDGET (widget));
-  g_assert (cr != NULL);
-
-  gtk_widget_get_allocation (widget, &alloc);
-
-  style_context = gtk_widget_get_style_context (widget);
-  state = gtk_style_context_get_state (style_context);
-  gtk_style_context_get_border (style_context, state, &border);
-  gtk_style_context_get_padding (style_context, state, &padding);
-
-  border_sum (&border, &padding);
-
-  gtk_render_background (gtk_widget_get_style_context (widget), cr,
-                         border.left,
-                         border.top,
-                         alloc.width - border.left - border.right,
-                         alloc.height - border.top - border.bottom);
-
-  child = gtk_bin_get_child (GTK_BIN (widget));
-
-  if (child != NULL)
-    gtk_container_propagate_draw (GTK_CONTAINER (widget), child, cr);
-
-  return GDK_EVENT_PROPAGATE;
-}
-
-static void
-rtfm_view_size_allocate (GtkWidget     *widget,
-                         GtkAllocation *allocation)
-{
-  GtkStyleContext *style_context;
-  GtkStateFlags state;
-  GtkBorder border;
-  GtkBorder padding;
-  gint border_width;
-  GtkWidget *child;
-
-  g_return_if_fail (GTK_IS_BIN (widget));
-  g_return_if_fail (allocation != NULL);
-
-  GTK_WIDGET_CLASS (rtfm_view_parent_class)->size_allocate (widget, allocation);
-
-  child = gtk_bin_get_child (GTK_BIN (widget));
-
-  if (child == NULL)
-    return;
-
-  style_context = gtk_widget_get_style_context (widget);
-  state = gtk_style_context_get_state (style_context);
-  gtk_style_context_get_border (style_context, state, &border);
-  gtk_style_context_get_padding (style_context, state, &padding);
-
-  border_sum (&border, &padding);
-
-  allocation->x += border.left;
-  allocation->y += border.top;
-  allocation->width -= border.left + border.right;
-  allocation->height -= border.top + border.bottom;
-
-  border_width = gtk_container_get_border_width (GTK_CONTAINER (widget));
-
-  allocation->x += border_width;
-  allocation->y += border_width;
-  allocation->width -= border_width * 2;
-  allocation->height -= border_width * 2;
-
-  gtk_widget_size_allocate (child, allocation);
-}
-
-static void
 rtfm_view_finalize (GObject *object)
 {
   RtfmView *self = (RtfmView *)object;
@@ -285,8 +192,6 @@ rtfm_view_class_init (RtfmViewClass *klass)
   object_class->get_property = rtfm_view_get_property;
   object_class->set_property = rtfm_view_set_property;
 
-  widget_class->draw = rtfm_view_draw;
-  widget_class->size_allocate = rtfm_view_size_allocate;
   widget_class->realize = rtfm_view_realize;
   widget_class->unrealize = rtfm_view_unrealize;
 
@@ -308,8 +213,6 @@ rtfm_view_class_init (RtfmViewClass *klass)
 
   gtk_widget_class_set_template_from_resource (widget_class, "/org/gnome/rtfm/ui/rtfm-view.ui");
   gtk_widget_class_set_css_name (widget_class, "rtfmview");
-  gtk_widget_class_bind_template_child_private (widget_class, RtfmView, box);
-  gtk_widget_class_bind_template_child_private (widget_class, RtfmView, title);
 
   rtfm_gtk_widget_class_set_css_from_resource (widget_class,
                                                NULL,
@@ -320,6 +223,8 @@ static void
 rtfm_view_init (RtfmView *self)
 {
   gtk_widget_init_template (GTK_WIDGET (self));
+  gtk_orientable_set_orientation (GTK_ORIENTABLE (self),
+                                  GTK_ORIENTATION_VERTICAL);
 }
 
 static void
@@ -358,20 +263,13 @@ rtfm_view_connect (RtfmView *self,
                    RtfmItem *item)
 {
   RtfmViewPrivate *priv = rtfm_view_get_instance_private (self);
-  const gchar *title;
 
   g_assert (RTFM_IS_VIEW (self));
   g_assert (RTFM_IS_ITEM (item));
   g_assert (priv->item == NULL);
 
   priv->item = g_object_ref (item);
-
-  title = rtfm_item_get_title (item);
-  gtk_label_set_label (priv->title, title);
-
-  peas_extension_set_foreach (priv->addins,
-                              rtfm_view_propagate_item,
-                              item);
+  peas_extension_set_foreach (priv->addins, rtfm_view_propagate_item, item);
 }
 
 GtkWidget *
@@ -447,16 +345,4 @@ rtfm_view_set_library (RtfmView    *self,
 
   if (g_set_object (&priv->library, library))
     g_object_notify_by_pspec (G_OBJECT (self), properties [PROP_LIBRARY]);
-}
-
-void
-rtfm_view_add_group (RtfmView      *self,
-                     RtfmViewGroup *group)
-{
-  RtfmViewPrivate *priv = rtfm_view_get_instance_private (self);
-
-  g_return_if_fail (RTFM_IS_VIEW (self));
-  g_return_if_fail (RTFM_IS_VIEW_GROUP (group));
-
-  gtk_container_add (GTK_CONTAINER (priv->box), GTK_WIDGET (group));
 }

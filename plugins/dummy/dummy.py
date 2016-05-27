@@ -217,13 +217,13 @@ class DummyViewAddin(GObject.Object, Rtfm.ViewAddin):
         self.view = view
 
         self.classes_group = Rtfm.ViewGroup(title='Classes')
-        self.view.add_group(self.classes_group)
+        self.view.add(self.classes_group)
 
         self.properties_group = Rtfm.ViewGroup(title='Properties')
-        self.view.add_group(self.properties_group)
+        self.view.add(self.properties_group)
 
         self.methods_group = Rtfm.ViewGroup(title='Methods')
-        self.view.add_group(self.methods_group)
+        self.view.add(self.methods_group)
 
     def do_unload(self, view):
         self.view = None

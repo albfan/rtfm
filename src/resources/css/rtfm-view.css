@@ -10,10 +10,6 @@ rtfmview label.h2 {
 }
 
 rtfmview {
-  background-color: mix(@content_view_bg, @theme_bg_color, 0.25);
-}
-
-rtfmview > box {
   min-width: 600px;
-  padding: 18px;
+  padding: 36px;
 }

@@ -25,7 +25,7 @@ G_BEGIN_DECLS
 
 struct _RtfmViewClass
 {
-  GtkBinClass parent;
+  GtkBoxClass parent;
 
   gpointer padding[8];
 };
@@ -37,8 +37,6 @@ void         rtfm_view_set_item    (RtfmView      *self,
 RtfmLibrary *rtfm_view_get_library (RtfmView      *self);
 void         rtfm_view_set_library (RtfmView      *self,
                                     RtfmLibrary   *library);
-void         rtfm_view_add_group   (RtfmView      *self,
-                                    RtfmViewGroup *group);
 
 G_END_DECLS
 

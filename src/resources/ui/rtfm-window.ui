@@ -73,9 +73,17 @@
           <object class="GtkScrolledWindow">
             <property name="visible">true</property>
             <child>
-              <object class="RtfmView" id="view">
-                <property name="expand">true</property>
+              <object class="GtkViewport" id="viewport">
                 <property name="visible">true</property>
+                <style>
+                  <class name="rtfm-view-area"/>
+                </style>
+                <child>
+                  <object class="RtfmView" id="view">
+                    <property name="expand">true</property>
+                    <property name="visible">true</property>
+                  </object>
+                </child>
               </object>
             </child>
           </object>
