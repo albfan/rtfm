@@ -6,12 +6,12 @@ rtfmsidebar stacklist list row {
   color: @theme_fg_color;
   padding-bottom: 3px;
 }
-rtfmsidebar stacklist list.stack-header row:hover,
+rtfmsidebar stacklist list.stack-header row:hover:not(:last-child),
 rtfmsidebar stacklist list row:hover {
   background-color: shade(@theme_bg_color, 0.95);
   color: @theme_fg_color;
 }
-rtfmsidebar stacklist list.stack-header row:active,
+rtfmsidebar stacklist list.stack-header row:active:not(:last-child),
 rtfmsidebar stacklist list row:active {
   color: @theme_selected_fg_color;
   background-color: @theme_selected_bg_color;
