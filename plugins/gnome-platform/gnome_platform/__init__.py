@@ -148,6 +148,10 @@ class Category(Rtfm.Item):
 def findCategory(idstr):
     return _MAPPING.get(idstr, 'platform:other')
 
+def itermodel(model):
+    for i in range(model.get_n_items()):
+        yield model.get_item(i)
+
 class Categorizer(GObject.Object, Rtfm.Provider):
 
     def do_postprocess(self, collection):
@@ -158,8 +162,7 @@ class Categorizer(GObject.Object, Rtfm.Provider):
         if path.is_empty():
             matched = []
             categories = {}
-            # Requires https://bugzilla.gnome.org/show_bug.cgi?id=766907
-            for child in collection:
+            for child in itermodel(collection):
                 category = findCategory(child.props.id)
                 if category is not None:
                     if category not in categories:

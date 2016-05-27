@@ -1,6 +1,6 @@
 [Plugin]
 Loader=python3
-Module=platform
+Module=gnome_platform
 Name=GNOME Platform
 Description=Categorize introspectable libraries
 Authors=Christian Hergert

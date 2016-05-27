@@ -108,6 +108,7 @@ AC_CONFIG_FILES([
 	src/rtfm-version.h
 
 	plugins/Makefile
+	plugins/gnome-platform/Makefile
 
 	data/Makefile
 	data/rtfm-$API_VERSION.pc:data/rtfm.pc.in
