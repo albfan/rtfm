@@ -461,6 +461,8 @@ rtfm_stack_list_init (RtfmStackList *self)
   priv->content = g_object_new (GTK_TYPE_LIST_BOX,
                                 "visible", TRUE,
                                 NULL);
+  gtk_style_context_add_class (gtk_widget_get_style_context (GTK_WIDGET (priv->content)),
+                               "stack-children");
   g_signal_connect_object (priv->content,
                            "row-activated",
                            G_CALLBACK (rtfm_stack_list_content_row_activated),
