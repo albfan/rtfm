@@ -1,40 +1,29 @@
-rtfmsidebar stacklist list.view {
-  background-color: @content_view_bg;
-}
-rtfmsidebar stacklist list row {
-  background-color: mix(@content_view_bg, @theme_bg_color, 0.5);
-  color: @theme_fg_color;
-  padding-bottom: 3px;
-}
-rtfmsidebar stacklist list.stack-header row:hover:not(:last-child),
-rtfmsidebar stacklist list row:hover {
-  background-color: shade(@theme_bg_color, 0.95);
+rtfmsidebar stacklist row {
+  padding: 3px 0;
   color: @theme_fg_color;
 }
-rtfmsidebar stacklist list.stack-header row:active:not(:last-child),
-rtfmsidebar stacklist list row:active {
-  color: @theme_selected_fg_color;
-  background-color: @theme_selected_bg_color;
-}
-rtfmsidebar stacklist list.stack-header row {
-  background-color: mix(@content_view_bg, @theme_bg_color, 0.25);
-  color: @theme_fg_color;
-}
-rtfmsidebar stacklist list.stack-header row:last-child {
-  border-bottom: 1px solid @borders;
-  color: @theme_fg_color;
-}
-rtfmsidebar list.stack-header row {
-  border-bottom: 1px solid alpha(@borders,.15);
-}
-stacklist list row:active,
-stacklist list row:selected {
-  background-color: @theme_selected_bg_color;
-  color: @theme_selected_fg_color;
+rtfmsidebar stacklist row:backdrop {
+  color: @theme_unfocused_fg_color;
 }
 rtfmsidebar stacklist row image {
-  margin: 6px;
-  min-width: 16px;
+  margin: 6px 12px;
   min-height: 16px;
-  color: alpha(@theme_fg_color, 0.8);
+  min-width: 16px;
+  opacity: 0.7;
+}
+rtfmsidebar stacklist list.stack-header {
+  background-color: @theme_base_color;
+  border-bottom: 1px solid @borders;
+}
+rtfmsidebar stacklist list.stack-header:backdrop {
+  background-color: @theme_unfocused_base_color;
+  border-color: @unfocused_borders;
+}
+rtfmsidebar stacklist list.stack-header row:not(:last-child) {
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+rtfmsidebar stacklist row:active,
+rtfmsidebar stacklist row:selected {
+  color: @theme_selected_fg_color;
+  background-color: @theme_selected_bg_color;
 }
