@@ -1,4 +1,5 @@
 SUBDIRS = \
+	gobject-introspection \
 	gnome-platform \
 	$(NULL)
 

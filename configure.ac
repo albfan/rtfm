@@ -91,6 +91,21 @@ PKG_CHECK_MODULES(RTFM, [gtk+-3.0 >= 3.20
 
 
 dnl ***********************************************************************
+dnl Setup common cflags and ldflags for plugins
+dnl ***********************************************************************
+PLUGIN_CFLAGS="$PLUGIN_CFLAGS -I\$(top_builddir)/src"
+PLUGIN_CFLAGS="$PLUGIN_CFLAGS -I\$(top_srcdir)/src"
+PLUGIN_CFLAGS="$PLUGIN_CFLAGS $RTFM_CFLAGS"
+PLUGIN_CFLAGS="$PLUGIN_CFLAGS $DEBUG_CFLAGS"
+AC_SUBST(PLUGIN_CFLAGS)
+
+PLUGIN_LDFLAGS="$PLUGIN_LDFLAGS -avoid-version"
+PLUGIN_LDFLAGS="$PLUGIN_LDFLAGS -export-symbols-regex peas_register_types"
+PLUGIN_LDFLAGS="$PLUGIN_LDFLAGS -module"
+AC_SUBST(PLUGIN_LDFLAGS)
+
+
+dnl ***********************************************************************
 dnl Initialize Libtool
 dnl ***********************************************************************
 LT_PREREQ([2.2])
@@ -109,6 +124,7 @@ AC_CONFIG_FILES([
 
 	plugins/Makefile
 	plugins/gnome-platform/Makefile
+	plugins/gobject-introspection/Makefile
 
 	data/Makefile
 	data/rtfm-$API_VERSION.pc:data/rtfm.pc.in

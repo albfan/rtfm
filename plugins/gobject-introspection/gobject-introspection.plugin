@@ -1,0 +1,6 @@
+[Plugin]
+Module=rtfm-plugin-gir
+Name=GObject Introspection
+Description=Import GObject Introspection information
+Authors=Christian Hergert
+Copyright=Copyright 2016 Christian Hergert <chergert@redhat.com>
