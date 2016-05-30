@@ -28,9 +28,6 @@
                 <style>
                   <class name="dim-label"/>
                 </style>
-                <attributes>
-                  <attribute name="scale" value="0.833333"/>
-                </attributes>
               </object>
             </child>
           </object>
