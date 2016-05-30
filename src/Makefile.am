@@ -41,12 +41,12 @@ librtfm_@API_VERSION@_la_SOURCES = \
 	$(librtfm_public_api) \
 	rtfm-animation.c \
 	rtfm-animation.h \
+	rtfm-bolding-label.c \
+	rtfm-bolding-label.h \
 	rtfm-frame-source.c \
 	rtfm-frame-source.h \
 	rtfm-item-private.h \
 	rtfm-library-private.h \
-	rtfm-path-bar-label.c \
-	rtfm-path-bar-label.h \
 	rtfm-rect.c \
 	rtfm-rect.h \
 	rtfm-widget.c \

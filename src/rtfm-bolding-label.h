@@ -1,4 +1,4 @@
-/* rtfm-path-bar-label.h
+/* rtfm-bolding-label.h
  *
  * Copyright (C) 2016 Christian Hergert <chergert@redhat.com>
  *
@@ -16,17 +16,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef RTFM_PATH_BAR_LABEL_H
-#define RTFM_PATH_BAR_LABEL_H
+#ifndef RTFM_BOLDING_LABEL_H
+#define RTFM_BOLDING_LABEL_H
 
 #include <gtk/gtk.h>
 
 G_BEGIN_DECLS
 
-#define RTFM_TYPE_PATH_BAR_LABEL (rtfm_path_bar_label_get_type())
+#define RTFM_TYPE_BOLDING_LABEL (rtfm_bolding_label_get_type())
 
-G_DECLARE_FINAL_TYPE (RtfmPathBarLabel, rtfm_path_bar_label, RTFM, PATH_BAR_LABEL, GtkLabel)
+G_DECLARE_FINAL_TYPE (RtfmBoldingLabel, rtfm_bolding_label, RTFM, BOLDING_LABEL, GtkLabel)
 
 G_END_DECLS
 
-#endif /* RTFM_PATH_BAR_LABEL_H */
+#endif /* RTFM_BOLDING_LABEL_H */

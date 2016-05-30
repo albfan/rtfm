@@ -20,19 +20,20 @@
 
 #include <glib/gi18n.h>
 
+#include "rtfm-bolding-label.h"
 #include "rtfm-item.h"
 #include "rtfm-library.h"
 #include "rtfm-sidebar-row.h"
 
 struct _RtfmSidebarRow
 {
-  GtkListBoxRow  parent_instance;
+  GtkListBoxRow     parent_instance;
 
-  GObject       *object;
+  GObject          *object;
 
-  GtkImage      *image;
-  GtkLabel      *subtitle;
-  GtkLabel      *title;
+  GtkImage         *image;
+  RtfmBoldingLabel *subtitle;
+  RtfmBoldingLabel *title;
 };
 
 G_DEFINE_TYPE (RtfmSidebarRow, rtfm_sidebar_row, GTK_TYPE_LIST_BOX_ROW)
@@ -133,8 +134,8 @@ rtfm_sidebar_row_update (RtfmSidebarRow *self,
 
   if (RTFM_IS_LIBRARY (object))
     {
-      gtk_label_set_label (self->title, _("Developer Library"));
-      gtk_label_set_label (self->subtitle, NULL);
+      gtk_label_set_label (GTK_LABEL (self->title), _("Developer Library"));
+      gtk_label_set_label (GTK_LABEL (self->subtitle), NULL);
       gtk_widget_set_visible (GTK_WIDGET (self->subtitle), FALSE);
       g_object_set (self->image,
                     "icon-name", "help-contents-symbolic",
@@ -152,8 +153,8 @@ rtfm_sidebar_row_update (RtfmSidebarRow *self,
       subtitle = rtfm_item_get_subtitle (item);
       title = rtfm_item_get_title (item);
 
-      gtk_label_set_label (self->title, title);
-      gtk_label_set_label (self->subtitle, subtitle);
+      gtk_label_set_label (GTK_LABEL (self->title), title);
+      gtk_label_set_label (GTK_LABEL (self->subtitle), subtitle);
       g_object_set (self->image,
                     "icon-name", icon_name,
                     "pixel-size", 16,

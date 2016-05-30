@@ -1,4 +1,4 @@
-/* rtfm-path-bar-label.c
+/* rtfm-bolding-label.c
  *
  * Copyright (C) 2016 Christian Hergert <chergert@redhat.com>
  *
@@ -18,28 +18,28 @@
 
 #include <glib/gi18n.h>
 
-#include "rtfm-path-bar-label.h"
+#include "rtfm-bolding-label.h"
 
-struct _RtfmPathBarLabel
+struct _RtfmBoldingLabel
 {
   GtkLabel parent_instance;
 };
 
-G_DEFINE_TYPE (RtfmPathBarLabel, rtfm_path_bar_label, GTK_TYPE_LABEL)
+G_DEFINE_TYPE (RtfmBoldingLabel, rtfm_bolding_label, GTK_TYPE_LABEL)
 
 static void
-rtfm_path_bar_label_get_preferred_width (GtkWidget *widget,
+rtfm_bolding_label_get_preferred_width (GtkWidget *widget,
                                          gint      *min_width,
                                          gint      *nat_width)
 {
   const PangoFontDescription *font_desc;
   PangoContext *context;
 
-  g_assert (RTFM_IS_PATH_BAR_LABEL (widget));
+  g_assert (RTFM_IS_BOLDING_LABEL (widget));
   g_assert (min_width);
   g_assert (nat_width);
 
-  GTK_WIDGET_CLASS (rtfm_path_bar_label_parent_class)->get_preferred_width (widget, min_width, nat_width);
+  GTK_WIDGET_CLASS (rtfm_bolding_label_parent_class)->get_preferred_width (widget, min_width, nat_width);
 
   if (NULL == (context = gtk_widget_get_pango_context (widget)) ||
       NULL == (font_desc = pango_context_get_font_description (context)))
@@ -77,14 +77,14 @@ rtfm_path_bar_label_get_preferred_width (GtkWidget *widget,
 }
 
 static void
-rtfm_path_bar_label_class_init (RtfmPathBarLabelClass *klass)
+rtfm_bolding_label_class_init (RtfmBoldingLabelClass *klass)
 {
   GtkWidgetClass *widget_class = GTK_WIDGET_CLASS (klass);
 
-  widget_class->get_preferred_width = rtfm_path_bar_label_get_preferred_width;
+  widget_class->get_preferred_width = rtfm_bolding_label_get_preferred_width;
 }
 
 static void
-rtfm_path_bar_label_init (RtfmPathBarLabel *self)
+rtfm_bolding_label_init (RtfmBoldingLabel *self)
 {
 }

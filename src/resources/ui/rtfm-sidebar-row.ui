@@ -16,13 +16,13 @@
             <property name="valign">center</property>
             <property name="visible">true</property>
             <child>
-              <object class="GtkLabel" id="title">
+              <object class="RtfmBoldingLabel" id="title">
                 <property name="visible">true</property>
                 <property name="xalign">0</property>
               </object>
             </child>
             <child>
-              <object class="GtkLabel" id="subtitle">
+              <object class="RtfmBoldingLabel" id="subtitle">
                 <property name="visible">true</property>
                 <property name="xalign">0</property>
                 <style>

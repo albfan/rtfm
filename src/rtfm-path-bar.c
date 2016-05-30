@@ -20,10 +20,10 @@
 
 #include <string.h>
 
+#include "rtfm-bolding-label.h"
 #include "rtfm-item.h"
 #include "rtfm-path.h"
 #include "rtfm-path-bar.h"
-#include "rtfm-path-bar-label.h"
 #include "rtfm-path-element.h"
 #include "rtfm-widget.h"
 
@@ -366,7 +366,7 @@ rtfm_path_bar_create_element (RtfmPathBar     *self,
       gtk_container_add (GTK_CONTAINER (box2), GTK_WIDGET (image));
     }
 
-  label = g_object_new (RTFM_TYPE_PATH_BAR_LABEL,
+  label = g_object_new (RTFM_TYPE_BOLDING_LABEL,
                         "label", title,
                         "valign", GTK_ALIGN_BASELINE,
                         "visible", TRUE,
