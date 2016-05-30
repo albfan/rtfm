@@ -22,8 +22,10 @@ rtfmsidebar stacklist list.stack-header:backdrop {
 rtfmsidebar stacklist list.stack-header row:not(:last-child) {
   border-bottom: 1px solid rgba(0,0,0,0.1);
 }
-rtfmsidebar stacklist row:active,
-rtfmsidebar stacklist row:selected {
+rtfmsidebar stacklist list:not(.stack-header) row:active,
+rtfmsidebar stacklist list:not(.stack-header) row:selected,
+rtfmsidebar stacklist list.stack-header row:not(:last-child):active,
+rtfmsidebar stacklist list.stack-header row:not(:last-child):selected {
   color: @theme_selected_fg_color;
   background-color: @theme_selected_bg_color;
 }
