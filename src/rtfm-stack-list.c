@@ -83,6 +83,35 @@ model_info_free (gpointer data)
   g_slice_free (ModelInfo, info);
 }
 
+static void
+enable_activatable (GtkWidget *widget,
+                    gpointer   user_data)
+{
+  GtkWidget **last = user_data;
+
+  g_assert (GTK_IS_LIST_BOX_ROW (widget));
+  g_assert (*last == NULL || GTK_IS_WIDGET (*last));
+
+  gtk_list_box_row_set_activatable (GTK_LIST_BOX_ROW (widget), TRUE);
+  *last = widget;
+}
+
+static void
+rtfm_stack_list_update_activatables (RtfmStackList *self)
+{
+  RtfmStackListPrivate *priv = rtfm_stack_list_get_instance_private (self);
+  GtkWidget *last = NULL;
+
+  g_assert (RTFM_IS_STACK_LIST (self));
+
+  gtk_container_foreach (GTK_CONTAINER (priv->headers),
+                         enable_activatable,
+                         &last);
+
+  if (GTK_IS_LIST_BOX_ROW (last))
+    gtk_list_box_row_set_activatable (GTK_LIST_BOX_ROW (last), FALSE);
+}
+
 static GtkWidget *
 rtfm_stack_list_create_widget_func (gpointer item,
                                     gpointer user_data)
@@ -208,6 +237,8 @@ rtfm_stack_list_end_anim (RtfmStackList *self)
   rtfm_stack_list_scroll_to_top (self);
 
   gtk_stack_set_visible_child (GTK_STACK (priv->flip_stack), GTK_WIDGET (priv->scroller));
+
+  rtfm_stack_list_update_activatables (self);
 
   g_object_notify_by_pspec (G_OBJECT (self), properties [PROP_MODEL]);
 
@@ -517,6 +548,7 @@ rtfm_stack_list_push (RtfmStackList                 *self,
   if (priv->activated == NULL)
     {
       gtk_container_add (GTK_CONTAINER (priv->headers), GTK_WIDGET (header));
+      rtfm_stack_list_update_activatables (self);
       gtk_list_box_bind_model (priv->content,
                                model,
                                rtfm_stack_list_create_widget_func,
@@ -580,6 +612,8 @@ rtfm_stack_list_pop (RtfmStackList *self)
                                info,
                                NULL);
     }
+
+  rtfm_stack_list_update_activatables (self);
 
   g_object_notify_by_pspec (G_OBJECT (self), properties [PROP_MODEL]);
 }
