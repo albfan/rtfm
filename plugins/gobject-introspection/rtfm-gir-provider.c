@@ -16,7 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define G_LOG_DOMAIN "rtfm-gir-provider"
+
 #include <glib/gi18n.h>
+#include <string.h>
 
 #include "rtfm-gir-provider.h"
 
@@ -138,14 +141,37 @@ rtfm_gir_provider_populate_async (RtfmProvider        *provider,
       for (i = 0; i < self->files->len; i++)
         {
           GFile *file = g_ptr_array_index (self->files, i);
-          g_autofree gchar *name = g_file_get_basename (file);
-          g_autofree gchar *id = g_strdup_printf ("gir:%s", name);
+          g_autofree gchar *path = NULL;
+          g_autofree gchar *name = NULL;
+          g_autofree gchar *id = NULL;
+          g_autofree gchar *subtitle = NULL;
+          const gchar *version;
           RtfmItem *item;
+          gchar *tmp;
 
+          path = g_file_get_path (file);
+          name = g_file_get_basename (file);
+
+          tmp = strrchr (name, '.');
+          if (tmp != NULL)
+            *tmp = '\0';
+
+          tmp = strrchr (name, '-');
+          if (tmp != NULL)
+            {
+              *tmp = '\0';
+              version = ++tmp;
+            }
+
+          id = g_strdup_printf ("gir:%s", path);
+          subtitle = g_strdup_printf ("%s %s", name, version);
           item = g_object_new (RTFM_TYPE_ITEM,
                                "id", id,
                                "title", name,
+                               "subtitle", subtitle,
+                               "icon-name", "lang-namespace-symbolic",
                                NULL);
+
           rtfm_collection_append (collection, item);
         }
     }
