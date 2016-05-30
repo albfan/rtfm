@@ -29,3 +29,6 @@ rtfmsidebar stacklist list.stack-header row:not(:last-child):selected {
   color: @theme_selected_fg_color;
   background-color: @theme_selected_bg_color;
 }
+rtfmsidebar stacklist list.stack-header row:last-child label:not(.dim-label) {
+  font-weight: bold;
+}
