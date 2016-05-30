@@ -2,6 +2,9 @@ rtfmsidebar stacklist row {
   padding: 3px 0;
   color: @theme_fg_color;
 }
+rtfmsidebar stacklist row label.dim-label {
+  font-size: smaller;
+}
 rtfmsidebar stacklist row:backdrop {
   color: @theme_unfocused_fg_color;
 }
