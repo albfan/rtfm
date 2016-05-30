@@ -1,4 +1,4 @@
-/* rtfm-gir-plugin.c
+/* rtfm-gir-plugin.h
  *
  * Copyright (C) 2016 Christian Hergert <chergert@redhat.com>
  *
@@ -16,25 +16,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <libpeas/peas.h>
-#include <rtfm.h>
+#ifndef RTFM_GIR_PLUGIN_H
+#define RTFM_GIR_PLUGIN_H
 
-#include "rtfm-gir-provider.h"
+#include <glib.h>
 
-static GStringChunk *strings;
+G_BEGIN_DECLS
 
-const gchar *
-rtfm_gir_plugin_intern_string (const gchar *string)
-{
-  return g_string_chunk_insert_const (strings, string);
-}
+const gchar *rtfm_gir_plugin_intern_string (const gchar *string);
 
-void
-peas_register_types (PeasObjectModule *module)
-{
-  strings = g_string_chunk_new (4096);
+G_END_DECLS
 
-  peas_object_module_register_extension_type (module,
-                                              RTFM_TYPE_PROVIDER,
-                                              RTFM_TYPE_GIR_PROVIDER);
-}
+#endif /* RTFM_GIR_PLUGIN_H */

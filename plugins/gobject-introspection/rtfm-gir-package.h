@@ -1,4 +1,4 @@
-/* rtfm-gir-item.h
+/* rtfm-gir-package.h
  *
  * Copyright (C) 2016 Christian Hergert <chergert@redhat.com>
  *
@@ -16,22 +16,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef RTFM_GIR_ITEM_H
-#define RTFM_GIR_ITEM_H
+#ifndef RTFM_GIR_PACKAGE_H
+#define RTFM_GIR_PACKAGE_H
 
+#include <libxml/xmlreader.h>
 #include <rtfm.h>
 
 G_BEGIN_DECLS
 
-#define RTFM_TYPE_GIR_ITEM (rtfm_gir_item_get_type())
+#define RTFM_TYPE_GIR_PACKAGE (rtfm_gir_package_get_type())
 
-G_DECLARE_DERIVABLE_TYPE (RtfmGirItem, rtfm_gir_item, RTFM, GIR_ITEM, RtfmItem)
+G_DECLARE_FINAL_TYPE (RtfmGirPackage, rtfm_gir_package, RTFM, GIR_PACKAGE, RtfmItem)
 
-struct _RtfmGirItemClass
-{
-  RtfmItem item_class;
-};
+gboolean rtfm_gir_package_ingest (RtfmGirPackage    *self,
+                                  xmlTextReaderPtr   reader,
+                                  GError           **error);
 
 G_END_DECLS
 
-#endif /* RTFM_GIR_ITEM_H */
+#endif /* RTFM_GIR_PACKAGE_H */

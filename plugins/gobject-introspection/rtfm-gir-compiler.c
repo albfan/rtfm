@@ -25,16 +25,149 @@
 #include <rtfm.h>
 #include <stdlib.h>
 
+#include "rtfm-gir-repository.h"
+
+static void
+error_handler (void                    *arg,
+               const char              *msg,
+               xmlParserSeverities      severity,
+               xmlTextReaderLocatorPtr  locator)
+{
+  gchar **target = arg;
+  guint line;
+
+  g_free (*target);
+
+  line = xmlTextReaderLocatorLineNumber (locator);
+  *target = g_strdup_printf ("Line %d: %s", line, msg);
+}
+
+static inline gboolean
+is_element_named (xmlTextReaderPtr  reader,
+                  const gchar      *name)
+{
+  g_assert (reader != NULL);
+  g_assert (name != NULL);
+
+  if (xmlTextReaderNodeType (reader) == XML_ELEMENT_NODE)
+    return (0 == g_strcmp0 (name, (gchar *)xmlTextReaderConstName (reader)));
+
+  return FALSE;
+}
+
+static void
+set_error_string (gchar       **dest,
+                  const gchar  *message)
+{
+  g_free (*dest);
+  *dest = g_strdup (message);
+}
+
+static RtfmGirRepository *
+rtfm_gir_compiler_parse (xmlTextReaderPtr   reader,
+                         GError           **error)
+{
+  g_autoptr(RtfmGirRepository) repository = NULL;
+  gchar *error_string = NULL;
+  int r;
+
+  g_assert (reader != NULL);
+  g_assert (error != NULL);
+
+  xmlTextReaderSetErrorHandler (reader, error_handler, &error_string);
+
+skip_node:
+  r = xmlTextReaderNext (reader);
+  if (r <= 0)
+    goto return_new_error;
+
+  if (xmlTextReaderNodeType (reader) == XML_COMMENT_NODE)
+    goto skip_node;
+
+  if (!is_element_named (reader, "repository"))
+    {
+      set_error_string (&error_string, "Failed to locate repository node");
+      goto return_new_error;
+    }
+
+  repository = g_object_new (RTFM_TYPE_GIR_REPOSITORY, NULL);
+
+  if (!rtfm_gir_repository_ingest (repository, reader, error))
+    return FALSE;
+
+  return g_steal_pointer (&repository);
+
+return_new_error:
+  if (*error == NULL)
+    {
+      if (error_string)
+        g_set_error (error,
+                     G_FILE_ERROR,
+                     G_FILE_ERROR_FAILED,
+                     "%s", error_string);
+      else
+        g_set_error (error,
+                     G_FILE_ERROR,
+                     G_FILE_ERROR_FAILED,
+                     "An unknown error occurred");
+    }
+
+  return NULL;
+}
+
 static gboolean
 rtfm_gir_compiler_compile (GFile   *in_file,
                            GFile   *out_file,
                            GError **error)
 {
+  g_autoptr(RtfmGirRepository) repository = NULL;
+  g_autofree gchar *contents = NULL;
+  xmlTextReaderPtr reader;
+  gsize len;
+
   g_assert (G_IS_FILE (in_file));
   g_assert (G_IS_FILE (out_file));
   g_assert (error != NULL);
 
+  if (!g_file_load_contents (in_file, NULL, &contents, &len, NULL, error))
+    return FALSE;
+
+  reader = xmlReaderForMemory (contents,
+                               len,
+                               NULL,
+                               NULL,
+                               (XML_PARSE_NOENT |
+                                XML_PARSE_NONET |
+                                XML_PARSE_NSCLEAN |
+                                XML_PARSE_COMPACT));
+
+  if (reader == NULL)
+    {
+      g_set_error (error,
+                   G_FILE_ERROR,
+                   G_FILE_ERROR_FAILED,
+                   "Failed to create XmlTextReader");
+      return FALSE;
+    }
+
+  repository = rtfm_gir_compiler_parse (reader, error);
+
+  if (repository == NULL)
+    return FALSE;
+
   return TRUE;
+
+#if 0
+  return g_file_replace_contents (out_file,
+                                  g_variant_get_data (variant),
+                                  g_variant_get_size (variant),
+                                  NULL,
+                                  FALSE,
+                                  G_FILE_CREATE_REPLACE_DESTINATION,
+                                  NULL,
+                                  NULL,
+                                  error);
+#endif
 }
 
 gint

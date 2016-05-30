@@ -22,7 +22,8 @@
 
 struct _RtfmGirProvider
 {
-  GObject object;
+  GObject    object;
+  GPtrArray *files;
 };
 
 static void provider_iface_init (RtfmProviderInterface *iface);
@@ -38,6 +39,58 @@ rtfm_gir_provider_class_init (RtfmGirProviderClass *klass)
 static void
 rtfm_gir_provider_init (RtfmGirProvider *self)
 {
+  self->files = g_ptr_array_new_with_free_func (g_object_unref);
+}
+
+static void
+rtfm_gir_provider_load_directory (RtfmGirProvider *self,
+                                  const gchar     *path)
+{
+  g_autoptr(GFile) parent = NULL;
+  g_autoptr(GFileEnumerator) enumerator = NULL;
+  g_autoptr(GError) error = NULL;
+  gpointer ptr;
+
+  g_assert (RTFM_IS_GIR_PROVIDER (self));
+
+  if (!g_file_test (path, G_FILE_TEST_IS_DIR))
+    return;
+
+  parent = g_file_new_for_path (path);
+  enumerator = g_file_enumerate_children (parent,
+                                          G_FILE_ATTRIBUTE_STANDARD_NAME,
+                                          G_FILE_QUERY_INFO_NONE,
+                                          NULL,
+                                          &error);
+
+  if (enumerator == NULL)
+    {
+      g_warning ("%s", error->message);
+      return;
+    }
+
+  while (NULL != (ptr = g_file_enumerator_next_file (enumerator, NULL, &error)))
+    {
+      g_autoptr(GFileInfo) file_info = ptr;
+      const gchar *name = g_file_info_get_name (file_info);
+      g_autoptr(GFile) file = g_file_get_child (parent, name);
+
+      g_ptr_array_add (self->files, g_steal_pointer (&file));
+    }
+
+  if (error != NULL)
+    {
+      g_warning ("%s", error->message);
+      return;
+    }
+}
+
+static void
+rtfm_gir_provider_reload (RtfmGirProvider *self)
+{
+  g_assert (RTFM_IS_GIR_PROVIDER (self));
+
+  rtfm_gir_provider_load_directory (self, "/usr/share/gir-1.0");
 }
 
 static void
@@ -48,6 +101,8 @@ rtfm_gir_provider_initialize (RtfmProvider *provider,
 
   g_assert (RTFM_IS_GIR_PROVIDER (self));
   g_assert (RTFM_IS_LIBRARY (library));
+
+  rtfm_gir_provider_reload (self);
 }
 
 static void
@@ -61,8 +116,60 @@ rtfm_gir_provider_shutdown (RtfmProvider *provider,
 }
 
 static void
+rtfm_gir_provider_populate_async (RtfmProvider        *provider,
+                                  RtfmCollection      *collection,
+                                  GCancellable        *cancellable,
+                                  GAsyncReadyCallback  callback,
+                                  gpointer             user_data)
+{
+  g_autoptr(GTask) task = NULL;
+  RtfmGirProvider *self = (RtfmGirProvider *)provider;
+  RtfmPath *path;
+  guint i;
+
+  g_assert (RTFM_IS_GIR_PROVIDER (self));
+  g_assert (RTFM_IS_COLLECTION (collection));
+  g_assert (!cancellable || G_IS_CANCELLABLE (cancellable));
+
+  path = rtfm_collection_get_path (collection);
+
+  if (rtfm_path_is_empty (path))
+    {
+      for (i = 0; i < self->files->len; i++)
+        {
+          GFile *file = g_ptr_array_index (self->files, i);
+          g_autofree gchar *name = g_file_get_basename (file);
+          g_autofree gchar *id = g_strdup_printf ("gir:%s", name);
+          RtfmItem *item;
+
+          item = g_object_new (RTFM_TYPE_ITEM,
+                               "id", id,
+                               "title", name,
+                               NULL);
+          rtfm_collection_append (collection, item);
+        }
+    }
+
+  task = g_task_new (self, cancellable, callback, user_data);
+  g_task_return_boolean (task, TRUE);
+}
+
+static gboolean
+rtfm_gir_provider_populate_finish (RtfmProvider  *provider,
+                                   GAsyncResult  *result,
+                                   GError       **error)
+{
+  g_assert (RTFM_IS_GIR_PROVIDER (provider));
+  g_assert (G_IS_TASK (result));
+
+  return g_task_propagate_boolean (G_TASK (result), error);
+}
+
+static void
 provider_iface_init (RtfmProviderInterface *iface)
 {
   iface->initialize = rtfm_gir_provider_initialize;
   iface->shutdown = rtfm_gir_provider_shutdown;
+  iface->populate_async = rtfm_gir_provider_populate_async;
+  iface->populate_finish = rtfm_gir_provider_populate_finish;
 }

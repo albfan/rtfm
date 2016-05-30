@@ -1,4 +1,4 @@
-/* rtfm-gir-plugin.c
+/* rtfm-gir-namespace.h
  *
  * Copyright (C) 2016 Christian Hergert <chergert@redhat.com>
  *
@@ -16,25 +16,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <libpeas/peas.h>
+#ifndef RTFM_GIR_NAMESPACE_H
+#define RTFM_GIR_NAMESPACE_H
+
+#include <libxml/xmlreader.h>
 #include <rtfm.h>
 
-#include "rtfm-gir-provider.h"
+G_BEGIN_DECLS
 
-static GStringChunk *strings;
+#define RTFM_TYPE_GIR_NAMESPACE (rtfm_gir_namespace_get_type())
 
-const gchar *
-rtfm_gir_plugin_intern_string (const gchar *string)
-{
-  return g_string_chunk_insert_const (strings, string);
-}
+G_DECLARE_FINAL_TYPE (RtfmGirNamespace, rtfm_gir_namespace, RTFM, GIR_NAMESPACE, RtfmItem)
 
-void
-peas_register_types (PeasObjectModule *module)
-{
-  strings = g_string_chunk_new (4096);
+gboolean rtfm_gir_namespace_ingest (RtfmGirNamespace  *self,
+                                    xmlTextReaderPtr   reader,
+                                    GError           **error);
 
-  peas_object_module_register_extension_type (module,
-                                              RTFM_TYPE_PROVIDER,
-                                              RTFM_TYPE_GIR_PROVIDER);
-}
+G_END_DECLS
+
+#endif /* RTFM_GIR_NAMESPACE_H */
