@@ -21,7 +21,10 @@
 #include <glib/gi18n.h>
 #include <string.h>
 
+#include "rtfm-gir-alias.h"
+#include "rtfm-gir-class.h"
 #include "rtfm-gir-file.h"
+#include "rtfm-gir-namespace.h"
 #include "rtfm-gir-provider.h"
 #include "rtfm-gir-repository.h"
 
@@ -135,6 +138,7 @@ rtfm_gir_provider_load_file_cb (GObject      *object,
   RtfmGirFile *file = (RtfmGirFile *)object;
   g_autoptr(RtfmGirRepository) repository = NULL;
   g_autoptr(GTask) task = user_data;
+  RtfmGirNamespace *namespace;
   RtfmCollection *collection;
   GError *error = NULL;
 
@@ -154,9 +158,37 @@ rtfm_gir_provider_load_file_cb (GObject      *object,
   collection = g_task_get_task_data (task);
   g_assert (RTFM_IS_COLLECTION (collection));
 
-  /* TODO: Get array children type such as classes */
-  rtfm_collection_append (collection,
-                          RTFM_ITEM (rtfm_gir_repository_get_include (repository)));
+  namespace = rtfm_gir_repository_get_namespace (repository);
+
+  if (namespace != NULL)
+    {
+      GPtrArray *ar;
+      guint i;
+
+      if (NULL != (ar = rtfm_gir_namespace_get_classes (namespace)))
+        {
+          for (i = 0; i < ar->len; i++)
+            {
+              RtfmGirClass *klass = g_ptr_array_index (ar, i);
+
+              g_assert (RTFM_IS_GIR_CLASS (klass));
+
+              rtfm_collection_append (collection, RTFM_ITEM (klass));
+            }
+        }
+
+      if (NULL != (ar = rtfm_gir_namespace_get_aliases (namespace)))
+        {
+          for (i = 0; i < ar->len; i++)
+            {
+              RtfmGirAlias *alias = g_ptr_array_index (ar, i);
+
+              g_assert (RTFM_IS_GIR_ALIAS (alias));
+
+              rtfm_collection_append (collection, RTFM_ITEM (alias));
+            }
+        }
+    }
 
   g_task_return_boolean (task, TRUE);
 }
