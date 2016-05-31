@@ -28,9 +28,11 @@ G_BEGIN_DECLS
 
 G_DECLARE_FINAL_TYPE (RtfmGirNamespace, rtfm_gir_namespace, RTFM, GIR_NAMESPACE, RtfmItem)
 
-gboolean rtfm_gir_namespace_ingest (RtfmGirNamespace  *self,
-                                    xmlTextReaderPtr   reader,
-                                    GError           **error);
+gboolean   rtfm_gir_namespace_ingest      (RtfmGirNamespace  *self,
+                                           xmlTextReaderPtr   reader,
+                                           GError           **error);
+GPtrArray *rtfm_gir_namespace_get_classes (RtfmGirNamespace  *self);
+GPtrArray *rtfm_gir_namespace_get_aliases (RtfmGirNamespace  *self);
 
 G_END_DECLS
 

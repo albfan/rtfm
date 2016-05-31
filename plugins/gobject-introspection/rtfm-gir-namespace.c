@@ -279,3 +279,31 @@ rtfm_gir_namespace_ingest (RtfmGirNamespace   *self,
 
   return TRUE;
 }
+
+/**
+ * rtfm_gir_namespace_get_classes:
+ *
+ * Returns: (nullable) (transfer none) (element-type Rtfm.GirClass): an
+ *   array of #RtfmGirClass.
+ */
+GPtrArray *
+rtfm_gir_namespace_get_classes (RtfmGirNamespace *self)
+{
+  g_return_val_if_fail (RTFM_IS_GIR_NAMESPACE (self), NULL);
+
+  return self->class;
+}
+
+/**
+ * rtfm_gir_namespace_get_aliases:
+ *
+ * Returns: (nullable) (transfer none) (element-type Rtfm.GirClass): an
+ *   array of #RtfmGirClass.
+ */
+GPtrArray *
+rtfm_gir_namespace_get_aliases (RtfmGirNamespace *self)
+{
+  g_return_val_if_fail (RTFM_IS_GIR_NAMESPACE (self), NULL);
+
+  return self->alias;
+}
