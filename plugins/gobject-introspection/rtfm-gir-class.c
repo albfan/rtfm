@@ -252,9 +252,9 @@ rtfm_gir_class_init (RtfmGirClass *self)
 }
 
 gboolean
-rtfm_gir_class_ingest (RtfmGirClass   *self,
-                          xmlTextReaderPtr   reader,
-                          GError           **error)
+rtfm_gir_class_ingest (RtfmGirClass      *self,
+                       xmlTextReaderPtr   reader,
+                       GError           **error)
 {
   xmlChar *name;
   xmlChar *c_symbol_prefix;

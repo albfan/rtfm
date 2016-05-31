@@ -146,7 +146,7 @@ class NamespaceItem(Rtfm.Item):
                 Rtfm.Item(title='Tutorials')]
 
 class DummyProvider(GObject.Object, Rtfm.Provider):
-    def do_populate_async(self, collection, cancellable, callback, data):
+    def do_populate_async(self, parent, collection, cancellable, callback, data):
         path = collection.get_path()
 
         if not path.is_empty():

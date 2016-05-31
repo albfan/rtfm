@@ -18,12 +18,14 @@
 
 #define G_LOG_DOMAIN "rtfm-provider"
 
+#include "rtfm-item.h"
 #include "rtfm-provider.h"
 
 G_DEFINE_INTERFACE (RtfmProvider, rtfm_provider, G_TYPE_OBJECT)
 
 static void
 rtfm_provider_real_populate_async (RtfmProvider        *self,
+                                   RtfmItem            *parent,
                                    RtfmCollection      *collection,
                                    GCancellable        *cancellable,
                                    GAsyncReadyCallback  callback,
@@ -33,6 +35,7 @@ rtfm_provider_real_populate_async (RtfmProvider        *self,
 
   g_assert (RTFM_IS_PROVIDER (self));
   g_assert (RTFM_IS_COLLECTION (collection));
+  g_assert (!parent || RTFM_IS_ITEM (parent));
   g_assert (!cancellable || G_IS_CANCELLABLE (cancellable));
 
   task = g_task_new (self, cancellable, callback, user_data);
@@ -121,6 +124,7 @@ rtfm_provider_default_init (RtfmProviderInterface *iface)
 
 void
 rtfm_provider_populate_async (RtfmProvider        *self,
+                              RtfmItem            *parent,
                               RtfmCollection      *collection,
                               GCancellable        *cancellable,
                               GAsyncReadyCallback  callback,
@@ -128,9 +132,10 @@ rtfm_provider_populate_async (RtfmProvider        *self,
 {
   g_return_if_fail (RTFM_IS_PROVIDER (self));
   g_return_if_fail (RTFM_IS_COLLECTION (collection));
+  g_assert (!parent || RTFM_IS_ITEM (parent));
   g_return_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable));
 
-  RTFM_PROVIDER_GET_IFACE (self)->populate_async (self, collection, cancellable, callback, user_data);
+  RTFM_PROVIDER_GET_IFACE (self)->populate_async (self, parent, collection, cancellable, callback, user_data);
 }
 
 gboolean

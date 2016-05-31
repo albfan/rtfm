@@ -359,6 +359,7 @@ rtfm_library_populate_async (RtfmLibrary         *self,
       RtfmProvider *provider = iter->data;
 
       rtfm_provider_populate_async (provider,
+                                    item,
                                     state->source,
                                     cancellable,
                                     rtfm_library_populate_cb,

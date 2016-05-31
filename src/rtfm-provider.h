@@ -41,6 +41,7 @@ struct _RtfmProviderInterface
 
   /* Load children from a given path */
   void       (*populate_async)       (RtfmProvider         *self,
+                                      RtfmItem             *parent,
                                       RtfmCollection       *collection,
                                       GCancellable         *cancellable,
                                       GAsyncReadyCallback   callback,
@@ -84,6 +85,7 @@ RtfmItem       *rtfm_provider_load_item       (RtfmProvider         *self,
 void            rtfm_provider_postprocess     (RtfmProvider         *self,
                                                RtfmCollection       *collection);
 void            rtfm_provider_populate_async  (RtfmProvider         *self,
+                                               RtfmItem             *parent,
                                                RtfmCollection       *collection,
                                                GCancellable         *cancellable,
                                                GAsyncReadyCallback   callback,

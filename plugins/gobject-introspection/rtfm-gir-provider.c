@@ -33,13 +33,57 @@ struct _RtfmGirProvider
   GObject     object;
 
   GPtrArray  *files;
-  GHashTable *item_cache;
 };
 
 static void provider_iface_init (RtfmProviderInterface *iface);
 
 G_DEFINE_TYPE_EXTENDED (RtfmGirProvider, rtfm_gir_provider, G_TYPE_OBJECT, 0,
                         G_IMPLEMENT_INTERFACE (RTFM_TYPE_PROVIDER, provider_iface_init))
+
+static RtfmGirRepository *
+find_repository (RtfmItem *item)
+{
+  if (RTFM_IS_GIR_FILE (item))
+    return rtfm_gir_file_get_repository (RTFM_GIR_FILE (item));
+
+  item = rtfm_item_get_parent (item);
+
+  if (item != NULL)
+    return find_repository (item);
+
+  return NULL;
+}
+
+static void
+populate_classes (RtfmGirProvider   *self,
+                  RtfmGirRepository *repository,
+                  RtfmCollection    *collection)
+{
+  RtfmGirNamespace *namespace;
+  GPtrArray *ar;
+  guint i;
+
+  g_assert (RTFM_IS_GIR_PROVIDER (self));
+  g_assert (RTFM_IS_GIR_REPOSITORY (repository));
+  g_assert (RTFM_IS_COLLECTION (collection));
+
+  if (NULL == (namespace = rtfm_gir_repository_get_namespace (repository)))
+    return;
+
+  if (NULL == (ar = rtfm_gir_namespace_get_classes (namespace)))
+    return;
+
+  for (i = 0; i < ar->len; i++)
+    {
+      RtfmGirClass *klass = g_ptr_array_index (ar, i);
+      g_autofree gchar *name = NULL;
+
+      g_object_get (klass, "name", &name, NULL);
+      g_print ("%s\n", name);
+
+      rtfm_collection_append (collection, RTFM_ITEM (klass));
+    }
+}
 
 static void
 rtfm_gir_provider_class_init (RtfmGirProviderClass *klass)
@@ -50,10 +94,6 @@ static void
 rtfm_gir_provider_init (RtfmGirProvider *self)
 {
   self->files = g_ptr_array_new_with_free_func (g_object_unref);
-  self->item_cache = g_hash_table_new_full (g_str_hash,
-                                            g_str_equal,
-                                            g_free,
-                                            g_object_unref);
 }
 
 static void
@@ -162,31 +202,25 @@ rtfm_gir_provider_load_file_cb (GObject      *object,
 
   if (namespace != NULL)
     {
+      g_autoptr(RtfmItem) item = NULL;
       GPtrArray *ar;
-      guint i;
 
       if (NULL != (ar = rtfm_gir_namespace_get_classes (namespace)))
         {
-          for (i = 0; i < ar->len; i++)
-            {
-              RtfmGirClass *klass = g_ptr_array_index (ar, i);
-
-              g_assert (RTFM_IS_GIR_CLASS (klass));
-
-              rtfm_collection_append (collection, RTFM_ITEM (klass));
-            }
+          item = g_object_new (RTFM_TYPE_ITEM,
+                               "id", "gir:classes",
+                               "title", _("Classes"),
+                               NULL);
+          rtfm_collection_append (collection, g_steal_pointer (&item));
         }
 
       if (NULL != (ar = rtfm_gir_namespace_get_aliases (namespace)))
         {
-          for (i = 0; i < ar->len; i++)
-            {
-              RtfmGirAlias *alias = g_ptr_array_index (ar, i);
-
-              g_assert (RTFM_IS_GIR_ALIAS (alias));
-
-              rtfm_collection_append (collection, RTFM_ITEM (alias));
-            }
+          item = g_object_new (RTFM_TYPE_ITEM,
+                               "id", "gir:types",
+                               "title", _("Types"),
+                               NULL);
+          rtfm_collection_append (collection, g_steal_pointer (&item));
         }
     }
 
@@ -195,6 +229,7 @@ rtfm_gir_provider_load_file_cb (GObject      *object,
 
 static void
 rtfm_gir_provider_populate_async (RtfmProvider        *provider,
+                                  RtfmItem            *parent,
                                   RtfmCollection      *collection,
                                   GCancellable        *cancellable,
                                   GAsyncReadyCallback  callback,
@@ -208,6 +243,7 @@ rtfm_gir_provider_populate_async (RtfmProvider        *provider,
 
   g_assert (RTFM_IS_GIR_PROVIDER (self));
   g_assert (RTFM_IS_COLLECTION (collection));
+  g_assert (!parent || RTFM_IS_ITEM (parent));
   g_assert (!cancellable || G_IS_CANCELLABLE (cancellable));
 
   task = g_task_new (self, cancellable, callback, user_data);
@@ -252,41 +288,24 @@ rtfm_gir_provider_populate_async (RtfmProvider        *provider,
                                NULL);
 
           rtfm_collection_append (collection, item);
-
-          g_hash_table_insert (self->item_cache,
-                               g_steal_pointer (&id),
-                               g_steal_pointer (&item));
         }
 
       goto complete_task;
     }
-  else
+  else if (RTFM_IS_GIR_FILE (parent))
     {
-      RtfmPathElement *element;
-      const gchar *id;
-      guint len;
+      rtfm_gir_file_load_async (RTFM_GIR_FILE (parent),
+                                cancellable,
+                                rtfm_gir_provider_load_file_cb,
+                                g_object_ref (task));
+      return;
+    }
+  else if (parent && g_strcmp0 ("gir:classes", rtfm_item_get_id (parent)) == 0)
+    {
+      RtfmGirRepository *repository;
 
-      len = rtfm_path_get_length (path);
-      g_assert (len > 0);
-
-      element = rtfm_path_get_element (path, len - 1);
-      g_assert (RTFM_IS_PATH_ELEMENT (element));
-
-      id = rtfm_path_element_get_id (element);
-
-      if (id != NULL && g_str_has_prefix (id, "gir:"))
-        {
-          item = g_hash_table_lookup (self->item_cache, id);
-
-          if (RTFM_IS_GIR_FILE (item))
-            {
-              rtfm_gir_file_load_async (RTFM_GIR_FILE (item),
-                                        cancellable,
-                                        rtfm_gir_provider_load_file_cb,
-                                        g_object_ref (task));
-              return;
-            }
-        }
+      if (NULL != (repository = find_repository (parent)))
+        populate_classes (self, repository, collection);
     }
 
 complete_task:

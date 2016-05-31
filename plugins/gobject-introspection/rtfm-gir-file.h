@@ -29,13 +29,14 @@ G_BEGIN_DECLS
 
 G_DECLARE_FINAL_TYPE (RtfmGirFile, rtfm_gir_file, RTFM, GIR_FILE, RtfmItem)
 
-void               rtfm_gir_file_load_async  (RtfmGirFile          *self,
-                                              GCancellable         *cancellable,
-                                              GAsyncReadyCallback   callback,
-                                              gpointer              user_data);
-RtfmGirRepository *rtfm_gir_file_load_finish (RtfmGirFile          *self,
-                                              GAsyncResult         *result,
-                                              GError              **error);
+void               rtfm_gir_file_load_async     (RtfmGirFile          *self,
+                                                 GCancellable         *cancellable,
+                                                 GAsyncReadyCallback   callback,
+                                                 gpointer              user_data);
+RtfmGirRepository *rtfm_gir_file_load_finish    (RtfmGirFile          *self,
+                                                 GAsyncResult         *result,
+                                                 GError              **error);
+RtfmGirRepository *rtfm_gir_file_get_repository (RtfmGirFile          *self);
 
 G_END_DECLS
 

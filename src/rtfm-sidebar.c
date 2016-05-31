@@ -72,11 +72,13 @@ rtfm_sidebar_populate_cb (GObject      *object,
 {
   g_autoptr(RtfmSidebar) self = user_data;
   RtfmLibrary *library = (RtfmLibrary *)object;
+  g_autoptr(GError) error = NULL;
 
   g_assert (RTFM_IS_SIDEBAR (self));
   g_assert (RTFM_IS_LIBRARY (library));
 
-  rtfm_library_populate_finish (library, result, NULL);
+  if (!rtfm_library_populate_finish (library, result, &error))
+    g_warning ("%s", error->message);
 }
 
 static void

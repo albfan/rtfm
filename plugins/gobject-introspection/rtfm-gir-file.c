@@ -193,6 +193,8 @@ skip_node:
       return;
     }
 
+  g_assert_no_error (error);
+
   /*
    * Stash the repository for later lookups so we can avoid
    * reparsing the XML document. Since we lazily parse these
@@ -250,4 +252,22 @@ rtfm_gir_file_load_finish (RtfmGirFile   *self,
   g_assert (G_IS_TASK (result));
 
   return g_task_propagate_pointer (G_TASK (result), error);
+}
+
+/**
+ * rtfm_gir_file_get_repository:
+ *
+ * Gets the cached repository without performing an async call.
+ *
+ * This will be %NULL until rtfm_gir_file_load_finish() has been
+ * called at least once.
+ *
+ * Returns: (nullable) (transfer none): An #RtfmGirRepository or %NULL.
+ */
+RtfmGirRepository *
+rtfm_gir_file_get_repository (RtfmGirFile *self)
+{
+  g_return_val_if_fail (RTFM_IS_GIR_FILE (self), NULL);
+
+  return self->repository;
 }
