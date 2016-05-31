@@ -219,3 +219,16 @@ rtfm_gir_alias_ingest (RtfmGirAlias   *self,
 
   return TRUE;
 }
+
+/**
+ * rtfm_gir_alias_get_referenced:
+ *
+ * Returns: (nullable) (transfer none): An #RtfmGirType or %NULL.
+ */
+RtfmGirType *
+rtfm_gir_alias_get_referenced (RtfmGirAlias *self)
+{
+  g_return_val_if_fail (RTFM_IS_GIR_ALIAS (self), NULL);
+
+  return self->type;
+}

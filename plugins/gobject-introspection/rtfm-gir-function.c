@@ -242,3 +242,16 @@ rtfm_gir_function_ingest (RtfmGirFunction   *self,
 
   return TRUE;
 }
+
+/**
+ * rtfm_gir_function_get_return_value:
+ *
+ * Returns: (nullable) (transfer none): An #RtfmGirReturnValue or %NULL.
+ */
+RtfmGirReturnValue *
+rtfm_gir_function_get_return_value (RtfmGirFunction *self)
+{
+  g_return_val_if_fail (RTFM_IS_GIR_FUNCTION (self), NULL);
+
+  return self->return_value;
+}

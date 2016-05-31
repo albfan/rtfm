@@ -288,3 +288,16 @@ rtfm_gir_property_ingest (RtfmGirProperty   *self,
 
   return TRUE;
 }
+
+/**
+ * rtfm_gir_property_get_referenced:
+ *
+ * Returns: (nullable) (transfer none): An #RtfmGirType or %NULL.
+ */
+RtfmGirType *
+rtfm_gir_property_get_referenced (RtfmGirProperty *self)
+{
+  g_return_val_if_fail (RTFM_IS_GIR_PROPERTY (self), NULL);
+
+  return self->type;
+}

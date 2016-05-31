@@ -22,6 +22,8 @@
 #include <libxml/xmlreader.h>
 #include <rtfm.h>
 
+#include "rtfm-gir-type.h"
+
 G_BEGIN_DECLS
 
 #define RTFM_TYPE_GIR_PROPERTY (rtfm_gir_property_get_type())
@@ -29,8 +31,9 @@ G_BEGIN_DECLS
 G_DECLARE_FINAL_TYPE (RtfmGirProperty, rtfm_gir_property, RTFM, GIR_PROPERTY, RtfmItem)
 
 gboolean rtfm_gir_property_ingest (RtfmGirProperty   *self,
-                                   xmlTextReaderPtr   reader,
-                                   GError           **error);
+                                   xmlTextReaderPtr    reader,
+                                   GError            **error);
+RtfmGirType *rtfm_gir_property_get_referenced (RtfmGirProperty *self);
 
 G_END_DECLS
 

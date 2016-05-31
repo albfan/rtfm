@@ -166,3 +166,16 @@ rtfm_gir_return_value_ingest (RtfmGirReturnValue   *self,
 
   return TRUE;
 }
+
+/**
+ * rtfm_gir_return_value_get_referenced:
+ *
+ * Returns: (nullable) (transfer none): An #RtfmGirType or %NULL.
+ */
+RtfmGirType *
+rtfm_gir_return_value_get_referenced (RtfmGirReturnValue *self)
+{
+  g_return_val_if_fail (RTFM_IS_GIR_RETURN_VALUE (self), NULL);
+
+  return self->type;
+}

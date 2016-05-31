@@ -22,6 +22,7 @@
 #include <libxml/xmlreader.h>
 #include <rtfm.h>
 
+
 G_BEGIN_DECLS
 
 #define RTFM_TYPE_GIR_INCLUDE (rtfm_gir_include_get_type())
@@ -29,8 +30,8 @@ G_BEGIN_DECLS
 G_DECLARE_FINAL_TYPE (RtfmGirInclude, rtfm_gir_include, RTFM, GIR_INCLUDE, RtfmItem)
 
 gboolean rtfm_gir_include_ingest (RtfmGirInclude    *self,
-                                  xmlTextReaderPtr   reader,
-                                  GError           **error);
+                                  xmlTextReaderPtr    reader,
+                                  GError            **error);
 
 G_END_DECLS
 

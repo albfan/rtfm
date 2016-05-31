@@ -242,3 +242,16 @@ rtfm_gir_callback_ingest (RtfmGirCallback   *self,
 
   return TRUE;
 }
+
+/**
+ * rtfm_gir_callback_get_return_value:
+ *
+ * Returns: (nullable) (transfer none): An #RtfmGirReturnValue or %NULL.
+ */
+RtfmGirReturnValue *
+rtfm_gir_callback_get_return_value (RtfmGirCallback *self)
+{
+  g_return_val_if_fail (RTFM_IS_GIR_CALLBACK (self), NULL);
+
+  return self->return_value;
+}

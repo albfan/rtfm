@@ -16,6 +16,8 @@ data_objects_sources = \
 	rtfm-gir-class.h \
 	rtfm-gir-field.c \
 	rtfm-gir-field.h \
+	rtfm-gir-file.c \
+	rtfm-gir-file.h \
 	rtfm-gir-function.c \
 	rtfm-gir-function.h \
 	rtfm-gir-include.c \

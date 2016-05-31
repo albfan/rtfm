@@ -22,6 +22,11 @@
 #include <libxml/xmlreader.h>
 #include <rtfm.h>
 
+#include "rtfm-gir-include.h"
+#include "rtfm-gir-package.h"
+#include "rtfm-gir-c-include.h"
+#include "rtfm-gir-namespace.h"
+
 G_BEGIN_DECLS
 
 #define RTFM_TYPE_GIR_REPOSITORY (rtfm_gir_repository_get_type())
@@ -29,8 +34,12 @@ G_BEGIN_DECLS
 G_DECLARE_FINAL_TYPE (RtfmGirRepository, rtfm_gir_repository, RTFM, GIR_REPOSITORY, RtfmItem)
 
 gboolean rtfm_gir_repository_ingest (RtfmGirRepository  *self,
-                                     xmlTextReaderPtr   reader,
-                                     GError           **error);
+                                     xmlTextReaderPtr    reader,
+                                     GError            **error);
+RtfmGirInclude *rtfm_gir_repository_get_include (RtfmGirRepository *self);
+RtfmGirPackage *rtfm_gir_repository_get_package (RtfmGirRepository *self);
+RtfmGirCInclude *rtfm_gir_repository_get_c_include (RtfmGirRepository *self);
+RtfmGirNamespace *rtfm_gir_repository_get_namespace (RtfmGirRepository *self);
 
 G_END_DECLS
 

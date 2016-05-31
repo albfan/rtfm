@@ -21,12 +21,16 @@
 #include <glib/gi18n.h>
 #include <string.h>
 
+#include "rtfm-gir-file.h"
 #include "rtfm-gir-provider.h"
+#include "rtfm-gir-repository.h"
 
 struct _RtfmGirProvider
 {
-  GObject    object;
-  GPtrArray *files;
+  GObject     object;
+
+  GPtrArray  *files;
+  GHashTable *item_cache;
 };
 
 static void provider_iface_init (RtfmProviderInterface *iface);
@@ -43,6 +47,10 @@ static void
 rtfm_gir_provider_init (RtfmGirProvider *self)
 {
   self->files = g_ptr_array_new_with_free_func (g_object_unref);
+  self->item_cache = g_hash_table_new_full (g_str_hash,
+                                            g_str_equal,
+                                            g_free,
+                                            g_object_unref);
 }
 
 static void
@@ -116,6 +124,41 @@ rtfm_gir_provider_shutdown (RtfmProvider *provider,
 
   g_assert (RTFM_IS_GIR_PROVIDER (self));
   g_assert (RTFM_IS_LIBRARY (library));
+
+}
+
+static void
+rtfm_gir_provider_load_file_cb (GObject      *object,
+                                GAsyncResult *result,
+                                gpointer      user_data)
+{
+  RtfmGirFile *file = (RtfmGirFile *)object;
+  g_autoptr(RtfmGirRepository) repository = NULL;
+  g_autoptr(GTask) task = user_data;
+  RtfmCollection *collection;
+  GError *error = NULL;
+
+  g_assert (RTFM_IS_GIR_FILE (file));
+  g_assert (G_IS_ASYNC_RESULT (result));
+  g_assert (G_IS_TASK (task));
+
+  repository = rtfm_gir_file_load_finish (file, result, &error);
+  g_assert (!repository || RTFM_IS_GIR_REPOSITORY (repository));
+
+  if (repository == NULL)
+    {
+      g_task_return_error (task, error);
+      return;
+    }
+
+  collection = g_task_get_task_data (task);
+  g_assert (RTFM_IS_COLLECTION (collection));
+
+  /* TODO: Get array children type such as classes */
+  rtfm_collection_append (collection,
+                          RTFM_ITEM (rtfm_gir_repository_get_include (repository)));
+
+  g_task_return_boolean (task, TRUE);
 }
 
 static void
@@ -128,11 +171,15 @@ rtfm_gir_provider_populate_async (RtfmProvider        *provider,
   g_autoptr(GTask) task = NULL;
   RtfmGirProvider *self = (RtfmGirProvider *)provider;
   RtfmPath *path;
+  RtfmItem *item;
   guint i;
 
   g_assert (RTFM_IS_GIR_PROVIDER (self));
   g_assert (RTFM_IS_COLLECTION (collection));
   g_assert (!cancellable || G_IS_CANCELLABLE (cancellable));
+
+  task = g_task_new (self, cancellable, callback, user_data);
+  g_task_set_task_data (task, g_object_ref (collection), g_object_unref);
 
   path = rtfm_collection_get_path (collection);
 
@@ -146,7 +193,6 @@ rtfm_gir_provider_populate_async (RtfmProvider        *provider,
           g_autofree gchar *id = NULL;
           g_autofree gchar *subtitle = NULL;
           const gchar *version;
-          RtfmItem *item;
           gchar *tmp;
 
           path = g_file_get_path (file);
@@ -165,7 +211,8 @@ rtfm_gir_provider_populate_async (RtfmProvider        *provider,
 
           id = g_strdup_printf ("gir:%s", path);
           subtitle = g_strdup_printf ("%s %s", name, version);
-          item = g_object_new (RTFM_TYPE_ITEM,
+          item = g_object_new (RTFM_TYPE_GIR_FILE,
+                               "file", file,
                                "id", id,
                                "title", name,
                                "subtitle", subtitle,
@@ -173,10 +220,44 @@ rtfm_gir_provider_populate_async (RtfmProvider        *provider,
                                NULL);
 
           rtfm_collection_append (collection, item);
+
+          g_hash_table_insert (self->item_cache,
+                               g_steal_pointer (&id),
+                               g_steal_pointer (&item));
+        }
+
+      goto complete_task;
+    }
+  else
+    {
+      RtfmPathElement *element;
+      const gchar *id;
+      guint len;
+
+      len = rtfm_path_get_length (path);
+      g_assert (len > 0);
+
+      element = rtfm_path_get_element (path, len - 1);
+      g_assert (RTFM_IS_PATH_ELEMENT (element));
+
+      id = rtfm_path_element_get_id (element);
+
+      if (id != NULL && g_str_has_prefix (id, "gir:"))
+        {
+          item = g_hash_table_lookup (self->item_cache, id);
+
+          if (RTFM_IS_GIR_FILE (item))
+            {
+              rtfm_gir_file_load_async (RTFM_GIR_FILE (item),
+                                        cancellable,
+                                        rtfm_gir_provider_load_file_cb,
+                                        g_object_ref (task));
+              return;
+            }
         }
     }
 
-  task = g_task_new (self, cancellable, callback, user_data);
+complete_task:
   g_task_return_boolean (task, TRUE);
 }
 

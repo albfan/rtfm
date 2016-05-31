@@ -219,3 +219,16 @@ rtfm_gir_parameter_ingest (RtfmGirParameter   *self,
 
   return TRUE;
 }
+
+/**
+ * rtfm_gir_parameter_get_referenced:
+ *
+ * Returns: (nullable) (transfer none): An #RtfmGirType or %NULL.
+ */
+RtfmGirType *
+rtfm_gir_parameter_get_referenced (RtfmGirParameter *self)
+{
+  g_return_val_if_fail (RTFM_IS_GIR_PARAMETER (self), NULL);
+
+  return self->type;
+}

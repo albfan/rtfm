@@ -205,3 +205,55 @@ rtfm_gir_repository_ingest (RtfmGirRepository   *self,
 
   return TRUE;
 }
+
+/**
+ * rtfm_gir_repository_get_include:
+ *
+ * Returns: (nullable) (transfer none): An #RtfmGirInclude or %NULL.
+ */
+RtfmGirInclude *
+rtfm_gir_repository_get_include (RtfmGirRepository *self)
+{
+  g_return_val_if_fail (RTFM_IS_GIR_REPOSITORY (self), NULL);
+
+  return self->include;
+}
+
+/**
+ * rtfm_gir_repository_get_package:
+ *
+ * Returns: (nullable) (transfer none): An #RtfmGirPackage or %NULL.
+ */
+RtfmGirPackage *
+rtfm_gir_repository_get_package (RtfmGirRepository *self)
+{
+  g_return_val_if_fail (RTFM_IS_GIR_REPOSITORY (self), NULL);
+
+  return self->package;
+}
+
+/**
+ * rtfm_gir_repository_get_c_include:
+ *
+ * Returns: (nullable) (transfer none): An #RtfmGirCInclude or %NULL.
+ */
+RtfmGirCInclude *
+rtfm_gir_repository_get_c_include (RtfmGirRepository *self)
+{
+  g_return_val_if_fail (RTFM_IS_GIR_REPOSITORY (self), NULL);
+
+  return self->c_include;
+}
+
+/**
+ * rtfm_gir_repository_get_namespace:
+ *
+ * Returns: (nullable) (transfer none): An #RtfmGirNamespace or %NULL.
+ */
+RtfmGirNamespace *
+rtfm_gir_repository_get_namespace (RtfmGirRepository *self)
+{
+  g_return_val_if_fail (RTFM_IS_GIR_REPOSITORY (self), NULL);
+
+  return self->namespace;
+}
