@@ -24,23 +24,42 @@
 #include "rtfm-gir-c-include.h"
 #include "rtfm-gir-namespace.h"
 
+G_DEFINE_AUTOPTR_CLEANUP_FUNC (xmlTextReader, xmlFreeTextReader)
+
+#define IS_ELEMENT_NAMED(r,name) \
+  ((xmlTextReaderNodeType(r) == XML_ELEMENT_NODE) && \
+   (0 == g_strcmp0 (name, (gchar *)xmlTextReaderConstName(r))))
+
 struct _RtfmGirRepository
 {
-  RtfmItem parent_instance;
-  gchar *version;
-  RtfmGirInclude *include;
-  RtfmGirPackage *package;
-  RtfmGirCInclude *c_include;
+  RtfmItem          parent_instance;
+
+  GMutex            mutex;
+  GSList           *loading_tasks;
+
+  GFile            *file;
+  gchar            *version;
+  RtfmGirInclude   *include;
+  RtfmGirPackage   *package;
+  RtfmGirCInclude  *c_include;
   RtfmGirNamespace *namespace;
+
+  guint             loaded : 1;
+  guint             loading : 1;
 };
 
 enum {
   PROP_0,
+  PROP_FILE,
   PROP_VERSION,
   N_PROPS
 };
 
-G_DEFINE_TYPE (RtfmGirRepository, rtfm_gir_repository, RTFM_TYPE_ITEM)
+static void async_initable_iface_init (GAsyncInitableIface *iface);
+
+G_DEFINE_TYPE_EXTENDED (RtfmGirRepository, rtfm_gir_repository, RTFM_TYPE_ITEM, 0,
+                        G_IMPLEMENT_INTERFACE (G_TYPE_ASYNC_INITABLE,
+                                               async_initable_iface_init))
 
 static GParamSpec *properties [N_PROPS];
 
@@ -50,6 +69,17 @@ rtfm_gir_repository_finalize (GObject *object)
   RtfmGirRepository *self = (RtfmGirRepository *)object;
 
   g_clear_pointer (&self->version, g_free);
+
+  g_clear_object (&self->file);
+  g_clear_object (&self->include);
+  g_clear_object (&self->package);
+  g_clear_object (&self->c_include);
+  g_clear_object (&self->namespace);
+
+  g_slist_free_full (self->loading_tasks, g_object_unref);
+  self->loading_tasks = NULL;
+
+  g_mutex_clear (&self->mutex);
 
   G_OBJECT_CLASS (rtfm_gir_repository_parent_class)->finalize (object);
 }
@@ -64,6 +94,10 @@ rtfm_gir_repository_get_property (GObject    *object,
 
   switch (prop_id)
     {
+    case PROP_FILE:
+      g_value_set_object (value, self->file);
+      break;
+
     case PROP_VERSION:
       g_value_set_string (value, self->version);
       break;
@@ -83,6 +117,10 @@ rtfm_gir_repository_set_property (GObject       *object,
 
   switch (prop_id)
     {
+    case PROP_FILE:
+      self->file = g_value_dup_object (value);
+      break;
+
     case PROP_VERSION:
       g_free (self->version);
       self->version = g_value_dup_string (value);
@@ -102,6 +140,13 @@ rtfm_gir_repository_class_init (RtfmGirRepositoryClass *klass)
   object_class->get_property = rtfm_gir_repository_get_property;
   object_class->set_property = rtfm_gir_repository_set_property;
 
+  properties [PROP_FILE] =
+    g_param_spec_object ("file",
+                         "File",
+                         "The .gir file to be read",
+                         G_TYPE_FILE,
+                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
   properties [PROP_VERSION] =
     g_param_spec_string ("version",
                          "version",
@@ -115,6 +160,15 @@ rtfm_gir_repository_class_init (RtfmGirRepositoryClass *klass)
 static void
 rtfm_gir_repository_init (RtfmGirRepository *self)
 {
+  g_mutex_init (&self->mutex);
+}
+
+RtfmGirRepository *
+rtfm_gir_repository_new (GFile *file)
+{
+  return g_object_new (RTFM_TYPE_GIR_REPOSITORY,
+                       "file", file,
+                       NULL);
 }
 
 gboolean
@@ -256,4 +310,170 @@ rtfm_gir_repository_get_namespace (RtfmGirRepository *self)
   g_return_val_if_fail (RTFM_IS_GIR_REPOSITORY (self), NULL);
 
   return self->namespace;
+}
+
+static void
+rtfm_gir_repository_init_worker (GTask        *task,
+                                 gpointer      source_object,
+                                 gpointer      task_data,
+                                 GCancellable *cancellable)
+{
+  RtfmGirRepository *self = source_object;
+  g_autoptr(GMutexLocker) locker = NULL;
+  g_autofree gchar *path = NULL;
+  g_autofree gchar *error_string = NULL;
+  g_autoptr(xmlTextReader) reader = NULL;
+  GError *error = NULL;
+  GSList *list;
+  GSList *iter;
+
+  g_assert (G_IS_TASK (task));
+  g_assert (RTFM_IS_GIR_REPOSITORY (self));
+
+  if (!G_IS_FILE (self->file) ||
+      !g_file_is_native (self->file) ||
+      NULL == (path = g_file_get_path (self->file)))
+    {
+      error = g_error_new (G_IO_ERROR,
+                           G_IO_ERROR_INVALID_FILENAME,
+                           "Missing filename or not a local file");
+      goto failure;
+    }
+
+  reader = xmlNewTextReaderFilename (path);
+
+  if (reader == NULL)
+    {
+      error = g_error_new (G_IO_ERROR,
+                           G_IO_ERROR_INVALID_FILENAME,
+                           "Failed to create xmlTextReader");
+      goto failure;
+    }
+
+skip_node:
+  if (xmlTextReaderNext (reader) != 1)
+    {
+      error = g_error_new (G_IO_ERROR,
+                           G_IO_ERROR_INVALID_FILENAME,
+                           "Failed to read from xmlTextReader");
+      goto failure;
+    }
+
+  if (xmlTextReaderNodeType (reader) == XML_COMMENT_NODE)
+    goto skip_node;
+
+  if (!IS_ELEMENT_NAMED (reader, "repository"))
+    {
+      error = g_error_new (G_IO_ERROR,
+                           G_IO_ERROR_FAILED,
+                           "Failed to locate repository element");
+      goto failure;
+    }
+
+  if (!rtfm_gir_repository_ingest (self, reader, &error))
+    goto failure;
+
+  g_assert_no_error (error);
+
+  locker = g_mutex_locker_new (&self->mutex);
+
+  self->loading = FALSE;
+  self->loaded = TRUE;
+
+  list = g_steal_pointer (&self->loading_tasks);
+
+  for (iter = list; iter != NULL; iter = iter->next)
+    {
+      GTask *iter_task = iter->data;
+
+      g_task_return_boolean (iter_task, TRUE);
+    }
+
+  g_slist_free_full (list, g_object_unref);
+
+  g_task_return_boolean (task, TRUE);
+
+  return;
+
+failure:
+  locker = g_mutex_locker_new (&self->mutex);
+
+  self->loading = FALSE;
+  self->loaded = TRUE;
+
+  list = g_steal_pointer (&self->loading_tasks);
+
+  for (iter = list; iter != NULL; iter = iter->next)
+    {
+      GTask *iter_task = iter->data;
+
+      g_task_return_boolean (iter_task, FALSE);
+    }
+
+  g_slist_free_full (list, g_object_unref);
+
+  if (error != NULL)
+    g_task_return_error (task, error);
+  else if (error_string != NULL)
+    g_task_return_new_error (task,
+                             G_IO_ERROR,
+                             G_IO_ERROR_FAILED,
+                             "%s", error_string);
+  else
+    g_task_return_new_error (task,
+                             G_IO_ERROR,
+                             G_IO_ERROR_FAILED,
+                             "An unknown error occurred while parsing the gir file");
+}
+
+static void
+rtfm_gir_repository_init_async (GAsyncInitable      *initable,
+                                gint                 priority,
+                                GCancellable        *cancellable,
+                                GAsyncReadyCallback  callback,
+                                gpointer             user_data)
+{
+  RtfmGirRepository *self = (RtfmGirRepository *)initable;
+  g_autoptr(GTask) task = NULL;
+  g_autoptr(GMutexLocker) locker = NULL;
+
+  g_assert (G_IS_ASYNC_INITABLE (initable));
+  g_assert (!cancellable || G_IS_CANCELLABLE (cancellable));
+
+  task = g_task_new (self, cancellable, callback, user_data);
+  locker = g_mutex_locker_new (&self->mutex);
+
+  if (self->loaded)
+    {
+      g_task_return_boolean (task, TRUE);
+      return;
+    }
+
+  if (self->loading)
+    {
+      self->loading_tasks = g_slist_prepend (self->loading_tasks, g_object_ref (task));
+      return;
+    }
+
+  self->loading = TRUE;
+
+  g_task_run_in_thread (task, rtfm_gir_repository_init_worker);
+}
+
+static gboolean
+rtfm_gir_repository_init_finish (GAsyncInitable  *initable,
+                                 GAsyncResult    *result,
+                                 GError         **error)
+{
+  g_assert (RTFM_IS_GIR_REPOSITORY (initable));
+  g_assert (G_IS_TASK (result));
+
+  return g_task_propagate_boolean (G_TASK (result), error);
+}
+
+static void
+async_initable_iface_init (GAsyncInitableIface *iface)
+{
+  iface->init_async = rtfm_gir_repository_init_async;
+  iface->init_finish = rtfm_gir_repository_init_finish;
 }

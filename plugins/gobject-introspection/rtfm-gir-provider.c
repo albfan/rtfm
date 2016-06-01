@@ -23,7 +23,7 @@
 
 #include "rtfm-gir-alias.h"
 #include "rtfm-gir-class.h"
-#include "rtfm-gir-file.h"
+#include "rtfm-gir-item.h"
 #include "rtfm-gir-namespace.h"
 #include "rtfm-gir-provider.h"
 #include "rtfm-gir-repository.h"
@@ -32,58 +32,13 @@ struct _RtfmGirProvider
 {
   GObject     object;
 
-  GPtrArray  *files;
+  GPtrArray  *repositories;
 };
 
 static void provider_iface_init (RtfmProviderInterface *iface);
 
 G_DEFINE_TYPE_EXTENDED (RtfmGirProvider, rtfm_gir_provider, G_TYPE_OBJECT, 0,
                         G_IMPLEMENT_INTERFACE (RTFM_TYPE_PROVIDER, provider_iface_init))
-
-static RtfmGirRepository *
-find_repository (RtfmItem *item)
-{
-  if (RTFM_IS_GIR_FILE (item))
-    return rtfm_gir_file_get_repository (RTFM_GIR_FILE (item));
-
-  item = rtfm_item_get_parent (item);
-
-  if (item != NULL)
-    return find_repository (item);
-
-  return NULL;
-}
-
-static void
-populate_classes (RtfmGirProvider   *self,
-                  RtfmGirRepository *repository,
-                  RtfmCollection    *collection)
-{
-  RtfmGirNamespace *namespace;
-  GPtrArray *ar;
-  guint i;
-
-  g_assert (RTFM_IS_GIR_PROVIDER (self));
-  g_assert (RTFM_IS_GIR_REPOSITORY (repository));
-  g_assert (RTFM_IS_COLLECTION (collection));
-
-  if (NULL == (namespace = rtfm_gir_repository_get_namespace (repository)))
-    return;
-
-  if (NULL == (ar = rtfm_gir_namespace_get_classes (namespace)))
-    return;
-
-  for (i = 0; i < ar->len; i++)
-    {
-      RtfmGirClass *klass = g_ptr_array_index (ar, i);
-      g_autofree gchar *name = NULL;
-
-      g_object_get (klass, "name", &name, NULL);
-      g_print ("%s\n", name);
-
-      rtfm_collection_append (collection, RTFM_ITEM (klass));
-    }
-}
 
 static void
 rtfm_gir_provider_class_init (RtfmGirProviderClass *klass)
@@ -93,7 +48,7 @@ rtfm_gir_provider_class_init (RtfmGirProviderClass *klass)
 static void
 rtfm_gir_provider_init (RtfmGirProvider *self)
 {
-  self->files = g_ptr_array_new_with_free_func (g_object_unref);
+  self->repositories = g_ptr_array_new_with_free_func (g_object_unref);
 }
 
 static void
@@ -125,11 +80,16 @@ rtfm_gir_provider_load_directory (RtfmGirProvider *self,
 
   while (NULL != (ptr = g_file_enumerator_next_file (enumerator, NULL, &error)))
     {
+      g_autoptr(RtfmGirRepository) repository = NULL;
       g_autoptr(GFileInfo) file_info = ptr;
-      const gchar *name = g_file_info_get_name (file_info);
-      g_autoptr(GFile) file = g_file_get_child (parent, name);
+      g_autoptr(GFile) file = NULL;
+      const gchar *name;
 
-      g_ptr_array_add (self->files, g_steal_pointer (&file));
+      name = g_file_info_get_name (file_info);
+      file = g_file_get_child (parent, name);
+      repository = rtfm_gir_repository_new (file);
+
+      g_ptr_array_add (self->repositories, g_steal_pointer (&repository));
     }
 
   if (error != NULL)
@@ -171,60 +131,22 @@ rtfm_gir_provider_shutdown (RtfmProvider *provider,
 }
 
 static void
-rtfm_gir_provider_load_file_cb (GObject      *object,
-                                GAsyncResult *result,
-                                gpointer      user_data)
+rtfm_gir_provider_populate_cb (GObject      *object,
+                               GAsyncResult *result,
+                               gpointer      user_data)
 {
-  RtfmGirFile *file = (RtfmGirFile *)object;
-  g_autoptr(RtfmGirRepository) repository = NULL;
   g_autoptr(GTask) task = user_data;
-  RtfmGirNamespace *namespace;
-  RtfmCollection *collection;
+  RtfmGirItem *item = (RtfmGirItem *)object;
   GError *error = NULL;
 
-  g_assert (RTFM_IS_GIR_FILE (file));
+  g_assert (RTFM_IS_GIR_ITEM (item));
   g_assert (G_IS_ASYNC_RESULT (result));
   g_assert (G_IS_TASK (task));
 
-  repository = rtfm_gir_file_load_finish (file, result, &error);
-  g_assert (!repository || RTFM_IS_GIR_REPOSITORY (repository));
-
-  if (repository == NULL)
-    {
-      g_task_return_error (task, error);
-      return;
-    }
-
-  collection = g_task_get_task_data (task);
-  g_assert (RTFM_IS_COLLECTION (collection));
-
-  namespace = rtfm_gir_repository_get_namespace (repository);
-
-  if (namespace != NULL)
-    {
-      g_autoptr(RtfmItem) item = NULL;
-      GPtrArray *ar;
-
-      if (NULL != (ar = rtfm_gir_namespace_get_classes (namespace)))
-        {
-          item = g_object_new (RTFM_TYPE_ITEM,
-                               "id", "gir:classes",
-                               "title", _("Classes"),
-                               NULL);
-          rtfm_collection_append (collection, g_steal_pointer (&item));
-        }
-
-      if (NULL != (ar = rtfm_gir_namespace_get_aliases (namespace)))
-        {
-          item = g_object_new (RTFM_TYPE_ITEM,
-                               "id", "gir:types",
-                               "title", _("Types"),
-                               NULL);
-          rtfm_collection_append (collection, g_steal_pointer (&item));
-        }
-    }
-
-  g_task_return_boolean (task, TRUE);
+  if (!rtfm_gir_item_populate_finish (item, result, &error))
+    g_task_return_error (task, error);
+  else
+    g_task_return_boolean (task, TRUE);
 }
 
 static void
@@ -253,63 +175,27 @@ rtfm_gir_provider_populate_async (RtfmProvider        *provider,
 
   if (rtfm_path_is_empty (path))
     {
-      for (i = 0; i < self->files->len; i++)
+      for (i = 0; i < self->repositories->len; i++)
         {
-          GFile *file = g_ptr_array_index (self->files, i);
-          g_autofree gchar *path = NULL;
-          g_autofree gchar *name = NULL;
-          g_autofree gchar *id = NULL;
-          g_autofree gchar *subtitle = NULL;
-          const gchar *version;
-          gchar *tmp;
+          RtfmGirRepository *repository = g_ptr_array_index (self->repositories, i);
+          g_autoptr(RtfmGirItem) item = NULL;
 
-          path = g_file_get_path (file);
-          name = g_file_get_basename (file);
-
-          tmp = strrchr (name, '.');
-          if (tmp != NULL)
-            *tmp = '\0';
-
-          tmp = strrchr (name, '-');
-          if (tmp != NULL)
-            {
-              *tmp = '\0';
-              version = ++tmp;
-            }
-
-          id = g_strdup_printf ("gir:%s", path);
-          subtitle = g_strdup_printf ("%s %s", name, version);
-          item = g_object_new (RTFM_TYPE_GIR_FILE,
-                               "file", file,
-                               "id", id,
-                               "title", name,
-                               "subtitle", subtitle,
-                               "icon-name", "lang-namespace-symbolic",
-                               NULL);
-
-          rtfm_collection_append (collection, item);
+          item = rtfm_gir_item_new (G_OBJECT (repository));
+          rtfm_collection_append (collection, g_steal_pointer (&item));
         }
 
-      goto complete_task;
-    }
-  else if (RTFM_IS_GIR_FILE (parent))
-    {
-      rtfm_gir_file_load_async (RTFM_GIR_FILE (parent),
-                                cancellable,
-                                rtfm_gir_provider_load_file_cb,
-                                g_object_ref (task));
+      g_task_return_boolean (task, TRUE);
+
       return;
     }
-  else if (parent && g_strcmp0 ("gir:classes", rtfm_item_get_id (parent)) == 0)
+  else if (RTFM_IS_GIR_ITEM (parent))
     {
-      RtfmGirRepository *repository;
-
-      if (NULL != (repository = find_repository (parent)))
-        populate_classes (self, repository, collection);
+      rtfm_gir_item_populate_async (RTFM_GIR_ITEM (parent),
+                                    collection,
+                                    cancellable,
+                                    rtfm_gir_provider_populate_cb,
+                                    g_object_ref (task));
     }
-
-complete_task:
-  g_task_return_boolean (task, TRUE);
 }
 
 static gboolean

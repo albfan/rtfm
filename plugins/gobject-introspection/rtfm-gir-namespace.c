@@ -307,3 +307,19 @@ rtfm_gir_namespace_get_aliases (RtfmGirNamespace *self)
 
   return self->alias;
 }
+
+gboolean
+rtfm_gir_namespace_has_aliases (RtfmGirNamespace *self)
+{
+  g_return_val_if_fail (RTFM_IS_GIR_NAMESPACE (self), FALSE);
+
+  return self->alias != NULL && self->alias->len > 0;
+}
+
+gboolean
+rtfm_gir_namespace_has_classes (RtfmGirNamespace *self)
+{
+  g_return_val_if_fail (RTFM_IS_GIR_NAMESPACE (self), FALSE);
+
+  return self->class != NULL && self->class->len > 0;
+}

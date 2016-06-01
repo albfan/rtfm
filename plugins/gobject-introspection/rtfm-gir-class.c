@@ -31,7 +31,7 @@ struct _RtfmGirClass
   gchar *c_type;
   gchar *version;
   gchar *parent;
-  gchar *glib_tpye_name;
+  gchar *glib_type_name;
   gchar *glib_get_type;
   gchar *doc;
   GPtrArray *method;
@@ -46,7 +46,7 @@ enum {
   PROP_C_TYPE,
   PROP_VERSION,
   PROP_PARENT,
-  PROP_GLIB_TPYE_NAME,
+  PROP_GLIB_TYPE_NAME,
   PROP_GLIB_GET_TYPE,
   PROP_DOC,
   N_PROPS
@@ -66,7 +66,7 @@ rtfm_gir_class_finalize (GObject *object)
   g_clear_pointer (&self->c_type, g_free);
   g_clear_pointer (&self->version, g_free);
   g_clear_pointer (&self->parent, g_free);
-  g_clear_pointer (&self->glib_tpye_name, g_free);
+  g_clear_pointer (&self->glib_type_name, g_free);
   g_clear_pointer (&self->glib_get_type, g_free);
   g_clear_pointer (&self->doc, g_free);
   g_clear_pointer (&self->doc, g_ptr_array_unref);
@@ -106,8 +106,8 @@ rtfm_gir_class_get_property (GObject    *object,
       g_value_set_string (value, self->parent);
       break;
 
-    case PROP_GLIB_TPYE_NAME:
-      g_value_set_string (value, self->glib_tpye_name);
+    case PROP_GLIB_TYPE_NAME:
+      g_value_set_string (value, self->glib_type_name);
       break;
 
     case PROP_GLIB_GET_TYPE:
@@ -158,9 +158,9 @@ rtfm_gir_class_set_property (GObject       *object,
       self->parent = g_value_dup_string (value);
       break;
 
-    case PROP_GLIB_TPYE_NAME:
-      g_free (self->glib_tpye_name);
-      self->glib_tpye_name = g_value_dup_string (value);
+    case PROP_GLIB_TYPE_NAME:
+      g_free (self->glib_type_name);
+      self->glib_type_name = g_value_dup_string (value);
       break;
 
     case PROP_GLIB_GET_TYPE:
@@ -222,10 +222,10 @@ rtfm_gir_class_class_init (RtfmGirClassClass *klass)
                          NULL,
                          (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
-  properties [PROP_GLIB_TPYE_NAME] =
-    g_param_spec_string ("glib-tpye-name",
-                         "glib-tpye-name",
-                         "glib-tpye-name",
+  properties [PROP_GLIB_TYPE_NAME] =
+    g_param_spec_string ("glib-type-name",
+                         "glib-type-name",
+                         "glib-type-name",
                          NULL,
                          (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
@@ -261,7 +261,7 @@ rtfm_gir_class_ingest (RtfmGirClass      *self,
   xmlChar *c_type;
   xmlChar *version;
   xmlChar *parent;
-  xmlChar *glib_tpye_name;
+  xmlChar *glib_type_name;
   xmlChar *glib_get_type;
 
   g_assert (RTFM_IS_GIR_CLASS (self));
@@ -273,7 +273,7 @@ rtfm_gir_class_ingest (RtfmGirClass      *self,
   c_type = xmlTextReaderGetAttribute (reader, (const xmlChar *)"c:type");
   version = xmlTextReaderGetAttribute (reader, (const xmlChar *)"version");
   parent = xmlTextReaderGetAttribute (reader, (const xmlChar *)"parent");
-  glib_tpye_name = xmlTextReaderGetAttribute (reader, (const xmlChar *)"glib:tpye-name");
+  glib_type_name = xmlTextReaderGetAttribute (reader, (const xmlChar *)"glib:type-name");
   glib_get_type = xmlTextReaderGetAttribute (reader, (const xmlChar *)"glib:get-type");
 
   /* Copy properties to object */
@@ -282,7 +282,7 @@ rtfm_gir_class_ingest (RtfmGirClass      *self,
   self->c_type = g_strdup ((gchar *)c_type);
   self->version = g_strdup ((gchar *)version);
   self->parent = g_strdup ((gchar *)parent);
-  self->glib_tpye_name = g_strdup ((gchar *)glib_tpye_name);
+  self->glib_type_name = g_strdup ((gchar *)glib_type_name);
   self->glib_get_type = g_strdup ((gchar *)glib_get_type);
 
   /* Free libxml allocated strings */
@@ -291,7 +291,7 @@ rtfm_gir_class_ingest (RtfmGirClass      *self,
   xmlFree (c_type);
   xmlFree (version);
   xmlFree (parent);
-  xmlFree (glib_tpye_name);
+  xmlFree (glib_type_name);
   xmlFree (glib_get_type);
 
   if (xmlTextReaderRead (reader) != 1)

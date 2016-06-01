@@ -22,6 +22,8 @@ data_objects_sources = \
 	rtfm-gir-function.h \
 	rtfm-gir-include.c \
 	rtfm-gir-include.h \
+	rtfm-gir-item.c \
+	rtfm-gir-item.h \
 	rtfm-gir-member.c \
 	rtfm-gir-member.h \
 	rtfm-gir-method.c \
