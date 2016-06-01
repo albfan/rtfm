@@ -22,7 +22,7 @@
 
 struct _RtfmGirMember
 {
-  RtfmItem parent_instance;
+  RtfmGirBase base;
   gchar *name;
   gchar *value;
   gchar *c_identifier;
@@ -38,9 +38,14 @@ enum {
   N_PROPS
 };
 
-G_DEFINE_TYPE (RtfmGirMember, rtfm_gir_member, RTFM_TYPE_ITEM)
+G_DEFINE_TYPE (RtfmGirMember, rtfm_gir_member, RTFM_TYPE_GIR_BASE)
 
 static GParamSpec *properties [N_PROPS];
+
+static gboolean
+rtfm_gir_member_ingest (RtfmGirBase       *base,
+                        xmlTextReaderPtr   reader,
+                        GError           **error);
 
 static void
 rtfm_gir_member_finalize (GObject *object)
@@ -125,10 +130,13 @@ static void
 rtfm_gir_member_class_init (RtfmGirMemberClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
+  RtfmGirBaseClass *base_class = RTFM_GIR_BASE_CLASS (klass);
 
   object_class->finalize = rtfm_gir_member_finalize;
   object_class->get_property = rtfm_gir_member_get_property;
   object_class->set_property = rtfm_gir_member_set_property;
+
+  base_class->ingest = rtfm_gir_member_ingest;
 
   properties [PROP_NAME] =
     g_param_spec_string ("name",
@@ -166,11 +174,12 @@ rtfm_gir_member_init (RtfmGirMember *self)
 {
 }
 
-gboolean
-rtfm_gir_member_ingest (RtfmGirMember   *self,
+static gboolean
+rtfm_gir_member_ingest (RtfmGirBase       *base,
                           xmlTextReaderPtr   reader,
                           GError           **error)
 {
+  RtfmGirMember *self = (RtfmGirMember *)base;
   xmlChar *name;
   xmlChar *value;
   xmlChar *c_identifier;

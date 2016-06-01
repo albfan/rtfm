@@ -19,20 +19,15 @@
 #ifndef RTFM_GIR_ALIAS_H
 #define RTFM_GIR_ALIAS_H
 
-#include <libxml/xmlreader.h>
-#include <rtfm.h>
-
+#include "rtfm-gir-base.h"
 #include "rtfm-gir-type.h"
 
 G_BEGIN_DECLS
 
 #define RTFM_TYPE_GIR_ALIAS (rtfm_gir_alias_get_type())
 
-G_DECLARE_FINAL_TYPE (RtfmGirAlias, rtfm_gir_alias, RTFM, GIR_ALIAS, RtfmItem)
+G_DECLARE_FINAL_TYPE (RtfmGirAlias, rtfm_gir_alias, RTFM, GIR_ALIAS, RtfmGirBase)
 
-gboolean rtfm_gir_alias_ingest (RtfmGirAlias      *self,
-                                xmlTextReaderPtr    reader,
-                                GError            **error);
 RtfmGirType *rtfm_gir_alias_get_referenced (RtfmGirAlias *self);
 
 G_END_DECLS

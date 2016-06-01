@@ -19,18 +19,16 @@
 #ifndef RTFM_GIR_NAMESPACE_H
 #define RTFM_GIR_NAMESPACE_H
 
-#include <libxml/xmlreader.h>
-#include <rtfm.h>
+#include "rtfm-gir-base.h"
+#include "rtfm-gir-alias.h"
+#include "rtfm-gir-class.h"
 
 G_BEGIN_DECLS
 
 #define RTFM_TYPE_GIR_NAMESPACE (rtfm_gir_namespace_get_type())
 
-G_DECLARE_FINAL_TYPE (RtfmGirNamespace, rtfm_gir_namespace, RTFM, GIR_NAMESPACE, RtfmItem)
+G_DECLARE_FINAL_TYPE (RtfmGirNamespace, rtfm_gir_namespace, RTFM, GIR_NAMESPACE, RtfmGirBase)
 
-gboolean   rtfm_gir_namespace_ingest      (RtfmGirNamespace  *self,
-                                           xmlTextReaderPtr   reader,
-                                           GError           **error);
 GPtrArray *rtfm_gir_namespace_get_aliases (RtfmGirNamespace  *self);
 GPtrArray *rtfm_gir_namespace_get_classes (RtfmGirNamespace  *self);
 gboolean   rtfm_gir_namespace_has_aliases (RtfmGirNamespace  *self);

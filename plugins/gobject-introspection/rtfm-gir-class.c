@@ -25,7 +25,7 @@
 
 struct _RtfmGirClass
 {
-  RtfmItem parent_instance;
+  RtfmGirBase base;
   gchar *name;
   gchar *c_symbol_prefix;
   gchar *c_type;
@@ -52,9 +52,14 @@ enum {
   N_PROPS
 };
 
-G_DEFINE_TYPE (RtfmGirClass, rtfm_gir_class, RTFM_TYPE_ITEM)
+G_DEFINE_TYPE (RtfmGirClass, rtfm_gir_class, RTFM_TYPE_GIR_BASE)
 
 static GParamSpec *properties [N_PROPS];
+
+static gboolean
+rtfm_gir_class_ingest (RtfmGirBase       *base,
+                       xmlTextReaderPtr   reader,
+                       GError           **error);
 
 static void
 rtfm_gir_class_finalize (GObject *object)
@@ -182,10 +187,13 @@ static void
 rtfm_gir_class_class_init (RtfmGirClassClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
+  RtfmGirBaseClass *base_class = RTFM_GIR_BASE_CLASS (klass);
 
   object_class->finalize = rtfm_gir_class_finalize;
   object_class->get_property = rtfm_gir_class_get_property;
   object_class->set_property = rtfm_gir_class_set_property;
+
+  base_class->ingest = rtfm_gir_class_ingest;
 
   properties [PROP_NAME] =
     g_param_spec_string ("name",
@@ -251,11 +259,12 @@ rtfm_gir_class_init (RtfmGirClass *self)
 {
 }
 
-gboolean
-rtfm_gir_class_ingest (RtfmGirClass      *self,
-                       xmlTextReaderPtr   reader,
-                       GError           **error)
+static gboolean
+rtfm_gir_class_ingest (RtfmGirBase       *base,
+                          xmlTextReaderPtr   reader,
+                          GError           **error)
 {
+  RtfmGirClass *self = (RtfmGirClass *)base;
   xmlChar *name;
   xmlChar *c_symbol_prefix;
   xmlChar *c_type;
@@ -330,7 +339,7 @@ rtfm_gir_class_ingest (RtfmGirClass      *self,
 
           method = g_object_new (RTFM_TYPE_GIR_METHOD, NULL);
 
-          if (!rtfm_gir_method_ingest (method, reader, error))
+          if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (method), reader, error))
             return FALSE;
 
           if (self->method == NULL)
@@ -344,7 +353,7 @@ rtfm_gir_class_ingest (RtfmGirClass      *self,
 
           property = g_object_new (RTFM_TYPE_GIR_PROPERTY, NULL);
 
-          if (!rtfm_gir_property_ingest (property, reader, error))
+          if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (property), reader, error))
             return FALSE;
 
           if (self->property == NULL)
@@ -358,7 +367,7 @@ rtfm_gir_class_ingest (RtfmGirClass      *self,
 
           bitfield = g_object_new (RTFM_TYPE_GIR_BITFIELD, NULL);
 
-          if (!rtfm_gir_bitfield_ingest (bitfield, reader, error))
+          if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (bitfield), reader, error))
             return FALSE;
 
           if (self->bitfield == NULL)

@@ -23,7 +23,7 @@
 
 struct _RtfmGirReturnValue
 {
-  RtfmItem parent_instance;
+  RtfmGirBase base;
   gchar *transfer_ownership;
   RtfmGirType *type;
 };
@@ -34,9 +34,14 @@ enum {
   N_PROPS
 };
 
-G_DEFINE_TYPE (RtfmGirReturnValue, rtfm_gir_return_value, RTFM_TYPE_ITEM)
+G_DEFINE_TYPE (RtfmGirReturnValue, rtfm_gir_return_value, RTFM_TYPE_GIR_BASE)
 
 static GParamSpec *properties [N_PROPS];
+
+static gboolean
+rtfm_gir_return_value_ingest (RtfmGirBase       *base,
+                              xmlTextReaderPtr   reader,
+                              GError           **error);
 
 static void
 rtfm_gir_return_value_finalize (GObject *object)
@@ -91,10 +96,13 @@ static void
 rtfm_gir_return_value_class_init (RtfmGirReturnValueClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
+  RtfmGirBaseClass *base_class = RTFM_GIR_BASE_CLASS (klass);
 
   object_class->finalize = rtfm_gir_return_value_finalize;
   object_class->get_property = rtfm_gir_return_value_get_property;
   object_class->set_property = rtfm_gir_return_value_set_property;
+
+  base_class->ingest = rtfm_gir_return_value_ingest;
 
   properties [PROP_TRANSFER_OWNERSHIP] =
     g_param_spec_string ("transfer-ownership",
@@ -111,11 +119,12 @@ rtfm_gir_return_value_init (RtfmGirReturnValue *self)
 {
 }
 
-gboolean
-rtfm_gir_return_value_ingest (RtfmGirReturnValue   *self,
+static gboolean
+rtfm_gir_return_value_ingest (RtfmGirBase       *base,
                           xmlTextReaderPtr   reader,
                           GError           **error)
 {
+  RtfmGirReturnValue *self = (RtfmGirReturnValue *)base;
   xmlChar *transfer_ownership;
 
   g_assert (RTFM_IS_GIR_RETURN_VALUE (self));
@@ -155,7 +164,7 @@ rtfm_gir_return_value_ingest (RtfmGirReturnValue   *self,
 
           type = g_object_new (RTFM_TYPE_GIR_TYPE, NULL);
 
-          if (!rtfm_gir_type_ingest (type, reader, error))
+          if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (type), reader, error))
             return FALSE;
 
           g_set_object (&self->type, type);

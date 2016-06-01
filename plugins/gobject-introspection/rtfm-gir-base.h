@@ -19,7 +19,6 @@
 #ifndef RTFM_GIR_BASE_H
 #define RTFM_GIR_BASE_H
 
-#include <glib-object.h>
 #include <libxml/xmlreader.h>
 #include <rtfm.h>
 

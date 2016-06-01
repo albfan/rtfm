@@ -22,7 +22,7 @@
 
 struct _RtfmGirCInclude
 {
-  RtfmItem parent_instance;
+  RtfmGirBase base;
   gchar *name;
 };
 
@@ -32,9 +32,14 @@ enum {
   N_PROPS
 };
 
-G_DEFINE_TYPE (RtfmGirCInclude, rtfm_gir_c_include, RTFM_TYPE_ITEM)
+G_DEFINE_TYPE (RtfmGirCInclude, rtfm_gir_c_include, RTFM_TYPE_GIR_BASE)
 
 static GParamSpec *properties [N_PROPS];
+
+static gboolean
+rtfm_gir_c_include_ingest (RtfmGirBase       *base,
+                           xmlTextReaderPtr   reader,
+                           GError           **error);
 
 static void
 rtfm_gir_c_include_finalize (GObject *object)
@@ -89,10 +94,13 @@ static void
 rtfm_gir_c_include_class_init (RtfmGirCIncludeClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
+  RtfmGirBaseClass *base_class = RTFM_GIR_BASE_CLASS (klass);
 
   object_class->finalize = rtfm_gir_c_include_finalize;
   object_class->get_property = rtfm_gir_c_include_get_property;
   object_class->set_property = rtfm_gir_c_include_set_property;
+
+  base_class->ingest = rtfm_gir_c_include_ingest;
 
   properties [PROP_NAME] =
     g_param_spec_string ("name",
@@ -109,11 +117,12 @@ rtfm_gir_c_include_init (RtfmGirCInclude *self)
 {
 }
 
-gboolean
-rtfm_gir_c_include_ingest (RtfmGirCInclude   *self,
+static gboolean
+rtfm_gir_c_include_ingest (RtfmGirBase       *base,
                           xmlTextReaderPtr   reader,
                           GError           **error)
 {
+  RtfmGirCInclude *self = (RtfmGirCInclude *)base;
   xmlChar *name;
 
   g_assert (RTFM_IS_GIR_C_INCLUDE (self));

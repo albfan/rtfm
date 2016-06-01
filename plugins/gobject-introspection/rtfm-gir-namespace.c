@@ -24,7 +24,7 @@
 
 struct _RtfmGirNamespace
 {
-  RtfmItem parent_instance;
+  RtfmGirBase base;
   gchar *name;
   gchar *version;
   gchar *shared_library;
@@ -44,9 +44,14 @@ enum {
   N_PROPS
 };
 
-G_DEFINE_TYPE (RtfmGirNamespace, rtfm_gir_namespace, RTFM_TYPE_ITEM)
+G_DEFINE_TYPE (RtfmGirNamespace, rtfm_gir_namespace, RTFM_TYPE_GIR_BASE)
 
 static GParamSpec *properties [N_PROPS];
+
+static gboolean
+rtfm_gir_namespace_ingest (RtfmGirBase       *base,
+                           xmlTextReaderPtr   reader,
+                           GError           **error);
 
 static void
 rtfm_gir_namespace_finalize (GObject *object)
@@ -143,10 +148,13 @@ static void
 rtfm_gir_namespace_class_init (RtfmGirNamespaceClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
+  RtfmGirBaseClass *base_class = RTFM_GIR_BASE_CLASS (klass);
 
   object_class->finalize = rtfm_gir_namespace_finalize;
   object_class->get_property = rtfm_gir_namespace_get_property;
   object_class->set_property = rtfm_gir_namespace_set_property;
+
+  base_class->ingest = rtfm_gir_namespace_ingest;
 
   properties [PROP_NAME] =
     g_param_spec_string ("name",
@@ -191,11 +199,12 @@ rtfm_gir_namespace_init (RtfmGirNamespace *self)
 {
 }
 
-gboolean
-rtfm_gir_namespace_ingest (RtfmGirNamespace   *self,
+static gboolean
+rtfm_gir_namespace_ingest (RtfmGirBase       *base,
                           xmlTextReaderPtr   reader,
                           GError           **error)
 {
+  RtfmGirNamespace *self = (RtfmGirNamespace *)base;
   xmlChar *name;
   xmlChar *version;
   xmlChar *shared_library;
@@ -251,7 +260,7 @@ rtfm_gir_namespace_ingest (RtfmGirNamespace   *self,
 
           alias = g_object_new (RTFM_TYPE_GIR_ALIAS, NULL);
 
-          if (!rtfm_gir_alias_ingest (alias, reader, error))
+          if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (alias), reader, error))
             return FALSE;
 
           if (self->alias == NULL)
@@ -265,7 +274,7 @@ rtfm_gir_namespace_ingest (RtfmGirNamespace   *self,
 
           class = g_object_new (RTFM_TYPE_GIR_CLASS, NULL);
 
-          if (!rtfm_gir_class_ingest (class, reader, error))
+          if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (class), reader, error))
             return FALSE;
 
           if (self->class == NULL)

@@ -63,6 +63,11 @@ G_DEFINE_TYPE_EXTENDED (RtfmGirRepository, rtfm_gir_repository, RTFM_TYPE_ITEM, 
 
 static GParamSpec *properties [N_PROPS];
 
+static gboolean
+rtfm_gir_repository_ingest (RtfmGirBase       *base,
+                            xmlTextReaderPtr   reader,
+                            GError           **error);
+
 static void
 rtfm_gir_repository_finalize (GObject *object)
 {
@@ -135,11 +140,13 @@ static void
 rtfm_gir_repository_class_init (RtfmGirRepositoryClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
+  RtfmGirBaseClass *base_class = RTFM_GIR_BASE_CLASS (klass);
 
   object_class->finalize = rtfm_gir_repository_finalize;
   object_class->get_property = rtfm_gir_repository_get_property;
   object_class->set_property = rtfm_gir_repository_set_property;
 
+  base_class->ingest = rtfm_gir_repository_ingest;
   properties [PROP_FILE] =
     g_param_spec_object ("file",
                          "File",
@@ -171,11 +178,12 @@ rtfm_gir_repository_new (GFile *file)
                        NULL);
 }
 
-gboolean
-rtfm_gir_repository_ingest (RtfmGirRepository   *self,
-                          xmlTextReaderPtr   reader,
-                          GError           **error)
+static gboolean
+rtfm_gir_repository_ingest (RtfmGirBase       *base,
+                            xmlTextReaderPtr   reader,
+                            GError           **error)
 {
+  RtfmGirRepository *self = (RtfmGirRepository *)base;
   xmlChar *version;
 
   g_assert (RTFM_IS_GIR_REPOSITORY (self));
@@ -215,7 +223,7 @@ rtfm_gir_repository_ingest (RtfmGirRepository   *self,
 
           include = g_object_new (RTFM_TYPE_GIR_INCLUDE, NULL);
 
-          if (!rtfm_gir_include_ingest (include, reader, error))
+          if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (include), reader, error))
             return FALSE;
 
           g_set_object (&self->include, include);
@@ -226,7 +234,7 @@ rtfm_gir_repository_ingest (RtfmGirRepository   *self,
 
           package = g_object_new (RTFM_TYPE_GIR_PACKAGE, NULL);
 
-          if (!rtfm_gir_package_ingest (package, reader, error))
+          if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (package), reader, error))
             return FALSE;
 
           g_set_object (&self->package, package);
@@ -237,7 +245,7 @@ rtfm_gir_repository_ingest (RtfmGirRepository   *self,
 
           c_include = g_object_new (RTFM_TYPE_GIR_C_INCLUDE, NULL);
 
-          if (!rtfm_gir_c_include_ingest (c_include, reader, error))
+          if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (c_include), reader, error))
             return FALSE;
 
           g_set_object (&self->c_include, c_include);
@@ -248,7 +256,7 @@ rtfm_gir_repository_ingest (RtfmGirRepository   *self,
 
           namespace = g_object_new (RTFM_TYPE_GIR_NAMESPACE, NULL);
 
-          if (!rtfm_gir_namespace_ingest (namespace, reader, error))
+          if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (namespace), reader, error))
             return FALSE;
 
           g_set_object (&self->namespace, namespace);
@@ -370,7 +378,7 @@ skip_node:
       goto failure;
     }
 
-  if (!rtfm_gir_repository_ingest (self, reader, &error))
+  if (!rtfm_gir_repository_ingest (RTFM_GIR_BASE (self), reader, &error))
     goto failure;
 
   g_assert_no_error (error);

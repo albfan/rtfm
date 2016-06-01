@@ -23,7 +23,7 @@
 
 struct _RtfmGirBitfield
 {
-  RtfmItem parent_instance;
+  RtfmGirBase base;
   gchar *name;
   gchar *version;
   gchar *glib_type_name;
@@ -44,9 +44,14 @@ enum {
   N_PROPS
 };
 
-G_DEFINE_TYPE (RtfmGirBitfield, rtfm_gir_bitfield, RTFM_TYPE_ITEM)
+G_DEFINE_TYPE (RtfmGirBitfield, rtfm_gir_bitfield, RTFM_TYPE_GIR_BASE)
 
 static GParamSpec *properties [N_PROPS];
+
+static gboolean
+rtfm_gir_bitfield_ingest (RtfmGirBase       *base,
+                          xmlTextReaderPtr   reader,
+                          GError           **error);
 
 static void
 rtfm_gir_bitfield_finalize (GObject *object)
@@ -152,10 +157,13 @@ static void
 rtfm_gir_bitfield_class_init (RtfmGirBitfieldClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
+  RtfmGirBaseClass *base_class = RTFM_GIR_BASE_CLASS (klass);
 
   object_class->finalize = rtfm_gir_bitfield_finalize;
   object_class->get_property = rtfm_gir_bitfield_get_property;
   object_class->set_property = rtfm_gir_bitfield_set_property;
+
+  base_class->ingest = rtfm_gir_bitfield_ingest;
 
   properties [PROP_NAME] =
     g_param_spec_string ("name",
@@ -207,11 +215,12 @@ rtfm_gir_bitfield_init (RtfmGirBitfield *self)
 {
 }
 
-gboolean
-rtfm_gir_bitfield_ingest (RtfmGirBitfield   *self,
+static gboolean
+rtfm_gir_bitfield_ingest (RtfmGirBase       *base,
                           xmlTextReaderPtr   reader,
                           GError           **error)
 {
+  RtfmGirBitfield *self = (RtfmGirBitfield *)base;
   xmlChar *name;
   xmlChar *version;
   xmlChar *glib_type_name;
@@ -278,7 +287,7 @@ rtfm_gir_bitfield_ingest (RtfmGirBitfield   *self,
 
           member = g_object_new (RTFM_TYPE_GIR_MEMBER, NULL);
 
-          if (!rtfm_gir_member_ingest (member, reader, error))
+          if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (member), reader, error))
             return FALSE;
 
           if (self->member == NULL)

@@ -24,7 +24,7 @@
 
 struct _RtfmGirCallback
 {
-  RtfmItem parent_instance;
+  RtfmGirBase base;
   gchar *name;
   gchar *c_type;
   gchar *doc;
@@ -40,9 +40,14 @@ enum {
   N_PROPS
 };
 
-G_DEFINE_TYPE (RtfmGirCallback, rtfm_gir_callback, RTFM_TYPE_ITEM)
+G_DEFINE_TYPE (RtfmGirCallback, rtfm_gir_callback, RTFM_TYPE_GIR_BASE)
 
 static GParamSpec *properties [N_PROPS];
+
+static gboolean
+rtfm_gir_callback_ingest (RtfmGirBase       *base,
+                          xmlTextReaderPtr   reader,
+                          GError           **error);
 
 static void
 rtfm_gir_callback_finalize (GObject *object)
@@ -117,10 +122,13 @@ static void
 rtfm_gir_callback_class_init (RtfmGirCallbackClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
+  RtfmGirBaseClass *base_class = RTFM_GIR_BASE_CLASS (klass);
 
   object_class->finalize = rtfm_gir_callback_finalize;
   object_class->get_property = rtfm_gir_callback_get_property;
   object_class->set_property = rtfm_gir_callback_set_property;
+
+  base_class->ingest = rtfm_gir_callback_ingest;
 
   properties [PROP_NAME] =
     g_param_spec_string ("name",
@@ -151,11 +159,12 @@ rtfm_gir_callback_init (RtfmGirCallback *self)
 {
 }
 
-gboolean
-rtfm_gir_callback_ingest (RtfmGirCallback   *self,
+static gboolean
+rtfm_gir_callback_ingest (RtfmGirBase       *base,
                           xmlTextReaderPtr   reader,
                           GError           **error)
 {
+  RtfmGirCallback *self = (RtfmGirCallback *)base;
   xmlChar *name;
   xmlChar *c_type;
 
@@ -210,7 +219,7 @@ rtfm_gir_callback_ingest (RtfmGirCallback   *self,
 
           return_value = g_object_new (RTFM_TYPE_GIR_RETURN_VALUE, NULL);
 
-          if (!rtfm_gir_return_value_ingest (return_value, reader, error))
+          if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (return_value), reader, error))
             return FALSE;
 
           g_set_object (&self->return_value, return_value);
@@ -229,7 +238,7 @@ rtfm_gir_callback_ingest (RtfmGirCallback   *self,
 
               parameter = g_object_new (RTFM_TYPE_GIR_PARAMETER, NULL);
 
-              if (!rtfm_gir_parameter_ingest (parameter, reader, error))
+              if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (parameter), reader, error))
                 return FALSE;
 
               g_ptr_array_add (self->parameters, g_steal_pointer (&parameter));

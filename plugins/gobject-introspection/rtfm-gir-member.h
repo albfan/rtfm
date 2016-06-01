@@ -19,18 +19,14 @@
 #ifndef RTFM_GIR_MEMBER_H
 #define RTFM_GIR_MEMBER_H
 
-#include <libxml/xmlreader.h>
-#include <rtfm.h>
+#include "rtfm-gir-base.h"
 
 G_BEGIN_DECLS
 
 #define RTFM_TYPE_GIR_MEMBER (rtfm_gir_member_get_type())
 
-G_DECLARE_FINAL_TYPE (RtfmGirMember, rtfm_gir_member, RTFM, GIR_MEMBER, RtfmItem)
+G_DECLARE_FINAL_TYPE (RtfmGirMember, rtfm_gir_member, RTFM, GIR_MEMBER, RtfmGirBase)
 
-gboolean rtfm_gir_member_ingest (RtfmGirMember     *self,
-                                 xmlTextReaderPtr   reader,
-                                 GError           **error);
 
 G_END_DECLS
 

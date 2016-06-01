@@ -19,18 +19,15 @@
 #ifndef RTFM_GIR_BITFIELD_H
 #define RTFM_GIR_BITFIELD_H
 
-#include <libxml/xmlreader.h>
-#include <rtfm.h>
+#include "rtfm-gir-base.h"
+#include "rtfm-gir-member.h"
 
 G_BEGIN_DECLS
 
 #define RTFM_TYPE_GIR_BITFIELD (rtfm_gir_bitfield_get_type())
 
-G_DECLARE_FINAL_TYPE (RtfmGirBitfield, rtfm_gir_bitfield, RTFM, GIR_BITFIELD, RtfmItem)
+G_DECLARE_FINAL_TYPE (RtfmGirBitfield, rtfm_gir_bitfield, RTFM, GIR_BITFIELD, RtfmGirBase)
 
-gboolean rtfm_gir_bitfield_ingest (RtfmGirBitfield   *self,
-                                   xmlTextReaderPtr   reader,
-                                   GError           **error);
 
 G_END_DECLS
 

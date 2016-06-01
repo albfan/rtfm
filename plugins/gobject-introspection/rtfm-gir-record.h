@@ -19,18 +19,16 @@
 #ifndef RTFM_GIR_RECORD_H
 #define RTFM_GIR_RECORD_H
 
-#include <libxml/xmlreader.h>
-#include <rtfm.h>
+#include "rtfm-gir-base.h"
+#include "rtfm-gir-field.h"
+#include "rtfm-gir-function.h"
 
 G_BEGIN_DECLS
 
 #define RTFM_TYPE_GIR_RECORD (rtfm_gir_record_get_type())
 
-G_DECLARE_FINAL_TYPE (RtfmGirRecord, rtfm_gir_record, RTFM, GIR_RECORD, RtfmItem)
+G_DECLARE_FINAL_TYPE (RtfmGirRecord, rtfm_gir_record, RTFM, GIR_RECORD, RtfmGirBase)
 
-gboolean rtfm_gir_record_ingest (RtfmGirRecord     *self,
-                                 xmlTextReaderPtr   reader,
-                                 GError           **error);
 
 G_END_DECLS
 
