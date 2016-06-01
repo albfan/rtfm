@@ -500,7 +500,7 @@ rtfm_gir_class_get_virtual_methods (RtfmGirClass *self)
 }
 
 gboolean
-rtfm_gir_class_has_propertys (RtfmGirClass *self)
+rtfm_gir_class_has_properties (RtfmGirClass *self)
 {
   g_return_val_if_fail (RTFM_IS_GIR_CLASS (self), FALSE);
 
@@ -508,13 +508,13 @@ rtfm_gir_class_has_propertys (RtfmGirClass *self)
 }
 
 /**
- * rtfm_gir_class_get_propertys:
+ * rtfm_gir_class_get_properties:
  *
  * Returns: (nullable) (transfer none) (element-type Rtfm.GirProperty):
  *  An array of #RtfmGirProperty or %NULL.
  */
 GPtrArray *
-rtfm_gir_class_get_propertys (RtfmGirClass *self)
+rtfm_gir_class_get_properties (RtfmGirClass *self)
 {
   g_return_val_if_fail (RTFM_IS_GIR_CLASS (self), NULL);
 
