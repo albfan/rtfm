@@ -216,6 +216,18 @@ rtfm_gir_item_populate_repository_cb (GObject      *object,
           rtfm_collection_append (collection, g_steal_pointer (&item));
         }
 
+      if (rtfm_gir_namespace_has_records (namespace))
+        {
+          g_autoptr(RtfmGirItem) item = NULL;
+
+          item = g_object_new (RTFM_TYPE_GIR_ITEM,
+                               "id", "gir:structs",
+                               "object", namespace,
+                               "title", _("Structs"),
+                               NULL);
+          rtfm_collection_append (collection, g_steal_pointer (&item));
+        }
+
       if (rtfm_gir_namespace_has_enumerations (namespace))
         {
           g_autoptr(RtfmGirItem) item = NULL;
