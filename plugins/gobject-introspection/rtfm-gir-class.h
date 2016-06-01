@@ -30,6 +30,12 @@ G_BEGIN_DECLS
 
 G_DECLARE_FINAL_TYPE (RtfmGirClass, rtfm_gir_class, RTFM, GIR_CLASS, RtfmGirBase)
 
+gboolean   rtfm_gir_class_has_methods (RtfmGirClass *self);
+GPtrArray *rtfm_gir_class_get_methods (RtfmGirClass *self);
+gboolean   rtfm_gir_class_has_propertys (RtfmGirClass *self);
+GPtrArray *rtfm_gir_class_get_propertys (RtfmGirClass *self);
+gboolean   rtfm_gir_class_has_bitfields (RtfmGirClass *self);
+GPtrArray *rtfm_gir_class_get_bitfields (RtfmGirClass *self);
 
 G_END_DECLS
 

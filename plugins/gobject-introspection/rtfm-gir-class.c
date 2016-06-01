@@ -381,3 +381,69 @@ rtfm_gir_class_ingest (RtfmGirBase       *base,
 
   return TRUE;
 }
+
+gboolean
+rtfm_gir_class_has_methods (RtfmGirClass *self)
+{
+  g_return_val_if_fail (RTFM_IS_GIR_CLASS (self), FALSE);
+
+  return self->method != NULL && self->method->len > 0;
+}
+
+/**
+ * rtfm_gir_class_get_methods:
+ *
+ * Returns: (nullable) (transfer none) (element-type Rtfm.GirMethod):
+ *  An array of #RtfmGirMethod or %NULL.
+ */
+GPtrArray *
+rtfm_gir_class_get_methods (RtfmGirClass *self)
+{
+  g_return_val_if_fail (RTFM_IS_GIR_CLASS (self), NULL);
+
+  return self->method;
+}
+
+gboolean
+rtfm_gir_class_has_propertys (RtfmGirClass *self)
+{
+  g_return_val_if_fail (RTFM_IS_GIR_CLASS (self), FALSE);
+
+  return self->property != NULL && self->property->len > 0;
+}
+
+/**
+ * rtfm_gir_class_get_propertys:
+ *
+ * Returns: (nullable) (transfer none) (element-type Rtfm.GirProperty):
+ *  An array of #RtfmGirProperty or %NULL.
+ */
+GPtrArray *
+rtfm_gir_class_get_propertys (RtfmGirClass *self)
+{
+  g_return_val_if_fail (RTFM_IS_GIR_CLASS (self), NULL);
+
+  return self->property;
+}
+
+gboolean
+rtfm_gir_class_has_bitfields (RtfmGirClass *self)
+{
+  g_return_val_if_fail (RTFM_IS_GIR_CLASS (self), FALSE);
+
+  return self->bitfield != NULL && self->bitfield->len > 0;
+}
+
+/**
+ * rtfm_gir_class_get_bitfields:
+ *
+ * Returns: (nullable) (transfer none) (element-type Rtfm.GirBitfield):
+ *  An array of #RtfmGirBitfield or %NULL.
+ */
+GPtrArray *
+rtfm_gir_class_get_bitfields (RtfmGirClass *self)
+{
+  g_return_val_if_fail (RTFM_IS_GIR_CLASS (self), NULL);
+
+  return self->bitfield;
+}

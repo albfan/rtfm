@@ -272,3 +272,47 @@ rtfm_gir_record_ingest (RtfmGirBase       *base,
 
   return TRUE;
 }
+
+gboolean
+rtfm_gir_record_has_fields (RtfmGirRecord *self)
+{
+  g_return_val_if_fail (RTFM_IS_GIR_RECORD (self), FALSE);
+
+  return self->field != NULL && self->field->len > 0;
+}
+
+/**
+ * rtfm_gir_record_get_fields:
+ *
+ * Returns: (nullable) (transfer none) (element-type Rtfm.GirField):
+ *  An array of #RtfmGirField or %NULL.
+ */
+GPtrArray *
+rtfm_gir_record_get_fields (RtfmGirRecord *self)
+{
+  g_return_val_if_fail (RTFM_IS_GIR_RECORD (self), NULL);
+
+  return self->field;
+}
+
+gboolean
+rtfm_gir_record_has_functions (RtfmGirRecord *self)
+{
+  g_return_val_if_fail (RTFM_IS_GIR_RECORD (self), FALSE);
+
+  return self->function != NULL && self->function->len > 0;
+}
+
+/**
+ * rtfm_gir_record_get_functions:
+ *
+ * Returns: (nullable) (transfer none) (element-type Rtfm.GirFunction):
+ *  An array of #RtfmGirFunction or %NULL.
+ */
+GPtrArray *
+rtfm_gir_record_get_functions (RtfmGirRecord *self)
+{
+  g_return_val_if_fail (RTFM_IS_GIR_RECORD (self), NULL);
+
+  return self->function;
+}

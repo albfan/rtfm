@@ -301,3 +301,25 @@ rtfm_gir_bitfield_ingest (RtfmGirBase       *base,
 
   return TRUE;
 }
+
+gboolean
+rtfm_gir_bitfield_has_members (RtfmGirBitfield *self)
+{
+  g_return_val_if_fail (RTFM_IS_GIR_BITFIELD (self), FALSE);
+
+  return self->member != NULL && self->member->len > 0;
+}
+
+/**
+ * rtfm_gir_bitfield_get_members:
+ *
+ * Returns: (nullable) (transfer none) (element-type Rtfm.GirMember):
+ *  An array of #RtfmGirMember or %NULL.
+ */
+GPtrArray *
+rtfm_gir_bitfield_get_members (RtfmGirBitfield *self)
+{
+  g_return_val_if_fail (RTFM_IS_GIR_BITFIELD (self), NULL);
+
+  return self->member;
+}

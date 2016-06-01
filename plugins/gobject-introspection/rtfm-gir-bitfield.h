@@ -28,6 +28,8 @@ G_BEGIN_DECLS
 
 G_DECLARE_FINAL_TYPE (RtfmGirBitfield, rtfm_gir_bitfield, RTFM, GIR_BITFIELD, RtfmGirBase)
 
+gboolean   rtfm_gir_bitfield_has_members (RtfmGirBitfield *self);
+GPtrArray *rtfm_gir_bitfield_get_members (RtfmGirBitfield *self);
 
 G_END_DECLS
 

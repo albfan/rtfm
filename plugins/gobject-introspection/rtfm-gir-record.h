@@ -29,6 +29,10 @@ G_BEGIN_DECLS
 
 G_DECLARE_FINAL_TYPE (RtfmGirRecord, rtfm_gir_record, RTFM, GIR_RECORD, RtfmGirBase)
 
+gboolean   rtfm_gir_record_has_fields (RtfmGirRecord *self);
+GPtrArray *rtfm_gir_record_get_fields (RtfmGirRecord *self);
+gboolean   rtfm_gir_record_has_functions (RtfmGirRecord *self);
+GPtrArray *rtfm_gir_record_get_functions (RtfmGirRecord *self);
 
 G_END_DECLS
 
