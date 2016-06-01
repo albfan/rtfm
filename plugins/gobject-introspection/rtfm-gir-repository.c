@@ -32,7 +32,7 @@ G_DEFINE_AUTOPTR_CLEANUP_FUNC (xmlTextReader, xmlFreeTextReader)
 
 struct _RtfmGirRepository
 {
-  RtfmItem          parent_instance;
+  RtfmGirBase       base;
 
   GMutex            mutex;
   GSList           *loading_tasks;
@@ -57,7 +57,7 @@ enum {
 
 static void async_initable_iface_init (GAsyncInitableIface *iface);
 
-G_DEFINE_TYPE_EXTENDED (RtfmGirRepository, rtfm_gir_repository, RTFM_TYPE_ITEM, 0,
+G_DEFINE_TYPE_EXTENDED (RtfmGirRepository, rtfm_gir_repository, RTFM_TYPE_GIR_BASE, 0,
                         G_IMPLEMENT_INTERFACE (G_TYPE_ASYNC_INITABLE,
                                                async_initable_iface_init))
 
