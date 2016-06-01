@@ -99,6 +99,13 @@ rtfm_gir_item_new (GObject *object)
                     NULL);
       icon_name = "lang-struct-symbolic";
     }
+  else if (RTFM_IS_GIR_CONSTRUCTOR (object))
+    {
+      g_object_get (object,
+                    "c-identifier", &title,
+                    NULL);
+      icon_name = "lang-function-symbolic";
+    }
 
   return g_object_new (RTFM_TYPE_GIR_ITEM,
                        "icon-name", icon_name,
@@ -344,7 +351,8 @@ rtfm_gir_item_populate_async (RtfmGirItem         *self,
       const gchar *id = rtfm_item_get_id (RTFM_ITEM (self));
       GPtrArray *ar = NULL;
 
-      if (g_strcmp0 ("gir:classes", id) == 0)
+      if (FALSE) {}
+      else if (g_strcmp0 ("gir:classes", id) == 0)
         ar = rtfm_gir_namespace_get_classes (RTFM_GIR_NAMESPACE (priv->object));
       else if (g_strcmp0 ("gir:aliases", id) == 0)
         ar = rtfm_gir_namespace_get_aliases (RTFM_GIR_NAMESPACE (priv->object));
@@ -377,6 +385,70 @@ rtfm_gir_item_populate_async (RtfmGirItem         *self,
     }
   else if (RTFM_IS_GIR_CLASS (priv->object))
     {
+      const gchar *id = rtfm_item_get_id (RTFM_ITEM (self));
+      GPtrArray *ar = NULL;
+
+      if (FALSE) {}
+      else if (g_strcmp0 ("gir:methods", id) == 0)
+        ar = rtfm_gir_class_get_methods (RTFM_GIR_CLASS (priv->object));
+      else if (g_strcmp0 ("gir:virtual", id) == 0)
+        ar = rtfm_gir_class_get_virtual_methods (RTFM_GIR_CLASS (priv->object));
+      else if (g_strcmp0 ("gir:properties", id) == 0)
+        ar = rtfm_gir_class_get_properties (RTFM_GIR_CLASS (priv->object));
+      else if (g_strcmp0 ("gir:constructors", id) == 0)
+        ar = rtfm_gir_class_get_constructors (RTFM_GIR_CLASS (priv->object));
+
+      if (ar != NULL)
+        {
+          guint i;
+
+          for (i = 0; i < ar->len; i++)
+            {
+              GObject *object = g_ptr_array_index (ar, i);
+              g_autoptr(RtfmGirItem) item = NULL;
+
+              item = rtfm_gir_item_new (object);
+              rtfm_collection_append (collection, g_steal_pointer (&item));
+            }
+        }
+      else
+        {
+          if (rtfm_gir_class_has_properties (RTFM_GIR_CLASS (priv->object)))
+            {
+              g_autoptr(RtfmGirItem) item = NULL;
+
+              item = g_object_new (RTFM_TYPE_GIR_ITEM,
+                                   "id", "gir:properties",
+                                   "object", priv->object,
+                                   "title", _("Properties"),
+                                   NULL);
+              rtfm_collection_append (collection, g_steal_pointer (&item));
+            }
+
+          if (rtfm_gir_class_has_constructors (RTFM_GIR_CLASS (priv->object)))
+            {
+              g_autoptr(RtfmGirItem) item = NULL;
+
+              item = g_object_new (RTFM_TYPE_GIR_ITEM,
+                                   "id", "gir:constructors",
+                                   "object", priv->object,
+                                   "title", _("Constructors"),
+                                   NULL);
+              rtfm_collection_append (collection, g_steal_pointer (&item));
+            }
+
+          if (rtfm_gir_class_has_methods (RTFM_GIR_CLASS (priv->object)))
+            {
+              g_autoptr(RtfmGirItem) item = NULL;
+
+              item = g_object_new (RTFM_TYPE_GIR_ITEM,
+                                   "id", "gir:methods",
+                                   "object", priv->object,
+                                   "title", _("Methods"),
+                                   NULL);
+              rtfm_collection_append (collection, g_steal_pointer (&item));
+            }
+        }
     }
   else if (RTFM_IS_GIR_ALIAS (priv->object))
     {
