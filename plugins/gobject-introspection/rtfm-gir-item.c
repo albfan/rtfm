@@ -240,18 +240,62 @@ rtfm_gir_item_populate_repository_cb (GObject      *object,
           rtfm_collection_append (collection, g_steal_pointer (&item));
         }
 
-      if (rtfm_gir_namespace_has_aliases (namespace))
+      if (rtfm_gir_namespace_has_bitfields (namespace))
         {
           g_autoptr(RtfmGirItem) item = NULL;
 
-          /* TODO: We should insert multiple items based on
-           *       enumerations, int types, etc.
-           */
+          item = g_object_new (RTFM_TYPE_GIR_ITEM,
+                               "id", "gir:bitfields",
+                               "object", namespace,
+                               "title", _("Flags"),
+                               NULL);
+          rtfm_collection_append (collection, g_steal_pointer (&item));
+        }
+
+      if (rtfm_gir_namespace_has_aliases (namespace))
+        {
+          g_autoptr(RtfmGirItem) item = NULL;
 
           item = g_object_new (RTFM_TYPE_GIR_ITEM,
                                "id", "gir:aliases",
                                "object", namespace,
                                "title", _("Aliases"),
+                               NULL);
+          rtfm_collection_append (collection, g_steal_pointer (&item));
+        }
+
+      if (rtfm_gir_namespace_has_callbacks (namespace))
+        {
+          g_autoptr(RtfmGirItem) item = NULL;
+
+          item = g_object_new (RTFM_TYPE_GIR_ITEM,
+                               "id", "gir:callbacks",
+                               "object", namespace,
+                               "title", _("Callbacks"),
+                               NULL);
+          rtfm_collection_append (collection, g_steal_pointer (&item));
+        }
+
+      if (rtfm_gir_namespace_has_constants (namespace))
+        {
+          g_autoptr(RtfmGirItem) item = NULL;
+
+          item = g_object_new (RTFM_TYPE_GIR_ITEM,
+                               "id", "gir:constants",
+                               "object", namespace,
+                               "title", _("Constants"),
+                               NULL);
+          rtfm_collection_append (collection, g_steal_pointer (&item));
+        }
+
+      if (rtfm_gir_namespace_has_functions (namespace))
+        {
+          g_autoptr(RtfmGirItem) item = NULL;
+
+          item = g_object_new (RTFM_TYPE_GIR_ITEM,
+                               "id", "gir:functions",
+                               "object", namespace,
+                               "title", _("Global Functions"),
                                NULL);
           rtfm_collection_append (collection, g_steal_pointer (&item));
         }
