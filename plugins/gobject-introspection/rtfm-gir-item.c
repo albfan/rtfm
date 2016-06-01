@@ -78,6 +78,12 @@ rtfm_gir_item_new (GObject *object)
             }
         }
     }
+  else if (RTFM_IS_GIR_ALIAS (object))
+    {
+      g_object_get (object,
+                    "c-type", &title,
+                    NULL);
+    }
   else if (RTFM_IS_GIR_CLASS (object))
     {
       g_object_get (object,
