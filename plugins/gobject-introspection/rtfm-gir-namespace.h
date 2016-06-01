@@ -21,11 +21,13 @@
 
 #include "rtfm-gir-base.h"
 #include "rtfm-gir-alias.h"
-#include "rtfm-gir-class.h"
-#include "rtfm-gir-callback.h"
 #include "rtfm-gir-bitfield.h"
-#include "rtfm-gir-record.h"
+#include "rtfm-gir-callback.h"
+#include "rtfm-gir-class.h"
+#include "rtfm-gir-constant.h"
+#include "rtfm-gir-enumeration.h"
 #include "rtfm-gir-function.h"
+#include "rtfm-gir-record.h"
 
 G_BEGIN_DECLS
 
@@ -35,16 +37,20 @@ G_DECLARE_FINAL_TYPE (RtfmGirNamespace, rtfm_gir_namespace, RTFM, GIR_NAMESPACE,
 
 gboolean   rtfm_gir_namespace_has_aliases (RtfmGirNamespace *self);
 GPtrArray *rtfm_gir_namespace_get_aliases (RtfmGirNamespace *self);
-gboolean   rtfm_gir_namespace_has_classes (RtfmGirNamespace *self);
-GPtrArray *rtfm_gir_namespace_get_classes (RtfmGirNamespace *self);
-gboolean   rtfm_gir_namespace_has_callbacks (RtfmGirNamespace *self);
-GPtrArray *rtfm_gir_namespace_get_callbacks (RtfmGirNamespace *self);
 gboolean   rtfm_gir_namespace_has_bitfields (RtfmGirNamespace *self);
 GPtrArray *rtfm_gir_namespace_get_bitfields (RtfmGirNamespace *self);
-gboolean   rtfm_gir_namespace_has_records (RtfmGirNamespace *self);
-GPtrArray *rtfm_gir_namespace_get_records (RtfmGirNamespace *self);
+gboolean   rtfm_gir_namespace_has_callbacks (RtfmGirNamespace *self);
+GPtrArray *rtfm_gir_namespace_get_callbacks (RtfmGirNamespace *self);
+gboolean   rtfm_gir_namespace_has_classes (RtfmGirNamespace *self);
+GPtrArray *rtfm_gir_namespace_get_classes (RtfmGirNamespace *self);
+gboolean   rtfm_gir_namespace_has_constants (RtfmGirNamespace *self);
+GPtrArray *rtfm_gir_namespace_get_constants (RtfmGirNamespace *self);
+gboolean   rtfm_gir_namespace_has_enumerations (RtfmGirNamespace *self);
+GPtrArray *rtfm_gir_namespace_get_enumerations (RtfmGirNamespace *self);
 gboolean   rtfm_gir_namespace_has_functions (RtfmGirNamespace *self);
 GPtrArray *rtfm_gir_namespace_get_functions (RtfmGirNamespace *self);
+gboolean   rtfm_gir_namespace_has_records (RtfmGirNamespace *self);
+GPtrArray *rtfm_gir_namespace_get_records (RtfmGirNamespace *self);
 
 G_END_DECLS
 

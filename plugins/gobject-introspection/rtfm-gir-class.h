@@ -20,9 +20,12 @@
 #define RTFM_GIR_CLASS_H
 
 #include "rtfm-gir-base.h"
+#include "rtfm-gir-implements.h"
 #include "rtfm-gir-method.h"
+#include "rtfm-gir-virtual-method.h"
 #include "rtfm-gir-property.h"
 #include "rtfm-gir-bitfield.h"
+#include "rtfm-gir-constructor.h"
 
 G_BEGIN_DECLS
 
@@ -30,12 +33,18 @@ G_BEGIN_DECLS
 
 G_DECLARE_FINAL_TYPE (RtfmGirClass, rtfm_gir_class, RTFM, GIR_CLASS, RtfmGirBase)
 
+gboolean   rtfm_gir_class_has_implements (RtfmGirClass *self);
+GPtrArray *rtfm_gir_class_get_implements (RtfmGirClass *self);
 gboolean   rtfm_gir_class_has_methods (RtfmGirClass *self);
 GPtrArray *rtfm_gir_class_get_methods (RtfmGirClass *self);
+gboolean   rtfm_gir_class_has_virtual_methods (RtfmGirClass *self);
+GPtrArray *rtfm_gir_class_get_virtual_methods (RtfmGirClass *self);
 gboolean   rtfm_gir_class_has_propertys (RtfmGirClass *self);
 GPtrArray *rtfm_gir_class_get_propertys (RtfmGirClass *self);
 gboolean   rtfm_gir_class_has_bitfields (RtfmGirClass *self);
 GPtrArray *rtfm_gir_class_get_bitfields (RtfmGirClass *self);
+gboolean   rtfm_gir_class_has_constructors (RtfmGirClass *self);
+GPtrArray *rtfm_gir_class_get_constructors (RtfmGirClass *self);
 
 G_END_DECLS
 

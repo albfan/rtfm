@@ -1,4 +1,4 @@
-/* rtfm-gir-function.h
+/* rtfm-gir-enumeration.h
  *
  * Copyright (C) 2016 Christian Hergert <chergert@redhat.com>
  *
@@ -16,22 +16,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef RTFM_GIR_FUNCTION_H
-#define RTFM_GIR_FUNCTION_H
+#ifndef RTFM_GIR_ENUMERATION_H
+#define RTFM_GIR_ENUMERATION_H
 
 #include "rtfm-gir-base.h"
-#include "rtfm-gir-return-value.h"
-#include "rtfm-gir-parameters.h"
+#include "rtfm-gir-member.h"
 
 G_BEGIN_DECLS
 
-#define RTFM_TYPE_GIR_FUNCTION (rtfm_gir_function_get_type())
+#define RTFM_TYPE_GIR_ENUMERATION (rtfm_gir_enumeration_get_type())
 
-G_DECLARE_FINAL_TYPE (RtfmGirFunction, rtfm_gir_function, RTFM, GIR_FUNCTION, RtfmGirBase)
+G_DECLARE_FINAL_TYPE (RtfmGirEnumeration, rtfm_gir_enumeration, RTFM, GIR_ENUMERATION, RtfmGirBase)
 
-RtfmGirReturnValue *rtfm_gir_function_get_return_value (RtfmGirFunction *self);
-RtfmGirParameters *rtfm_gir_function_get_parameters (RtfmGirFunction *self);
+gboolean   rtfm_gir_enumeration_has_members (RtfmGirEnumeration *self);
+GPtrArray *rtfm_gir_enumeration_get_members (RtfmGirEnumeration *self);
 
 G_END_DECLS
 
-#endif /* RTFM_GIR_FUNCTION_H */
+#endif /* RTFM_GIR_ENUMERATION_H */

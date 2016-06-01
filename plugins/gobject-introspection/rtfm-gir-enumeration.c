@@ -1,4 +1,4 @@
-/* rtfm-gir-record.c
+/* rtfm-gir-enumeration.c
  *
  * Copyright (C) 2016 Christian Hergert <chergert@redhat.com>
  *
@@ -16,20 +16,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define G_LOG_DOMAIN "rtfm-gir-record"
+#define G_LOG_DOMAIN "rtfm-gir-enumeration"
 
-#include "rtfm-gir-record.h"
-#include "rtfm-gir-field.h"
-#include "rtfm-gir-function.h"
+#include "rtfm-gir-enumeration.h"
+#include "rtfm-gir-member.h"
 
-struct _RtfmGirRecord
+struct _RtfmGirEnumeration
 {
   RtfmGirBase base;
   gchar *name;
   gchar *c_type;
   gchar *doc;
-  GPtrArray *field;
-  GPtrArray *function;
+  GPtrArray *member;
 };
 
 enum {
@@ -40,36 +38,35 @@ enum {
   N_PROPS
 };
 
-G_DEFINE_TYPE (RtfmGirRecord, rtfm_gir_record, RTFM_TYPE_GIR_BASE)
+G_DEFINE_TYPE (RtfmGirEnumeration, rtfm_gir_enumeration, RTFM_TYPE_GIR_BASE)
 
 static GParamSpec *properties [N_PROPS];
 
 static gboolean
-rtfm_gir_record_ingest (RtfmGirBase       *base,
-                        xmlTextReaderPtr   reader,
-                        GError           **error);
+rtfm_gir_enumeration_ingest (RtfmGirBase       *base,
+                             xmlTextReaderPtr   reader,
+                             GError           **error);
 
 static void
-rtfm_gir_record_finalize (GObject *object)
+rtfm_gir_enumeration_finalize (GObject *object)
 {
-  RtfmGirRecord *self = (RtfmGirRecord *)object;
+  RtfmGirEnumeration *self = (RtfmGirEnumeration *)object;
 
   g_clear_pointer (&self->name, g_free);
   g_clear_pointer (&self->c_type, g_free);
   g_clear_pointer (&self->doc, g_free);
   g_clear_pointer (&self->doc, g_ptr_array_unref);
-  g_clear_pointer (&self->doc, g_ptr_array_unref);
 
-  G_OBJECT_CLASS (rtfm_gir_record_parent_class)->finalize (object);
+  G_OBJECT_CLASS (rtfm_gir_enumeration_parent_class)->finalize (object);
 }
 
 static void
-rtfm_gir_record_get_property (GObject    *object,
-                              guint       prop_id,
-                              GValue     *value,
-                              GParamSpec *pspec)
+rtfm_gir_enumeration_get_property (GObject    *object,
+                                   guint       prop_id,
+                                   GValue     *value,
+                                   GParamSpec *pspec)
 {
-  RtfmGirRecord *self = (RtfmGirRecord *)object;
+  RtfmGirEnumeration *self = (RtfmGirEnumeration *)object;
 
   switch (prop_id)
     {
@@ -91,12 +88,12 @@ rtfm_gir_record_get_property (GObject    *object,
 }
 
 static void
-rtfm_gir_record_set_property (GObject       *object,
-                              guint         prop_id,
-                              const GValue *value,
-                              GParamSpec   *pspec)
+rtfm_gir_enumeration_set_property (GObject       *object,
+                                   guint         prop_id,
+                                   const GValue *value,
+                                   GParamSpec   *pspec)
 {
-  RtfmGirRecord *self = (RtfmGirRecord *)object;
+  RtfmGirEnumeration *self = (RtfmGirEnumeration *)object;
 
   switch (prop_id)
     {
@@ -121,16 +118,16 @@ rtfm_gir_record_set_property (GObject       *object,
 }
 
 static void
-rtfm_gir_record_class_init (RtfmGirRecordClass *klass)
+rtfm_gir_enumeration_class_init (RtfmGirEnumerationClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
   RtfmGirBaseClass *base_class = RTFM_GIR_BASE_CLASS (klass);
 
-  object_class->finalize = rtfm_gir_record_finalize;
-  object_class->get_property = rtfm_gir_record_get_property;
-  object_class->set_property = rtfm_gir_record_set_property;
+  object_class->finalize = rtfm_gir_enumeration_finalize;
+  object_class->get_property = rtfm_gir_enumeration_get_property;
+  object_class->set_property = rtfm_gir_enumeration_set_property;
 
-  base_class->ingest = rtfm_gir_record_ingest;
+  base_class->ingest = rtfm_gir_enumeration_ingest;
 
   properties [PROP_NAME] =
     g_param_spec_string ("name",
@@ -157,20 +154,20 @@ rtfm_gir_record_class_init (RtfmGirRecordClass *klass)
 }
 
 static void
-rtfm_gir_record_init (RtfmGirRecord *self)
+rtfm_gir_enumeration_init (RtfmGirEnumeration *self)
 {
 }
 
 static gboolean
-rtfm_gir_record_ingest (RtfmGirBase       *base,
+rtfm_gir_enumeration_ingest (RtfmGirBase       *base,
                           xmlTextReaderPtr   reader,
                           GError           **error)
 {
-  RtfmGirRecord *self = (RtfmGirRecord *)base;
+  RtfmGirEnumeration *self = (RtfmGirEnumeration *)base;
   xmlChar *name;
   xmlChar *c_type;
 
-  g_assert (RTFM_IS_GIR_RECORD (self));
+  g_assert (RTFM_IS_GIR_ENUMERATION (self));
   g_assert (reader != NULL);
 
   /* Read properties from element */
@@ -215,33 +212,19 @@ rtfm_gir_record_ingest (RtfmGirBase       *base,
 
           xmlFree (doc);
         }
-      else if (g_strcmp0 (element_name, "field") == 0)
+      else if (g_strcmp0 (element_name, "member") == 0)
         {
-          g_autoptr(RtfmGirField) field = NULL;
+          g_autoptr(RtfmGirMember) member = NULL;
 
-          field = g_object_new (RTFM_TYPE_GIR_FIELD, NULL);
+          member = g_object_new (RTFM_TYPE_GIR_MEMBER, NULL);
 
-          if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (field), reader, error))
+          if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (member), reader, error))
             return FALSE;
 
-          if (self->field == NULL)
-            self->field = g_ptr_array_new_with_free_func (g_object_unref);
+          if (self->member == NULL)
+            self->member = g_ptr_array_new_with_free_func (g_object_unref);
 
-          g_ptr_array_add (self->field, g_steal_pointer (&field));
-        }
-      else if (g_strcmp0 (element_name, "function") == 0)
-        {
-          g_autoptr(RtfmGirFunction) function = NULL;
-
-          function = g_object_new (RTFM_TYPE_GIR_FUNCTION, NULL);
-
-          if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (function), reader, error))
-            return FALSE;
-
-          if (self->function == NULL)
-            self->function = g_ptr_array_new_with_free_func (g_object_unref);
-
-          g_ptr_array_add (self->function, g_steal_pointer (&function));
+          g_ptr_array_add (self->member, g_steal_pointer (&member));
         }
     }
   while (xmlTextReaderNext (reader) == 1);
@@ -251,45 +234,23 @@ rtfm_gir_record_ingest (RtfmGirBase       *base,
 }
 
 gboolean
-rtfm_gir_record_has_fields (RtfmGirRecord *self)
+rtfm_gir_enumeration_has_members (RtfmGirEnumeration *self)
 {
-  g_return_val_if_fail (RTFM_IS_GIR_RECORD (self), FALSE);
+  g_return_val_if_fail (RTFM_IS_GIR_ENUMERATION (self), FALSE);
 
-  return self->field != NULL && self->field->len > 0;
+  return self->member != NULL && self->member->len > 0;
 }
 
 /**
- * rtfm_gir_record_get_fields:
+ * rtfm_gir_enumeration_get_members:
  *
- * Returns: (nullable) (transfer none) (element-type Rtfm.GirField):
- *  An array of #RtfmGirField or %NULL.
+ * Returns: (nullable) (transfer none) (element-type Rtfm.GirMember):
+ *  An array of #RtfmGirMember or %NULL.
  */
 GPtrArray *
-rtfm_gir_record_get_fields (RtfmGirRecord *self)
+rtfm_gir_enumeration_get_members (RtfmGirEnumeration *self)
 {
-  g_return_val_if_fail (RTFM_IS_GIR_RECORD (self), NULL);
+  g_return_val_if_fail (RTFM_IS_GIR_ENUMERATION (self), NULL);
 
-  return self->field;
-}
-
-gboolean
-rtfm_gir_record_has_functions (RtfmGirRecord *self)
-{
-  g_return_val_if_fail (RTFM_IS_GIR_RECORD (self), FALSE);
-
-  return self->function != NULL && self->function->len > 0;
-}
-
-/**
- * rtfm_gir_record_get_functions:
- *
- * Returns: (nullable) (transfer none) (element-type Rtfm.GirFunction):
- *  An array of #RtfmGirFunction or %NULL.
- */
-GPtrArray *
-rtfm_gir_record_get_functions (RtfmGirRecord *self)
-{
-  g_return_val_if_fail (RTFM_IS_GIR_RECORD (self), NULL);
-
-  return self->function;
+  return self->member;
 }

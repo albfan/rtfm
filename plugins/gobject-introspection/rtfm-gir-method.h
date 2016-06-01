@@ -21,6 +21,7 @@
 
 #include "rtfm-gir-base.h"
 #include "rtfm-gir-return-value.h"
+#include "rtfm-gir-parameters.h"
 
 G_BEGIN_DECLS
 
@@ -29,6 +30,7 @@ G_BEGIN_DECLS
 G_DECLARE_FINAL_TYPE (RtfmGirMethod, rtfm_gir_method, RTFM, GIR_METHOD, RtfmGirBase)
 
 RtfmGirReturnValue *rtfm_gir_method_get_return_value (RtfmGirMethod *self);
+RtfmGirParameters *rtfm_gir_method_get_parameters (RtfmGirMethod *self);
 
 G_END_DECLS
 

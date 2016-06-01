@@ -19,8 +19,8 @@
 #define G_LOG_DOMAIN "rtfm-gir-callback"
 
 #include "rtfm-gir-callback.h"
+#include "rtfm-gir-parameters.h"
 #include "rtfm-gir-return-value.h"
-#include "rtfm-gir-parameter.h"
 
 struct _RtfmGirCallback
 {
@@ -28,8 +28,8 @@ struct _RtfmGirCallback
   gchar *name;
   gchar *c_type;
   gchar *doc;
+  RtfmGirParameters *parameters;
   RtfmGirReturnValue *return_value;
-  GPtrArray *parameters;
 };
 
 enum {
@@ -213,6 +213,17 @@ rtfm_gir_callback_ingest (RtfmGirBase       *base,
 
           xmlFree (doc);
         }
+      else if (g_strcmp0 (element_name, "parameters") == 0)
+        {
+          g_autoptr(RtfmGirParameters) parameters = NULL;
+
+          parameters = g_object_new (RTFM_TYPE_GIR_PARAMETERS, NULL);
+
+          if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (parameters), reader, error))
+            return FALSE;
+
+          g_set_object (&self->parameters, parameters);
+        }
       else if (g_strcmp0 (element_name, "return-value") == 0)
         {
           g_autoptr(RtfmGirReturnValue) return_value = NULL;
@@ -224,32 +235,24 @@ rtfm_gir_callback_ingest (RtfmGirBase       *base,
 
           g_set_object (&self->return_value, return_value);
         }
-      else if (g_strcmp0 (element_name, "parameters") == 0)
-        {
-          if (self->parameters == NULL)
-            self->parameters = g_ptr_array_new_with_free_func (g_object_unref);
-
-          if (xmlTextReaderRead (reader) != 1)
-            return FALSE;
-
-          do
-            {
-              g_autoptr(RtfmGirParameter) parameter = NULL;
-
-              parameter = g_object_new (RTFM_TYPE_GIR_PARAMETER, NULL);
-
-              if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (parameter), reader, error))
-                return FALSE;
-
-              g_ptr_array_add (self->parameters, g_steal_pointer (&parameter));
-            }
-          while (xmlTextReaderNext (reader) == 1);
-        }
     }
   while (xmlTextReaderNext (reader) == 1);
 
 
   return TRUE;
+}
+
+/**
+ * rtfm_gir_callback_get_parameters:
+ *
+ * Returns: (nullable) (transfer none): An #RtfmGirParameters or %NULL.
+ */
+RtfmGirParameters *
+rtfm_gir_callback_get_parameters (RtfmGirCallback *self)
+{
+  g_return_val_if_fail (RTFM_IS_GIR_CALLBACK (self), NULL);
+
+  return self->parameters;
 }
 
 /**

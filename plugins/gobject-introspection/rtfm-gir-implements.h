@@ -1,4 +1,4 @@
-/* rtfm-gir-function.h
+/* rtfm-gir-implements.h
  *
  * Copyright (C) 2016 Christian Hergert <chergert@redhat.com>
  *
@@ -16,22 +16,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef RTFM_GIR_FUNCTION_H
-#define RTFM_GIR_FUNCTION_H
+#ifndef RTFM_GIR_IMPLEMENTS_H
+#define RTFM_GIR_IMPLEMENTS_H
 
 #include "rtfm-gir-base.h"
-#include "rtfm-gir-return-value.h"
-#include "rtfm-gir-parameters.h"
 
 G_BEGIN_DECLS
 
-#define RTFM_TYPE_GIR_FUNCTION (rtfm_gir_function_get_type())
+#define RTFM_TYPE_GIR_IMPLEMENTS (rtfm_gir_implements_get_type())
 
-G_DECLARE_FINAL_TYPE (RtfmGirFunction, rtfm_gir_function, RTFM, GIR_FUNCTION, RtfmGirBase)
+G_DECLARE_FINAL_TYPE (RtfmGirImplements, rtfm_gir_implements, RTFM, GIR_IMPLEMENTS, RtfmGirBase)
 
-RtfmGirReturnValue *rtfm_gir_function_get_return_value (RtfmGirFunction *self);
-RtfmGirParameters *rtfm_gir_function_get_parameters (RtfmGirFunction *self);
 
 G_END_DECLS
 
-#endif /* RTFM_GIR_FUNCTION_H */
+#endif /* RTFM_GIR_IMPLEMENTS_H */

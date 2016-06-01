@@ -1,4 +1,4 @@
-/* rtfm-gir-method.c
+/* rtfm-gir-constructor.c
  *
  * Copyright (C) 2016 Christian Hergert <chergert@redhat.com>
  *
@@ -16,61 +16,56 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define G_LOG_DOMAIN "rtfm-gir-method"
+#define G_LOG_DOMAIN "rtfm-gir-constructor"
 
-#include "rtfm-gir-method.h"
+#include "rtfm-gir-constructor.h"
 #include "rtfm-gir-return-value.h"
-#include "rtfm-gir-parameters.h"
 
-struct _RtfmGirMethod
+struct _RtfmGirConstructor
 {
   RtfmGirBase base;
   gchar *name;
   gchar *c_identifier;
-  gchar *version;
   gchar *doc;
   RtfmGirReturnValue *return_value;
-  RtfmGirParameters *parameters;
 };
 
 enum {
   PROP_0,
   PROP_NAME,
   PROP_C_IDENTIFIER,
-  PROP_VERSION,
   PROP_DOC,
   N_PROPS
 };
 
-G_DEFINE_TYPE (RtfmGirMethod, rtfm_gir_method, RTFM_TYPE_GIR_BASE)
+G_DEFINE_TYPE (RtfmGirConstructor, rtfm_gir_constructor, RTFM_TYPE_GIR_BASE)
 
 static GParamSpec *properties [N_PROPS];
 
 static gboolean
-rtfm_gir_method_ingest (RtfmGirBase       *base,
-                        xmlTextReaderPtr   reader,
-                        GError           **error);
+rtfm_gir_constructor_ingest (RtfmGirBase       *base,
+                             xmlTextReaderPtr   reader,
+                             GError           **error);
 
 static void
-rtfm_gir_method_finalize (GObject *object)
+rtfm_gir_constructor_finalize (GObject *object)
 {
-  RtfmGirMethod *self = (RtfmGirMethod *)object;
+  RtfmGirConstructor *self = (RtfmGirConstructor *)object;
 
   g_clear_pointer (&self->name, g_free);
   g_clear_pointer (&self->c_identifier, g_free);
-  g_clear_pointer (&self->version, g_free);
   g_clear_pointer (&self->doc, g_free);
 
-  G_OBJECT_CLASS (rtfm_gir_method_parent_class)->finalize (object);
+  G_OBJECT_CLASS (rtfm_gir_constructor_parent_class)->finalize (object);
 }
 
 static void
-rtfm_gir_method_get_property (GObject    *object,
-                              guint       prop_id,
-                              GValue     *value,
-                              GParamSpec *pspec)
+rtfm_gir_constructor_get_property (GObject    *object,
+                                   guint       prop_id,
+                                   GValue     *value,
+                                   GParamSpec *pspec)
 {
-  RtfmGirMethod *self = (RtfmGirMethod *)object;
+  RtfmGirConstructor *self = (RtfmGirConstructor *)object;
 
   switch (prop_id)
     {
@@ -80,10 +75,6 @@ rtfm_gir_method_get_property (GObject    *object,
 
     case PROP_C_IDENTIFIER:
       g_value_set_string (value, self->c_identifier);
-      break;
-
-    case PROP_VERSION:
-      g_value_set_string (value, self->version);
       break;
 
     case PROP_DOC:
@@ -96,12 +87,12 @@ rtfm_gir_method_get_property (GObject    *object,
 }
 
 static void
-rtfm_gir_method_set_property (GObject       *object,
-                              guint         prop_id,
-                              const GValue *value,
-                              GParamSpec   *pspec)
+rtfm_gir_constructor_set_property (GObject       *object,
+                                   guint         prop_id,
+                                   const GValue *value,
+                                   GParamSpec   *pspec)
 {
-  RtfmGirMethod *self = (RtfmGirMethod *)object;
+  RtfmGirConstructor *self = (RtfmGirConstructor *)object;
 
   switch (prop_id)
     {
@@ -115,11 +106,6 @@ rtfm_gir_method_set_property (GObject       *object,
       self->c_identifier = g_value_dup_string (value);
       break;
 
-    case PROP_VERSION:
-      g_free (self->version);
-      self->version = g_value_dup_string (value);
-      break;
-
     case PROP_DOC:
       g_free (self->doc);
       self->doc = g_value_dup_string (value);
@@ -131,16 +117,16 @@ rtfm_gir_method_set_property (GObject       *object,
 }
 
 static void
-rtfm_gir_method_class_init (RtfmGirMethodClass *klass)
+rtfm_gir_constructor_class_init (RtfmGirConstructorClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
   RtfmGirBaseClass *base_class = RTFM_GIR_BASE_CLASS (klass);
 
-  object_class->finalize = rtfm_gir_method_finalize;
-  object_class->get_property = rtfm_gir_method_get_property;
-  object_class->set_property = rtfm_gir_method_set_property;
+  object_class->finalize = rtfm_gir_constructor_finalize;
+  object_class->get_property = rtfm_gir_constructor_get_property;
+  object_class->set_property = rtfm_gir_constructor_set_property;
 
-  base_class->ingest = rtfm_gir_method_ingest;
+  base_class->ingest = rtfm_gir_constructor_ingest;
 
   properties [PROP_NAME] =
     g_param_spec_string ("name",
@@ -156,13 +142,6 @@ rtfm_gir_method_class_init (RtfmGirMethodClass *klass)
                          NULL,
                          (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
-  properties [PROP_VERSION] =
-    g_param_spec_string ("version",
-                         "version",
-                         "version",
-                         NULL,
-                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
-
   properties [PROP_DOC] =
     g_param_spec_string ("doc",
                          "doc",
@@ -174,37 +153,33 @@ rtfm_gir_method_class_init (RtfmGirMethodClass *klass)
 }
 
 static void
-rtfm_gir_method_init (RtfmGirMethod *self)
+rtfm_gir_constructor_init (RtfmGirConstructor *self)
 {
 }
 
 static gboolean
-rtfm_gir_method_ingest (RtfmGirBase       *base,
+rtfm_gir_constructor_ingest (RtfmGirBase       *base,
                           xmlTextReaderPtr   reader,
                           GError           **error)
 {
-  RtfmGirMethod *self = (RtfmGirMethod *)base;
+  RtfmGirConstructor *self = (RtfmGirConstructor *)base;
   xmlChar *name;
   xmlChar *c_identifier;
-  xmlChar *version;
 
-  g_assert (RTFM_IS_GIR_METHOD (self));
+  g_assert (RTFM_IS_GIR_CONSTRUCTOR (self));
   g_assert (reader != NULL);
 
   /* Read properties from element */
   name = xmlTextReaderGetAttribute (reader, (const xmlChar *)"name");
   c_identifier = xmlTextReaderGetAttribute (reader, (const xmlChar *)"c:identifier");
-  version = xmlTextReaderGetAttribute (reader, (const xmlChar *)"version");
 
   /* Copy properties to object */
   self->name = g_strdup ((gchar *)name);
   self->c_identifier = g_strdup ((gchar *)c_identifier);
-  self->version = g_strdup ((gchar *)version);
 
   /* Free libxml allocated strings */
   xmlFree (name);
   xmlFree (c_identifier);
-  xmlFree (version);
 
   if (xmlTextReaderRead (reader) != 1)
     return FALSE;
@@ -247,17 +222,6 @@ rtfm_gir_method_ingest (RtfmGirBase       *base,
 
           g_set_object (&self->return_value, return_value);
         }
-      else if (g_strcmp0 (element_name, "parameters") == 0)
-        {
-          g_autoptr(RtfmGirParameters) parameters = NULL;
-
-          parameters = g_object_new (RTFM_TYPE_GIR_PARAMETERS, NULL);
-
-          if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (parameters), reader, error))
-            return FALSE;
-
-          g_set_object (&self->parameters, parameters);
-        }
     }
   while (xmlTextReaderNext (reader) == 1);
 
@@ -266,27 +230,14 @@ rtfm_gir_method_ingest (RtfmGirBase       *base,
 }
 
 /**
- * rtfm_gir_method_get_return_value:
+ * rtfm_gir_constructor_get_return_value:
  *
  * Returns: (nullable) (transfer none): An #RtfmGirReturnValue or %NULL.
  */
 RtfmGirReturnValue *
-rtfm_gir_method_get_return_value (RtfmGirMethod *self)
+rtfm_gir_constructor_get_return_value (RtfmGirConstructor *self)
 {
-  g_return_val_if_fail (RTFM_IS_GIR_METHOD (self), NULL);
+  g_return_val_if_fail (RTFM_IS_GIR_CONSTRUCTOR (self), NULL);
 
   return self->return_value;
-}
-
-/**
- * rtfm_gir_method_get_parameters:
- *
- * Returns: (nullable) (transfer none): An #RtfmGirParameters or %NULL.
- */
-RtfmGirParameters *
-rtfm_gir_method_get_parameters (RtfmGirMethod *self)
-{
-  g_return_val_if_fail (RTFM_IS_GIR_METHOD (self), NULL);
-
-  return self->parameters;
 }

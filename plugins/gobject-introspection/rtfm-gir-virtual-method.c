@@ -1,4 +1,4 @@
-/* rtfm-gir-function.c
+/* rtfm-gir-virtual-method.c
  *
  * Copyright (C) 2016 Christian Hergert <chergert@redhat.com>
  *
@@ -16,18 +16,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define G_LOG_DOMAIN "rtfm-gir-function"
+#define G_LOG_DOMAIN "rtfm-gir-virtual_method"
 
-#include "rtfm-gir-function.h"
+#include "rtfm-gir-virtual-method.h"
 #include "rtfm-gir-return-value.h"
 #include "rtfm-gir-parameters.h"
 
-struct _RtfmGirFunction
+struct _RtfmGirVirtualMethod
 {
   RtfmGirBase base;
   gchar *name;
-  gchar *c_identifier;
-  gchar *doc;
   RtfmGirReturnValue *return_value;
   RtfmGirParameters *parameters;
 };
@@ -35,52 +33,40 @@ struct _RtfmGirFunction
 enum {
   PROP_0,
   PROP_NAME,
-  PROP_C_IDENTIFIER,
-  PROP_DOC,
   N_PROPS
 };
 
-G_DEFINE_TYPE (RtfmGirFunction, rtfm_gir_function, RTFM_TYPE_GIR_BASE)
+G_DEFINE_TYPE (RtfmGirVirtualMethod, rtfm_gir_virtual_method, RTFM_TYPE_GIR_BASE)
 
 static GParamSpec *properties [N_PROPS];
 
 static gboolean
-rtfm_gir_function_ingest (RtfmGirBase       *base,
-                          xmlTextReaderPtr   reader,
-                          GError           **error);
+rtfm_gir_virtual_method_ingest (RtfmGirBase       *base,
+                                xmlTextReaderPtr   reader,
+                                GError           **error);
 
 static void
-rtfm_gir_function_finalize (GObject *object)
+rtfm_gir_virtual_method_finalize (GObject *object)
 {
-  RtfmGirFunction *self = (RtfmGirFunction *)object;
+  RtfmGirVirtualMethod *self = (RtfmGirVirtualMethod *)object;
 
   g_clear_pointer (&self->name, g_free);
-  g_clear_pointer (&self->c_identifier, g_free);
-  g_clear_pointer (&self->doc, g_free);
 
-  G_OBJECT_CLASS (rtfm_gir_function_parent_class)->finalize (object);
+  G_OBJECT_CLASS (rtfm_gir_virtual_method_parent_class)->finalize (object);
 }
 
 static void
-rtfm_gir_function_get_property (GObject    *object,
-                                guint       prop_id,
-                                GValue     *value,
-                                GParamSpec *pspec)
+rtfm_gir_virtual_method_get_property (GObject    *object,
+                                      guint       prop_id,
+                                      GValue     *value,
+                                      GParamSpec *pspec)
 {
-  RtfmGirFunction *self = (RtfmGirFunction *)object;
+  RtfmGirVirtualMethod *self = (RtfmGirVirtualMethod *)object;
 
   switch (prop_id)
     {
     case PROP_NAME:
       g_value_set_string (value, self->name);
-      break;
-
-    case PROP_C_IDENTIFIER:
-      g_value_set_string (value, self->c_identifier);
-      break;
-
-    case PROP_DOC:
-      g_value_set_string (value, self->doc);
       break;
 
     default:
@@ -89,12 +75,12 @@ rtfm_gir_function_get_property (GObject    *object,
 }
 
 static void
-rtfm_gir_function_set_property (GObject       *object,
-                                guint         prop_id,
-                                const GValue *value,
-                                GParamSpec   *pspec)
+rtfm_gir_virtual_method_set_property (GObject       *object,
+                                      guint         prop_id,
+                                      const GValue *value,
+                                      GParamSpec   *pspec)
 {
-  RtfmGirFunction *self = (RtfmGirFunction *)object;
+  RtfmGirVirtualMethod *self = (RtfmGirVirtualMethod *)object;
 
   switch (prop_id)
     {
@@ -103,32 +89,22 @@ rtfm_gir_function_set_property (GObject       *object,
       self->name = g_value_dup_string (value);
       break;
 
-    case PROP_C_IDENTIFIER:
-      g_free (self->c_identifier);
-      self->c_identifier = g_value_dup_string (value);
-      break;
-
-    case PROP_DOC:
-      g_free (self->doc);
-      self->doc = g_value_dup_string (value);
-      break;
-
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
     }
 }
 
 static void
-rtfm_gir_function_class_init (RtfmGirFunctionClass *klass)
+rtfm_gir_virtual_method_class_init (RtfmGirVirtualMethodClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
   RtfmGirBaseClass *base_class = RTFM_GIR_BASE_CLASS (klass);
 
-  object_class->finalize = rtfm_gir_function_finalize;
-  object_class->get_property = rtfm_gir_function_get_property;
-  object_class->set_property = rtfm_gir_function_set_property;
+  object_class->finalize = rtfm_gir_virtual_method_finalize;
+  object_class->get_property = rtfm_gir_virtual_method_get_property;
+  object_class->set_property = rtfm_gir_virtual_method_set_property;
 
-  base_class->ingest = rtfm_gir_function_ingest;
+  base_class->ingest = rtfm_gir_virtual_method_ingest;
 
   properties [PROP_NAME] =
     g_param_spec_string ("name",
@@ -137,51 +113,33 @@ rtfm_gir_function_class_init (RtfmGirFunctionClass *klass)
                          NULL,
                          (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
-  properties [PROP_C_IDENTIFIER] =
-    g_param_spec_string ("c-identifier",
-                         "c-identifier",
-                         "c-identifier",
-                         NULL,
-                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
-
-  properties [PROP_DOC] =
-    g_param_spec_string ("doc",
-                         "doc",
-                         "doc",
-                         NULL,
-                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
-
   g_object_class_install_properties (object_class, N_PROPS, properties);
 }
 
 static void
-rtfm_gir_function_init (RtfmGirFunction *self)
+rtfm_gir_virtual_method_init (RtfmGirVirtualMethod *self)
 {
 }
 
 static gboolean
-rtfm_gir_function_ingest (RtfmGirBase       *base,
+rtfm_gir_virtual_method_ingest (RtfmGirBase       *base,
                           xmlTextReaderPtr   reader,
                           GError           **error)
 {
-  RtfmGirFunction *self = (RtfmGirFunction *)base;
+  RtfmGirVirtualMethod *self = (RtfmGirVirtualMethod *)base;
   xmlChar *name;
-  xmlChar *c_identifier;
 
-  g_assert (RTFM_IS_GIR_FUNCTION (self));
+  g_assert (RTFM_IS_GIR_VIRTUAL_METHOD (self));
   g_assert (reader != NULL);
 
   /* Read properties from element */
   name = xmlTextReaderGetAttribute (reader, (const xmlChar *)"name");
-  c_identifier = xmlTextReaderGetAttribute (reader, (const xmlChar *)"c:identifier");
 
   /* Copy properties to object */
   self->name = g_strdup ((gchar *)name);
-  self->c_identifier = g_strdup ((gchar *)c_identifier);
 
   /* Free libxml allocated strings */
   xmlFree (name);
-  xmlFree (c_identifier);
 
   if (xmlTextReaderRead (reader) != 1)
     return FALSE;
@@ -202,17 +160,6 @@ rtfm_gir_function_ingest (RtfmGirBase       *base,
       element_name = (const gchar *)xmlTextReaderConstName (reader);
 
       if (FALSE) { }
-      else if (g_strcmp0 (element_name, "doc") == 0)
-        {
-          xmlChar *doc;
-
-          doc = xmlTextReaderReadString (reader);
-
-          g_clear_pointer (&self->doc, g_free);
-          self->doc = g_strdup ((gchar *)doc);
-
-          xmlFree (doc);
-        }
       else if (g_strcmp0 (element_name, "return-value") == 0)
         {
           g_autoptr(RtfmGirReturnValue) return_value = NULL;
@@ -243,27 +190,27 @@ rtfm_gir_function_ingest (RtfmGirBase       *base,
 }
 
 /**
- * rtfm_gir_function_get_return_value:
+ * rtfm_gir_virtual_method_get_return_value:
  *
  * Returns: (nullable) (transfer none): An #RtfmGirReturnValue or %NULL.
  */
 RtfmGirReturnValue *
-rtfm_gir_function_get_return_value (RtfmGirFunction *self)
+rtfm_gir_virtual_method_get_return_value (RtfmGirVirtualMethod *self)
 {
-  g_return_val_if_fail (RTFM_IS_GIR_FUNCTION (self), NULL);
+  g_return_val_if_fail (RTFM_IS_GIR_VIRTUAL_METHOD (self), NULL);
 
   return self->return_value;
 }
 
 /**
- * rtfm_gir_function_get_parameters:
+ * rtfm_gir_virtual_method_get_parameters:
  *
  * Returns: (nullable) (transfer none): An #RtfmGirParameters or %NULL.
  */
 RtfmGirParameters *
-rtfm_gir_function_get_parameters (RtfmGirFunction *self)
+rtfm_gir_virtual_method_get_parameters (RtfmGirVirtualMethod *self)
 {
-  g_return_val_if_fail (RTFM_IS_GIR_FUNCTION (self), NULL);
+  g_return_val_if_fail (RTFM_IS_GIR_VIRTUAL_METHOD (self), NULL);
 
   return self->parameters;
 }

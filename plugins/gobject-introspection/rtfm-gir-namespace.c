@@ -20,11 +20,13 @@
 
 #include "rtfm-gir-namespace.h"
 #include "rtfm-gir-alias.h"
-#include "rtfm-gir-class.h"
-#include "rtfm-gir-callback.h"
 #include "rtfm-gir-bitfield.h"
-#include "rtfm-gir-record.h"
+#include "rtfm-gir-callback.h"
+#include "rtfm-gir-class.h"
+#include "rtfm-gir-constant.h"
+#include "rtfm-gir-enumeration.h"
 #include "rtfm-gir-function.h"
+#include "rtfm-gir-record.h"
 
 struct _RtfmGirNamespace
 {
@@ -35,11 +37,13 @@ struct _RtfmGirNamespace
   gchar *c_identifier_prefixes;
   gchar *c_symbol_prefixes;
   GPtrArray *alias;
-  GPtrArray *class;
-  GPtrArray *callback;
   GPtrArray *bitfield;
-  GPtrArray *record;
+  GPtrArray *callback;
+  GPtrArray *class;
+  GPtrArray *constant;
+  GPtrArray *enumeration;
   GPtrArray *function;
+  GPtrArray *record;
 };
 
 enum {
@@ -71,6 +75,8 @@ rtfm_gir_namespace_finalize (GObject *object)
   g_clear_pointer (&self->shared_library, g_free);
   g_clear_pointer (&self->c_identifier_prefixes, g_free);
   g_clear_pointer (&self->c_symbol_prefixes, g_free);
+  g_clear_pointer (&self->c_symbol_prefixes, g_ptr_array_unref);
+  g_clear_pointer (&self->c_symbol_prefixes, g_ptr_array_unref);
   g_clear_pointer (&self->c_symbol_prefixes, g_ptr_array_unref);
   g_clear_pointer (&self->c_symbol_prefixes, g_ptr_array_unref);
   g_clear_pointer (&self->c_symbol_prefixes, g_ptr_array_unref);
@@ -280,19 +286,19 @@ rtfm_gir_namespace_ingest (RtfmGirBase       *base,
 
           g_ptr_array_add (self->alias, g_steal_pointer (&alias));
         }
-      else if (g_strcmp0 (element_name, "class") == 0)
+      else if (g_strcmp0 (element_name, "bitfield") == 0)
         {
-          g_autoptr(RtfmGirClass) class = NULL;
+          g_autoptr(RtfmGirBitfield) bitfield = NULL;
 
-          class = g_object_new (RTFM_TYPE_GIR_CLASS, NULL);
+          bitfield = g_object_new (RTFM_TYPE_GIR_BITFIELD, NULL);
 
-          if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (class), reader, error))
+          if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (bitfield), reader, error))
             return FALSE;
 
-          if (self->class == NULL)
-            self->class = g_ptr_array_new_with_free_func (g_object_unref);
+          if (self->bitfield == NULL)
+            self->bitfield = g_ptr_array_new_with_free_func (g_object_unref);
 
-          g_ptr_array_add (self->class, g_steal_pointer (&class));
+          g_ptr_array_add (self->bitfield, g_steal_pointer (&bitfield));
         }
       else if (g_strcmp0 (element_name, "callback") == 0)
         {
@@ -308,33 +314,47 @@ rtfm_gir_namespace_ingest (RtfmGirBase       *base,
 
           g_ptr_array_add (self->callback, g_steal_pointer (&callback));
         }
-      else if (g_strcmp0 (element_name, "bitfield") == 0)
+      else if (g_strcmp0 (element_name, "class") == 0)
         {
-          g_autoptr(RtfmGirBitfield) bitfield = NULL;
+          g_autoptr(RtfmGirClass) class = NULL;
 
-          bitfield = g_object_new (RTFM_TYPE_GIR_BITFIELD, NULL);
+          class = g_object_new (RTFM_TYPE_GIR_CLASS, NULL);
 
-          if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (bitfield), reader, error))
+          if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (class), reader, error))
             return FALSE;
 
-          if (self->bitfield == NULL)
-            self->bitfield = g_ptr_array_new_with_free_func (g_object_unref);
+          if (self->class == NULL)
+            self->class = g_ptr_array_new_with_free_func (g_object_unref);
 
-          g_ptr_array_add (self->bitfield, g_steal_pointer (&bitfield));
+          g_ptr_array_add (self->class, g_steal_pointer (&class));
         }
-      else if (g_strcmp0 (element_name, "record") == 0)
+      else if (g_strcmp0 (element_name, "constant") == 0)
         {
-          g_autoptr(RtfmGirRecord) record = NULL;
+          g_autoptr(RtfmGirConstant) constant = NULL;
 
-          record = g_object_new (RTFM_TYPE_GIR_RECORD, NULL);
+          constant = g_object_new (RTFM_TYPE_GIR_CONSTANT, NULL);
 
-          if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (record), reader, error))
+          if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (constant), reader, error))
             return FALSE;
 
-          if (self->record == NULL)
-            self->record = g_ptr_array_new_with_free_func (g_object_unref);
+          if (self->constant == NULL)
+            self->constant = g_ptr_array_new_with_free_func (g_object_unref);
 
-          g_ptr_array_add (self->record, g_steal_pointer (&record));
+          g_ptr_array_add (self->constant, g_steal_pointer (&constant));
+        }
+      else if (g_strcmp0 (element_name, "enumeration") == 0)
+        {
+          g_autoptr(RtfmGirEnumeration) enumeration = NULL;
+
+          enumeration = g_object_new (RTFM_TYPE_GIR_ENUMERATION, NULL);
+
+          if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (enumeration), reader, error))
+            return FALSE;
+
+          if (self->enumeration == NULL)
+            self->enumeration = g_ptr_array_new_with_free_func (g_object_unref);
+
+          g_ptr_array_add (self->enumeration, g_steal_pointer (&enumeration));
         }
       else if (g_strcmp0 (element_name, "function") == 0)
         {
@@ -349,6 +369,20 @@ rtfm_gir_namespace_ingest (RtfmGirBase       *base,
             self->function = g_ptr_array_new_with_free_func (g_object_unref);
 
           g_ptr_array_add (self->function, g_steal_pointer (&function));
+        }
+      else if (g_strcmp0 (element_name, "record") == 0)
+        {
+          g_autoptr(RtfmGirRecord) record = NULL;
+
+          record = g_object_new (RTFM_TYPE_GIR_RECORD, NULL);
+
+          if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (record), reader, error))
+            return FALSE;
+
+          if (self->record == NULL)
+            self->record = g_ptr_array_new_with_free_func (g_object_unref);
+
+          g_ptr_array_add (self->record, g_steal_pointer (&record));
         }
     }
   while (xmlTextReaderNext (reader) == 1);
@@ -380,25 +414,25 @@ rtfm_gir_namespace_get_aliases (RtfmGirNamespace *self)
 }
 
 gboolean
-rtfm_gir_namespace_has_classes (RtfmGirNamespace *self)
+rtfm_gir_namespace_has_bitfields (RtfmGirNamespace *self)
 {
   g_return_val_if_fail (RTFM_IS_GIR_NAMESPACE (self), FALSE);
 
-  return self->class != NULL && self->class->len > 0;
+  return self->bitfield != NULL && self->bitfield->len > 0;
 }
 
 /**
- * rtfm_gir_namespace_get_classes:
+ * rtfm_gir_namespace_get_bitfields:
  *
- * Returns: (nullable) (transfer none) (element-type Rtfm.GirClass):
- *  An array of #RtfmGirClass or %NULL.
+ * Returns: (nullable) (transfer none) (element-type Rtfm.GirBitfield):
+ *  An array of #RtfmGirBitfield or %NULL.
  */
 GPtrArray *
-rtfm_gir_namespace_get_classes (RtfmGirNamespace *self)
+rtfm_gir_namespace_get_bitfields (RtfmGirNamespace *self)
 {
   g_return_val_if_fail (RTFM_IS_GIR_NAMESPACE (self), NULL);
 
-  return self->class;
+  return self->bitfield;
 }
 
 gboolean
@@ -424,47 +458,69 @@ rtfm_gir_namespace_get_callbacks (RtfmGirNamespace *self)
 }
 
 gboolean
-rtfm_gir_namespace_has_bitfields (RtfmGirNamespace *self)
+rtfm_gir_namespace_has_classes (RtfmGirNamespace *self)
 {
   g_return_val_if_fail (RTFM_IS_GIR_NAMESPACE (self), FALSE);
 
-  return self->bitfield != NULL && self->bitfield->len > 0;
+  return self->class != NULL && self->class->len > 0;
 }
 
 /**
- * rtfm_gir_namespace_get_bitfields:
+ * rtfm_gir_namespace_get_classes:
  *
- * Returns: (nullable) (transfer none) (element-type Rtfm.GirBitfield):
- *  An array of #RtfmGirBitfield or %NULL.
+ * Returns: (nullable) (transfer none) (element-type Rtfm.GirClass):
+ *  An array of #RtfmGirClass or %NULL.
  */
 GPtrArray *
-rtfm_gir_namespace_get_bitfields (RtfmGirNamespace *self)
+rtfm_gir_namespace_get_classes (RtfmGirNamespace *self)
 {
   g_return_val_if_fail (RTFM_IS_GIR_NAMESPACE (self), NULL);
 
-  return self->bitfield;
+  return self->class;
 }
 
 gboolean
-rtfm_gir_namespace_has_records (RtfmGirNamespace *self)
+rtfm_gir_namespace_has_constants (RtfmGirNamespace *self)
 {
   g_return_val_if_fail (RTFM_IS_GIR_NAMESPACE (self), FALSE);
 
-  return self->record != NULL && self->record->len > 0;
+  return self->constant != NULL && self->constant->len > 0;
 }
 
 /**
- * rtfm_gir_namespace_get_records:
+ * rtfm_gir_namespace_get_constants:
  *
- * Returns: (nullable) (transfer none) (element-type Rtfm.GirRecord):
- *  An array of #RtfmGirRecord or %NULL.
+ * Returns: (nullable) (transfer none) (element-type Rtfm.GirConstant):
+ *  An array of #RtfmGirConstant or %NULL.
  */
 GPtrArray *
-rtfm_gir_namespace_get_records (RtfmGirNamespace *self)
+rtfm_gir_namespace_get_constants (RtfmGirNamespace *self)
 {
   g_return_val_if_fail (RTFM_IS_GIR_NAMESPACE (self), NULL);
 
-  return self->record;
+  return self->constant;
+}
+
+gboolean
+rtfm_gir_namespace_has_enumerations (RtfmGirNamespace *self)
+{
+  g_return_val_if_fail (RTFM_IS_GIR_NAMESPACE (self), FALSE);
+
+  return self->enumeration != NULL && self->enumeration->len > 0;
+}
+
+/**
+ * rtfm_gir_namespace_get_enumerations:
+ *
+ * Returns: (nullable) (transfer none) (element-type Rtfm.GirEnumeration):
+ *  An array of #RtfmGirEnumeration or %NULL.
+ */
+GPtrArray *
+rtfm_gir_namespace_get_enumerations (RtfmGirNamespace *self)
+{
+  g_return_val_if_fail (RTFM_IS_GIR_NAMESPACE (self), NULL);
+
+  return self->enumeration;
 }
 
 gboolean
@@ -487,4 +543,26 @@ rtfm_gir_namespace_get_functions (RtfmGirNamespace *self)
   g_return_val_if_fail (RTFM_IS_GIR_NAMESPACE (self), NULL);
 
   return self->function;
+}
+
+gboolean
+rtfm_gir_namespace_has_records (RtfmGirNamespace *self)
+{
+  g_return_val_if_fail (RTFM_IS_GIR_NAMESPACE (self), FALSE);
+
+  return self->record != NULL && self->record->len > 0;
+}
+
+/**
+ * rtfm_gir_namespace_get_records:
+ *
+ * Returns: (nullable) (transfer none) (element-type Rtfm.GirRecord):
+ *  An array of #RtfmGirRecord or %NULL.
+ */
+GPtrArray *
+rtfm_gir_namespace_get_records (RtfmGirNamespace *self)
+{
+  g_return_val_if_fail (RTFM_IS_GIR_NAMESPACE (self), NULL);
+
+  return self->record;
 }

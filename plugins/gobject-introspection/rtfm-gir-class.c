@@ -19,9 +19,12 @@
 #define G_LOG_DOMAIN "rtfm-gir-class"
 
 #include "rtfm-gir-class.h"
+#include "rtfm-gir-implements.h"
 #include "rtfm-gir-method.h"
+#include "rtfm-gir-virtual-method.h"
 #include "rtfm-gir-property.h"
 #include "rtfm-gir-bitfield.h"
+#include "rtfm-gir-constructor.h"
 
 struct _RtfmGirClass
 {
@@ -34,9 +37,12 @@ struct _RtfmGirClass
   gchar *glib_type_name;
   gchar *glib_get_type;
   gchar *doc;
+  GPtrArray *implements;
   GPtrArray *method;
+  GPtrArray *virtual_method;
   GPtrArray *property;
   GPtrArray *bitfield;
+  GPtrArray *constructor;
 };
 
 enum {
@@ -74,6 +80,9 @@ rtfm_gir_class_finalize (GObject *object)
   g_clear_pointer (&self->glib_type_name, g_free);
   g_clear_pointer (&self->glib_get_type, g_free);
   g_clear_pointer (&self->doc, g_free);
+  g_clear_pointer (&self->doc, g_ptr_array_unref);
+  g_clear_pointer (&self->doc, g_ptr_array_unref);
+  g_clear_pointer (&self->doc, g_ptr_array_unref);
   g_clear_pointer (&self->doc, g_ptr_array_unref);
   g_clear_pointer (&self->doc, g_ptr_array_unref);
   g_clear_pointer (&self->doc, g_ptr_array_unref);
@@ -333,6 +342,20 @@ rtfm_gir_class_ingest (RtfmGirBase       *base,
 
           xmlFree (doc);
         }
+      else if (g_strcmp0 (element_name, "implements") == 0)
+        {
+          g_autoptr(RtfmGirImplements) implements = NULL;
+
+          implements = g_object_new (RTFM_TYPE_GIR_IMPLEMENTS, NULL);
+
+          if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (implements), reader, error))
+            return FALSE;
+
+          if (self->implements == NULL)
+            self->implements = g_ptr_array_new_with_free_func (g_object_unref);
+
+          g_ptr_array_add (self->implements, g_steal_pointer (&implements));
+        }
       else if (g_strcmp0 (element_name, "method") == 0)
         {
           g_autoptr(RtfmGirMethod) method = NULL;
@@ -346,6 +369,20 @@ rtfm_gir_class_ingest (RtfmGirBase       *base,
             self->method = g_ptr_array_new_with_free_func (g_object_unref);
 
           g_ptr_array_add (self->method, g_steal_pointer (&method));
+        }
+      else if (g_strcmp0 (element_name, "virtual-method") == 0)
+        {
+          g_autoptr(RtfmGirVirtualMethod) virtual_method = NULL;
+
+          virtual_method = g_object_new (RTFM_TYPE_GIR_VIRTUAL_METHOD, NULL);
+
+          if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (virtual_method), reader, error))
+            return FALSE;
+
+          if (self->virtual_method == NULL)
+            self->virtual_method = g_ptr_array_new_with_free_func (g_object_unref);
+
+          g_ptr_array_add (self->virtual_method, g_steal_pointer (&virtual_method));
         }
       else if (g_strcmp0 (element_name, "property") == 0)
         {
@@ -375,11 +412,47 @@ rtfm_gir_class_ingest (RtfmGirBase       *base,
 
           g_ptr_array_add (self->bitfield, g_steal_pointer (&bitfield));
         }
+      else if (g_strcmp0 (element_name, "constructor") == 0)
+        {
+          g_autoptr(RtfmGirConstructor) constructor = NULL;
+
+          constructor = g_object_new (RTFM_TYPE_GIR_CONSTRUCTOR, NULL);
+
+          if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (constructor), reader, error))
+            return FALSE;
+
+          if (self->constructor == NULL)
+            self->constructor = g_ptr_array_new_with_free_func (g_object_unref);
+
+          g_ptr_array_add (self->constructor, g_steal_pointer (&constructor));
+        }
     }
   while (xmlTextReaderNext (reader) == 1);
 
 
   return TRUE;
+}
+
+gboolean
+rtfm_gir_class_has_implements (RtfmGirClass *self)
+{
+  g_return_val_if_fail (RTFM_IS_GIR_CLASS (self), FALSE);
+
+  return self->implements != NULL && self->implements->len > 0;
+}
+
+/**
+ * rtfm_gir_class_get_implements:
+ *
+ * Returns: (nullable) (transfer none) (element-type Rtfm.GirImplements):
+ *  An array of #RtfmGirImplements or %NULL.
+ */
+GPtrArray *
+rtfm_gir_class_get_implements (RtfmGirClass *self)
+{
+  g_return_val_if_fail (RTFM_IS_GIR_CLASS (self), NULL);
+
+  return self->implements;
 }
 
 gboolean
@@ -402,6 +475,28 @@ rtfm_gir_class_get_methods (RtfmGirClass *self)
   g_return_val_if_fail (RTFM_IS_GIR_CLASS (self), NULL);
 
   return self->method;
+}
+
+gboolean
+rtfm_gir_class_has_virtual_methods (RtfmGirClass *self)
+{
+  g_return_val_if_fail (RTFM_IS_GIR_CLASS (self), FALSE);
+
+  return self->virtual_method != NULL && self->virtual_method->len > 0;
+}
+
+/**
+ * rtfm_gir_class_get_virtual_methods:
+ *
+ * Returns: (nullable) (transfer none) (element-type Rtfm.GirVirtualMethod):
+ *  An array of #RtfmGirVirtualMethod or %NULL.
+ */
+GPtrArray *
+rtfm_gir_class_get_virtual_methods (RtfmGirClass *self)
+{
+  g_return_val_if_fail (RTFM_IS_GIR_CLASS (self), NULL);
+
+  return self->virtual_method;
 }
 
 gboolean
@@ -446,4 +541,26 @@ rtfm_gir_class_get_bitfields (RtfmGirClass *self)
   g_return_val_if_fail (RTFM_IS_GIR_CLASS (self), NULL);
 
   return self->bitfield;
+}
+
+gboolean
+rtfm_gir_class_has_constructors (RtfmGirClass *self)
+{
+  g_return_val_if_fail (RTFM_IS_GIR_CLASS (self), FALSE);
+
+  return self->constructor != NULL && self->constructor->len > 0;
+}
+
+/**
+ * rtfm_gir_class_get_constructors:
+ *
+ * Returns: (nullable) (transfer none) (element-type Rtfm.GirConstructor):
+ *  An array of #RtfmGirConstructor or %NULL.
+ */
+GPtrArray *
+rtfm_gir_class_get_constructors (RtfmGirClass *self)
+{
+  g_return_val_if_fail (RTFM_IS_GIR_CLASS (self), NULL);
+
+  return self->constructor;
 }
