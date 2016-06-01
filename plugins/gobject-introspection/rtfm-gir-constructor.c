@@ -159,8 +159,8 @@ rtfm_gir_constructor_init (RtfmGirConstructor *self)
 
 static gboolean
 rtfm_gir_constructor_ingest (RtfmGirBase       *base,
-                          xmlTextReaderPtr   reader,
-                          GError           **error)
+                             xmlTextReaderPtr   reader,
+                             GError           **error)
 {
   RtfmGirConstructor *self = (RtfmGirConstructor *)base;
   xmlChar *name;

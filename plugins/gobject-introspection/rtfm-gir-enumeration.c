@@ -160,8 +160,8 @@ rtfm_gir_enumeration_init (RtfmGirEnumeration *self)
 
 static gboolean
 rtfm_gir_enumeration_ingest (RtfmGirBase       *base,
-                          xmlTextReaderPtr   reader,
-                          GError           **error)
+                             xmlTextReaderPtr   reader,
+                             GError           **error)
 {
   RtfmGirEnumeration *self = (RtfmGirEnumeration *)base;
   xmlChar *name;

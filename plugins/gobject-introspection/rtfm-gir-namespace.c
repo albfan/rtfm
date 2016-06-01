@@ -219,8 +219,8 @@ rtfm_gir_namespace_init (RtfmGirNamespace *self)
 
 static gboolean
 rtfm_gir_namespace_ingest (RtfmGirBase       *base,
-                          xmlTextReaderPtr   reader,
-                          GError           **error)
+                           xmlTextReaderPtr   reader,
+                           GError           **error)
 {
   RtfmGirNamespace *self = (RtfmGirNamespace *)base;
   xmlChar *name;

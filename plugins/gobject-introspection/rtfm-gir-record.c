@@ -163,8 +163,8 @@ rtfm_gir_record_init (RtfmGirRecord *self)
 
 static gboolean
 rtfm_gir_record_ingest (RtfmGirBase       *base,
-                          xmlTextReaderPtr   reader,
-                          GError           **error)
+                        xmlTextReaderPtr   reader,
+                        GError           **error)
 {
   RtfmGirRecord *self = (RtfmGirRecord *)base;
   xmlChar *name;

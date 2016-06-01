@@ -119,8 +119,8 @@ rtfm_gir_package_init (RtfmGirPackage *self)
 
 static gboolean
 rtfm_gir_package_ingest (RtfmGirBase       *base,
-                          xmlTextReaderPtr   reader,
-                          GError           **error)
+                         xmlTextReaderPtr   reader,
+                         GError           **error)
 {
   RtfmGirPackage *self = (RtfmGirPackage *)base;
   xmlChar *name;

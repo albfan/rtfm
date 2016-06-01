@@ -121,8 +121,8 @@ rtfm_gir_return_value_init (RtfmGirReturnValue *self)
 
 static gboolean
 rtfm_gir_return_value_ingest (RtfmGirBase       *base,
-                          xmlTextReaderPtr   reader,
-                          GError           **error)
+                              xmlTextReaderPtr   reader,
+                              GError           **error)
 {
   RtfmGirReturnValue *self = (RtfmGirReturnValue *)base;
   xmlChar *transfer_ownership;

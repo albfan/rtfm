@@ -103,8 +103,8 @@ rtfm_gir_parameters_init (RtfmGirParameters *self)
 
 static gboolean
 rtfm_gir_parameters_ingest (RtfmGirBase       *base,
-                          xmlTextReaderPtr   reader,
-                          GError           **error)
+                            xmlTextReaderPtr   reader,
+                            GError           **error)
 {
   RtfmGirParameters *self = (RtfmGirParameters *)base;
 

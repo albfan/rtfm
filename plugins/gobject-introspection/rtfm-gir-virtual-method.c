@@ -123,8 +123,8 @@ rtfm_gir_virtual_method_init (RtfmGirVirtualMethod *self)
 
 static gboolean
 rtfm_gir_virtual_method_ingest (RtfmGirBase       *base,
-                          xmlTextReaderPtr   reader,
-                          GError           **error)
+                                xmlTextReaderPtr   reader,
+                                GError           **error)
 {
   RtfmGirVirtualMethod *self = (RtfmGirVirtualMethod *)base;
   xmlChar *name;

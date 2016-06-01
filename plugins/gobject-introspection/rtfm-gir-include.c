@@ -138,8 +138,8 @@ rtfm_gir_include_init (RtfmGirInclude *self)
 
 static gboolean
 rtfm_gir_include_ingest (RtfmGirBase       *base,
-                          xmlTextReaderPtr   reader,
-                          GError           **error)
+                         xmlTextReaderPtr   reader,
+                         GError           **error)
 {
   RtfmGirInclude *self = (RtfmGirInclude *)base;
   xmlChar *name;

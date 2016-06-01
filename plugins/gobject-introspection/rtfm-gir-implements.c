@@ -119,8 +119,8 @@ rtfm_gir_implements_init (RtfmGirImplements *self)
 
 static gboolean
 rtfm_gir_implements_ingest (RtfmGirBase       *base,
-                          xmlTextReaderPtr   reader,
-                          GError           **error)
+                            xmlTextReaderPtr   reader,
+                            GError           **error)
 {
   RtfmGirImplements *self = (RtfmGirImplements *)base;
   xmlChar *name;

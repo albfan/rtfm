@@ -176,8 +176,8 @@ rtfm_gir_member_init (RtfmGirMember *self)
 
 static gboolean
 rtfm_gir_member_ingest (RtfmGirBase       *base,
-                          xmlTextReaderPtr   reader,
-                          GError           **error)
+                        xmlTextReaderPtr   reader,
+                        GError           **error)
 {
   RtfmGirMember *self = (RtfmGirMember *)base;
   xmlChar *name;

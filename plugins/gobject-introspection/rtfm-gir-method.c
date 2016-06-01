@@ -180,8 +180,8 @@ rtfm_gir_method_init (RtfmGirMethod *self)
 
 static gboolean
 rtfm_gir_method_ingest (RtfmGirBase       *base,
-                          xmlTextReaderPtr   reader,
-                          GError           **error)
+                        xmlTextReaderPtr   reader,
+                        GError           **error)
 {
   RtfmGirMethod *self = (RtfmGirMethod *)base;
   xmlChar *name;

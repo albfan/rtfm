@@ -159,8 +159,8 @@ rtfm_gir_alias_init (RtfmGirAlias *self)
 
 static gboolean
 rtfm_gir_alias_ingest (RtfmGirBase       *base,
-                          xmlTextReaderPtr   reader,
-                          GError           **error)
+                       xmlTextReaderPtr   reader,
+                       GError           **error)
 {
   RtfmGirAlias *self = (RtfmGirAlias *)base;
   xmlChar *name;

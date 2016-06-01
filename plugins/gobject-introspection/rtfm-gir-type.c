@@ -138,8 +138,8 @@ rtfm_gir_type_init (RtfmGirType *self)
 
 static gboolean
 rtfm_gir_type_ingest (RtfmGirBase       *base,
-                          xmlTextReaderPtr   reader,
-                          GError           **error)
+                      xmlTextReaderPtr   reader,
+                      GError           **error)
 {
   RtfmGirType *self = (RtfmGirType *)base;
   xmlChar *name;

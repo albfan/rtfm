@@ -159,8 +159,8 @@ rtfm_gir_field_init (RtfmGirField *self)
 
 static gboolean
 rtfm_gir_field_ingest (RtfmGirBase       *base,
-                          xmlTextReaderPtr   reader,
-                          GError           **error)
+                       xmlTextReaderPtr   reader,
+                       GError           **error)
 {
   RtfmGirField *self = (RtfmGirField *)base;
   xmlChar *name;
