@@ -23,6 +23,7 @@
 #include "rtfm-gir-alias.h"
 #include "rtfm-gir-class.h"
 #include "rtfm-gir-item.h"
+#include "rtfm-gir-record.h"
 #include "rtfm-gir-repository.h"
 
 typedef struct
@@ -90,6 +91,13 @@ rtfm_gir_item_new (GObject *object)
                     "glib-type-name", &title,
                     NULL);
       icon_name = "lang-class-symbolic";
+    }
+  else if (RTFM_IS_GIR_RECORD (object))
+    {
+      g_object_get (object,
+                    "c-type", &title,
+                    NULL);
+      icon_name = "lang-struct-symbolic";
     }
 
   return g_object_new (RTFM_TYPE_GIR_ITEM,
@@ -221,7 +229,7 @@ rtfm_gir_item_populate_repository_cb (GObject      *object,
           g_autoptr(RtfmGirItem) item = NULL;
 
           item = g_object_new (RTFM_TYPE_GIR_ITEM,
-                               "id", "gir:structs",
+                               "id", "gir:records",
                                "object", namespace,
                                "title", _("Structs"),
                                NULL);
@@ -340,6 +348,18 @@ rtfm_gir_item_populate_async (RtfmGirItem         *self,
         ar = rtfm_gir_namespace_get_classes (RTFM_GIR_NAMESPACE (priv->object));
       else if (g_strcmp0 ("gir:aliases", id) == 0)
         ar = rtfm_gir_namespace_get_aliases (RTFM_GIR_NAMESPACE (priv->object));
+      else if (g_strcmp0 ("gir:records", id) == 0)
+        ar = rtfm_gir_namespace_get_records (RTFM_GIR_NAMESPACE (priv->object));
+      else if (g_strcmp0 ("gir:enumerations", id) == 0)
+        ar = rtfm_gir_namespace_get_enumerations (RTFM_GIR_NAMESPACE (priv->object));
+      else if (g_strcmp0 ("gir:bitfields", id) == 0)
+        ar = rtfm_gir_namespace_get_bitfields (RTFM_GIR_NAMESPACE (priv->object));
+      else if (g_strcmp0 ("gir:callbacks", id) == 0)
+        ar = rtfm_gir_namespace_get_callbacks (RTFM_GIR_NAMESPACE (priv->object));
+      else if (g_strcmp0 ("gir:constants", id) == 0)
+        ar = rtfm_gir_namespace_get_constants (RTFM_GIR_NAMESPACE (priv->object));
+      else if (g_strcmp0 ("gir:functions", id) == 0)
+        ar = rtfm_gir_namespace_get_functions (RTFM_GIR_NAMESPACE (priv->object));
 
       if (ar != NULL)
         {
