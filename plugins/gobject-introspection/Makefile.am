@@ -6,6 +6,8 @@ plugin_LTLIBRARIES = librtfm-plugin-gir.la
 data_objects_sources = \
 	rtfm-gir-alias.c \
 	rtfm-gir-alias.h \
+	rtfm-gir-base.c \
+	rtfm-gir-base.h \
 	rtfm-gir-bitfield.c \
 	rtfm-gir-bitfield.h \
 	rtfm-gir-callback.c \
