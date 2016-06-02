@@ -267,7 +267,10 @@ rtfm_gir_enumeration_text (GMarkupParseContext  *context,
   if (FALSE) {}
   else if (g_strcmp0 (element_name, "doc") == 0)
     {
-      g_string_append_len (self->doc, text, text_len);
+      if (self->doc == NULL)
+        self->doc = g_string_new_len (text, text_len);
+      else
+        g_string_append_len (self->doc, text, text_len);
     }
 }
 
