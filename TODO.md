@@ -3,8 +3,8 @@
 ## String Compression
 
 We load a lot of duplicate strings. It would be nice if we could share a
-string index in some places such as the G-I data files. We could plumb
-this through using a GStringChunk owned by the repository.
+string index in some places such as the G-I data objects. We could plumb
+this through using a GStringChunk owned by the RtfmGirRepository.
 
 ## Search
 
@@ -14,6 +14,11 @@ search indexes. Each plugin will probably want to implement a search index
 index in the background when new .gir files are added. The search query
 will access this rather than parse .gir files and manually look. This way
 we only parse gir files when necesary (to browse the hierarchy).
+
+## Remove Path Bar
+
+It looks like we won't be needing the path bar since we have the StackList
+working relatively well now.
 
 ## Views
 
@@ -96,4 +101,6 @@ spend additional time documenting API.
 It might be possible to generate manpages that can be used from VIM.
 If we set ~/.manpath, then vim/emacs should be able to pick this up.
 
+## Application Menu
 
+We need to add an application menu with about/help/quit/etc.
