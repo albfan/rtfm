@@ -41,14 +41,7 @@ struct _RtfmGirParameters
   GPtrArray *parameter;
 };
 
-enum {
-  PROP_0,
-  N_PROPS
-};
-
 G_DEFINE_TYPE (RtfmGirParameters, rtfm_gir_parameters, RTFM_TYPE_GIR_BASE)
-
-static GParamSpec *properties [N_PROPS];
 
 static gboolean
 rtfm_gir_parameters_ingest (RtfmGirBase          *base,
@@ -68,35 +61,6 @@ rtfm_gir_parameters_finalize (GObject *object)
   G_OBJECT_CLASS (rtfm_gir_parameters_parent_class)->finalize (object);
 }
 
-static void
-rtfm_gir_parameters_get_property (GObject    *object,
-                                  guint       prop_id,
-                                  GValue     *value,
-                                  GParamSpec *pspec)
-{
-  RtfmGirParameters *self = (RtfmGirParameters *)object;
-
-  switch (prop_id)
-    {
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-    }
-}
-
-static void
-rtfm_gir_parameters_set_property (GObject       *object,
-                                  guint         prop_id,
-                                  const GValue *value,
-                                  GParamSpec   *pspec)
-{
-  RtfmGirParameters *self = (RtfmGirParameters *)object;
-
-  switch (prop_id)
-    {
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-    }
-}
 
 static void
 rtfm_gir_parameters_class_init (RtfmGirParametersClass *klass)
@@ -105,12 +69,8 @@ rtfm_gir_parameters_class_init (RtfmGirParametersClass *klass)
   RtfmGirBaseClass *base_class = RTFM_GIR_BASE_CLASS (klass);
 
   object_class->finalize = rtfm_gir_parameters_finalize;
-  object_class->get_property = rtfm_gir_parameters_get_property;
-  object_class->set_property = rtfm_gir_parameters_set_property;
 
   base_class->ingest = rtfm_gir_parameters_ingest;
-
-  g_object_class_install_properties (object_class, N_PROPS, properties);
 }
 
 static void

@@ -54,9 +54,9 @@ enum {
   N_PROPS
 };
 
-G_DEFINE_TYPE (RtfmGirMember, rtfm_gir_member, RTFM_TYPE_GIR_BASE)
-
 static GParamSpec *properties [N_PROPS];
+
+G_DEFINE_TYPE (RtfmGirMember, rtfm_gir_member, RTFM_TYPE_GIR_BASE)
 
 static gboolean
 rtfm_gir_member_ingest (RtfmGirBase          *base,
