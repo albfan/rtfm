@@ -19,10 +19,24 @@
 #define G_LOG_DOMAIN "rtfm-gir-type"
 
 #include "rtfm-gir-type.h"
+#include "rtfm-gir-markup.h"
+
+#if 0
+# define ENTRY     do { g_printerr ("ENTRY: %s(): %d: (%s)\n", G_STRFUNC, __LINE__, element_name); } while (0)
+# define EXIT      do { g_printerr (" EXIT: %s(): %d: (%s)\n", G_STRFUNC, __LINE__, element_name); return; } while (0)
+# define RETURN(r) do { g_printerr (" EXIT: %s(): %d: (%s)\n", G_STRFUNC, __LINE__, element_name); return r; } while (0)
+#else
+# define ENTRY
+# define EXIT return
+# define RETURN(r) do { return r; } while (0)
+#endif
 
 struct _RtfmGirType
 {
   RtfmGirBase base;
+
+  gchar *ingest_element_name;
+
   gchar *name;
   gchar *c_type;
 };
@@ -39,9 +53,12 @@ G_DEFINE_TYPE (RtfmGirType, rtfm_gir_type, RTFM_TYPE_GIR_BASE)
 static GParamSpec *properties [N_PROPS];
 
 static gboolean
-rtfm_gir_type_ingest (RtfmGirBase       *base,
-                      xmlTextReaderPtr   reader,
-                      GError           **error);
+rtfm_gir_type_ingest (RtfmGirBase          *base,
+                      GMarkupParseContext  *context,
+                      const gchar          *element_name,
+                      const gchar         **attribute_names,
+                      const gchar         **attribute_values,
+                      GError              **error);
 
 static void
 rtfm_gir_type_finalize (GObject *object)
@@ -137,28 +154,36 @@ rtfm_gir_type_init (RtfmGirType *self)
 }
 
 static gboolean
-rtfm_gir_type_ingest (RtfmGirBase       *base,
-                      xmlTextReaderPtr   reader,
-                      GError           **error)
+rtfm_gir_type_ingest (RtfmGirBase          *base,
+                      GMarkupParseContext  *context,
+                      const gchar          *element_name,
+                      const gchar         **attribute_names,
+                      const gchar         **attribute_values,
+                      GError              **error)
 {
   RtfmGirType *self = (RtfmGirType *)base;
-  xmlChar *name;
-  xmlChar *c_type;
+
+  ENTRY;
 
   g_assert (RTFM_IS_GIR_TYPE (self));
-  g_assert (reader != NULL);
+  g_assert (context != NULL);
+  g_assert (element_name != NULL);
+  g_assert (attribute_names != NULL);
+  g_assert (attribute_values != NULL);
 
-  /* Read properties from element */
-  name = xmlTextReaderGetAttribute (reader, (const xmlChar *)"name");
-  c_type = xmlTextReaderGetAttribute (reader, (const xmlChar *)"c:type");
+  self->ingest_element_name = g_strdup (element_name);
 
-  /* Copy properties to object */
-  self->name = g_strdup ((gchar *)name);
-  self->c_type = g_strdup ((gchar *)c_type);
+  g_clear_pointer (&self->name, g_free);
+  g_clear_pointer (&self->c_type, g_free);
 
-  /* Free libxml allocated strings */
-  xmlFree (name);
-  xmlFree (c_type);
+  if (!rtfm_g_markup_collect_some_attributes (element_name,
+                                              attribute_names,
+                                              attribute_values,
+                                              error,
+                                              G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "name", &self->name,
+                                              G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "c:type", &self->c_type,
+                                              G_MARKUP_COLLECT_INVALID))
+    RETURN (FALSE);
 
-  return TRUE;
+  RETURN (TRUE);
 }

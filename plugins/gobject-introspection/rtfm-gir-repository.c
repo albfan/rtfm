@@ -22,13 +22,18 @@
 #include "rtfm-gir-include.h"
 #include "rtfm-gir-package.h"
 #include "rtfm-gir-c-include.h"
+#include "rtfm-gir-markup.h"
 #include "rtfm-gir-namespace.h"
 
-G_DEFINE_AUTOPTR_CLEANUP_FUNC (xmlTextReader, xmlFreeTextReader)
-
-#define IS_ELEMENT_NAMED(r,name) \
-  ((xmlTextReaderNodeType(r) == XML_ELEMENT_NODE) && \
-   (0 == g_strcmp0 (name, (gchar *)xmlTextReaderConstName(r))))
+#if 1
+# define ENTRY     do { g_printerr ("ENTRY: %s(): %d: (%s)\n", G_STRFUNC, __LINE__, element_name); } while (0)
+# define EXIT      do { g_printerr (" EXIT: %s(): %d: (%s)\n", G_STRFUNC, __LINE__, element_name); return; } while (0)
+# define RETURN(r) do { g_printerr (" EXIT: %s(): %d: (%s)\n", G_STRFUNC, __LINE__, element_name); return r; } while (0)
+#else
+# define ENTRY
+# define EXIT return
+# define RETURN(r) do { return r; } while (0)
+#endif
 
 struct _RtfmGirRepository
 {
@@ -36,13 +41,14 @@ struct _RtfmGirRepository
 
   GMutex            mutex;
   GSList           *loading_tasks;
+  GError           *loading_error;
 
   GFile            *file;
   gchar            *version;
-  RtfmGirInclude   *include;
-  RtfmGirPackage   *package;
-  RtfmGirCInclude  *c_include;
   RtfmGirNamespace *namespace;
+  GPtrArray        *include;
+  GPtrArray        *package;
+  GPtrArray        *c_include;
 
   guint             loaded : 1;
   guint             loading : 1;
@@ -64,9 +70,12 @@ G_DEFINE_TYPE_EXTENDED (RtfmGirRepository, rtfm_gir_repository, RTFM_TYPE_GIR_BA
 static GParamSpec *properties [N_PROPS];
 
 static gboolean
-rtfm_gir_repository_ingest (RtfmGirBase       *base,
-                            xmlTextReaderPtr   reader,
-                            GError           **error);
+rtfm_gir_repository_ingest (RtfmGirBase          *base,
+                            GMarkupParseContext  *context,
+                            const gchar          *element_name,
+                            const gchar         **attribute_names,
+                            const gchar         **attribute_values,
+                            GError              **error);
 
 static void
 rtfm_gir_repository_finalize (GObject *object)
@@ -76,10 +85,10 @@ rtfm_gir_repository_finalize (GObject *object)
   g_clear_pointer (&self->version, g_free);
 
   g_clear_object (&self->file);
-  g_clear_object (&self->include);
-  g_clear_object (&self->package);
-  g_clear_object (&self->c_include);
   g_clear_object (&self->namespace);
+  g_clear_pointer (&self->include, g_ptr_array_unref);
+  g_clear_pointer (&self->package, g_ptr_array_unref);
+  g_clear_pointer (&self->c_include, g_ptr_array_unref);
 
   g_slist_free_full (self->loading_tasks, g_object_unref);
   self->loading_tasks = NULL;
@@ -147,6 +156,7 @@ rtfm_gir_repository_class_init (RtfmGirRepositoryClass *klass)
   object_class->set_property = rtfm_gir_repository_set_property;
 
   base_class->ingest = rtfm_gir_repository_ingest;
+
   properties [PROP_FILE] =
     g_param_spec_object ("file",
                          "File",
@@ -178,102 +188,203 @@ rtfm_gir_repository_new (GFile *file)
                        NULL);
 }
 
+static void
+rtfm_gir_repository_start_element (GMarkupParseContext  *context,
+                                   const gchar          *element_name,
+                                   const gchar         **attribute_names,
+                                   const gchar         **attribute_values,
+                                   gpointer              user_data,
+                                   GError              **error)
+{
+  RtfmGirRepository *self = user_data;
+
+  ENTRY;
+
+  g_assert (context != NULL);
+  g_assert (element_name != NULL);
+  g_assert (attribute_names != NULL);
+  g_assert (attribute_values != NULL);
+  g_assert (RTFM_IS_GIR_REPOSITORY (self));
+  g_assert (error != NULL);
+
+  if (FALSE) {}
+  else if (g_strcmp0 (element_name, "namespace") == 0)
+    {
+      g_autoptr(RtfmGirNamespace) namespace = NULL;
+
+      namespace = g_object_new (RTFM_TYPE_GIR_NAMESPACE, NULL);
+
+      if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (namespace),
+                                 context,
+                                 element_name,
+                                 attribute_names,
+                                 attribute_values,
+                                 error))
+        return;
+
+      g_set_object (&self->namespace, namespace);
+    }
+  else if (g_strcmp0 (element_name, "include") == 0)
+    {
+      g_autoptr(RtfmGirInclude) include = NULL;
+
+      include = g_object_new (RTFM_TYPE_GIR_INCLUDE, NULL);
+
+      if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (include),
+                                 context,
+                                 element_name,
+                                 attribute_names,
+                                 attribute_values,
+                                 error))
+        return;
+
+      if (self->include == NULL)
+        self->include = g_ptr_array_new_with_free_func (g_object_unref);
+
+      g_ptr_array_add (self->include, g_steal_pointer (&include));
+    }
+  else if (g_strcmp0 (element_name, "package") == 0)
+    {
+      g_autoptr(RtfmGirPackage) package = NULL;
+
+      package = g_object_new (RTFM_TYPE_GIR_PACKAGE, NULL);
+
+      if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (package),
+                                 context,
+                                 element_name,
+                                 attribute_names,
+                                 attribute_values,
+                                 error))
+        return;
+
+      if (self->package == NULL)
+        self->package = g_ptr_array_new_with_free_func (g_object_unref);
+
+      g_ptr_array_add (self->package, g_steal_pointer (&package));
+    }
+  else if (g_strcmp0 (element_name, "c:include") == 0)
+    {
+      g_autoptr(RtfmGirCInclude) c_include = NULL;
+
+      c_include = g_object_new (RTFM_TYPE_GIR_C_INCLUDE, NULL);
+
+      if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (c_include),
+                                 context,
+                                 element_name,
+                                 attribute_names,
+                                 attribute_values,
+                                 error))
+        return;
+
+      if (self->c_include == NULL)
+        self->c_include = g_ptr_array_new_with_free_func (g_object_unref);
+
+      g_ptr_array_add (self->c_include, g_steal_pointer (&c_include));
+    }
+
+  EXIT;
+}
+
+static void
+rtfm_gir_repository_end_element (GMarkupParseContext  *context,
+                                 const gchar          *element_name,
+                                 gpointer              user_data,
+                                 GError              **error)
+{
+  RtfmGirRepository *self = user_data;
+
+  g_assert (context != NULL);
+  g_assert (element_name != NULL);
+  g_assert (RTFM_IS_GIR_REPOSITORY (self));
+  g_assert (error != NULL);
+
+  if (g_strcmp0 (element_name, "repository") == 0)
+    g_markup_parse_context_pop (context);
+}
+
+static void
+rtfm_gir_repository_text (GMarkupParseContext  *context,
+                          const gchar          *text,
+                          gsize                 text_len,
+                          gpointer              user_data,
+                          GError              **error)
+{
+  RtfmGirRepository *self = user_data;
+
+  g_assert (context != NULL);
+  g_assert (text != NULL);
+  g_assert (RTFM_IS_GIR_REPOSITORY (self));
+  g_assert (error != NULL);
+
+}
+
+static void
+rtfm_gir_repository_error (GMarkupParseContext *context,
+                           GError              *error,
+                           gpointer             user_data)
+{
+  RtfmGirRepository *self = user_data;
+
+  g_assert (context != NULL);
+  g_assert (RTFM_IS_GIR_REPOSITORY (self));
+  g_assert (error != NULL);
+
+  if (error != self->loading_error)
+    {
+      g_clear_error (&self->loading_error);
+      self->loading_error = g_error_copy (error);
+    }
+}
+
+static const GMarkupParser markup_parser = {
+  rtfm_gir_repository_start_element,
+  rtfm_gir_repository_end_element,
+  rtfm_gir_repository_text,
+  NULL,
+  rtfm_gir_repository_error,
+};
+
 static gboolean
-rtfm_gir_repository_ingest (RtfmGirBase       *base,
-                            xmlTextReaderPtr   reader,
-                            GError           **error)
+rtfm_gir_repository_ingest (RtfmGirBase          *base,
+                            GMarkupParseContext  *context,
+                            const gchar          *element_name,
+                            const gchar         **attribute_names,
+                            const gchar         **attribute_values,
+                            GError              **error)
 {
   RtfmGirRepository *self = (RtfmGirRepository *)base;
-  xmlChar *version;
+
+  ENTRY;
 
   g_assert (RTFM_IS_GIR_REPOSITORY (self));
-  g_assert (reader != NULL);
+  g_assert (context != NULL);
+  g_assert (element_name != NULL);
+  g_assert (attribute_names != NULL);
+  g_assert (attribute_values != NULL);
+  g_assert (error != NULL);
 
-  /* Read properties from element */
-  version = xmlTextReaderGetAttribute (reader, (const xmlChar *)"version");
+  g_clear_pointer (&self->version, g_free);
 
-  /* Copy properties to object */
-  self->version = g_strdup ((gchar *)version);
+  if (!rtfm_g_markup_collect_some_attributes (element_name,
+                                              attribute_names,
+                                              attribute_values,
+                                              error,
+                                              G_MARKUP_COLLECT_STRDUP, "version", &self->version,
+                                              G_MARKUP_COLLECT_INVALID))
+    RETURN (FALSE);
 
-  /* Free libxml allocated strings */
-  xmlFree (version);
+  g_markup_parse_context_push (context, &markup_parser, self);
 
-  if (xmlTextReaderRead (reader) != 1)
-    return FALSE;
-
-  while (xmlTextReaderNodeType (reader) != XML_ELEMENT_NODE)
-    {
-      if (xmlTextReaderNext (reader) != 1)
-        return FALSE;
-    }
-
-  do
-    {
-      const gchar *element_name;
-
-      if (xmlTextReaderNodeType (reader) != XML_ELEMENT_NODE)
-        continue;
-
-      element_name = (const gchar *)xmlTextReaderConstName (reader);
-
-      if (FALSE) { }
-      else if (g_strcmp0 (element_name, "include") == 0)
-        {
-          g_autoptr(RtfmGirInclude) include = NULL;
-
-          include = g_object_new (RTFM_TYPE_GIR_INCLUDE, NULL);
-
-          if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (include), reader, error))
-            return FALSE;
-
-          g_set_object (&self->include, include);
-        }
-      else if (g_strcmp0 (element_name, "package") == 0)
-        {
-          g_autoptr(RtfmGirPackage) package = NULL;
-
-          package = g_object_new (RTFM_TYPE_GIR_PACKAGE, NULL);
-
-          if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (package), reader, error))
-            return FALSE;
-
-          g_set_object (&self->package, package);
-        }
-      else if (g_strcmp0 (element_name, "c:include") == 0)
-        {
-          g_autoptr(RtfmGirCInclude) c_include = NULL;
-
-          c_include = g_object_new (RTFM_TYPE_GIR_C_INCLUDE, NULL);
-
-          if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (c_include), reader, error))
-            return FALSE;
-
-          g_set_object (&self->c_include, c_include);
-        }
-      else if (g_strcmp0 (element_name, "namespace") == 0)
-        {
-          g_autoptr(RtfmGirNamespace) namespace = NULL;
-
-          namespace = g_object_new (RTFM_TYPE_GIR_NAMESPACE, NULL);
-
-          if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (namespace), reader, error))
-            return FALSE;
-
-          g_set_object (&self->namespace, namespace);
-        }
-    }
-  while (xmlTextReaderNext (reader) == 1);
-
-
-  return TRUE;
+  RETURN (TRUE);
 }
 
 /**
  * rtfm_gir_repository_get_include:
  *
- * Returns: (nullable) (transfer none): An #RtfmGirInclude or %NULL.
+ * Returns: (nullable) (transfer none) (element-type Rtfm.GirInclude):
+ *   A #GPtrArray of #RtfmGirInclude or %NULL.
  */
-RtfmGirInclude *
+GPtrArray *
 rtfm_gir_repository_get_include (RtfmGirRepository *self)
 {
   g_return_val_if_fail (RTFM_IS_GIR_REPOSITORY (self), NULL);
@@ -284,9 +395,10 @@ rtfm_gir_repository_get_include (RtfmGirRepository *self)
 /**
  * rtfm_gir_repository_get_package:
  *
- * Returns: (nullable) (transfer none): An #RtfmGirPackage or %NULL.
+ * Returns: (nullable) (transfer none) (element-type Rtfm.GirPackage):
+ *   A #GPtrArray of #RtfmGirPackage or %NULL.
  */
-RtfmGirPackage *
+GPtrArray *
 rtfm_gir_repository_get_package (RtfmGirRepository *self)
 {
   g_return_val_if_fail (RTFM_IS_GIR_REPOSITORY (self), NULL);
@@ -297,9 +409,10 @@ rtfm_gir_repository_get_package (RtfmGirRepository *self)
 /**
  * rtfm_gir_repository_get_c_include:
  *
- * Returns: (nullable) (transfer none): An #RtfmGirCInclude or %NULL.
+ * Returns: (nullable) (transfer none) (element-type Rtfm.GirCInclude):
+ *   A #GPtrArray of #RtfmGirCInclude or %NULL.
  */
-RtfmGirCInclude *
+GPtrArray *
 rtfm_gir_repository_get_c_include (RtfmGirRepository *self)
 {
   g_return_val_if_fail (RTFM_IS_GIR_REPOSITORY (self), NULL);
@@ -321,64 +434,114 @@ rtfm_gir_repository_get_namespace (RtfmGirRepository *self)
 }
 
 static void
+rtfm_gir_repository_base_start_element (GMarkupParseContext  *context,
+                                        const gchar          *element_name,
+                                        const gchar         **attribute_names,
+                                        const gchar         **attribute_values,
+                                        gpointer              user_data,
+                                        GError              **error)
+{
+  RtfmGirRepository *self = user_data;
+
+  g_assert (context != NULL);
+  g_assert (element_name != NULL);
+  g_assert (attribute_names != NULL);
+  g_assert (attribute_values != NULL);
+  g_assert (RTFM_IS_GIR_REPOSITORY (self));
+
+  if (g_strcmp0 (element_name, "repository") == 0)
+    rtfm_gir_base_ingest (RTFM_GIR_BASE (self),
+                          context,
+                          element_name,
+                          attribute_names,
+                          attribute_values,
+                          error);
+}
+
+static void
+rtfm_gir_repository_base_end_element (GMarkupParseContext  *context,
+                                      const gchar          *element_name,
+                                      gpointer              user_data,
+                                      GError              **error)
+{
+  RtfmGirRepository *self = user_data;
+
+  g_assert (context != NULL);
+  g_assert (element_name != NULL);
+  g_assert (RTFM_IS_GIR_REPOSITORY (self));
+
+  g_markup_parse_context_pop (context);
+}
+
+static void
+rtfm_gir_repository_base_error (GMarkupParseContext *context,
+                                GError              *error,
+                                gpointer             user_data)
+{
+  RtfmGirRepository *self = user_data;
+
+  g_assert (RTFM_IS_GIR_REPOSITORY (self));
+  g_assert (context != NULL);
+  g_assert (error != NULL);
+
+  g_clear_error (&self->loading_error);
+  self->loading_error = g_error_copy (error);
+}
+
+static const GMarkupParser base_parser = {
+  rtfm_gir_repository_base_start_element,
+  rtfm_gir_repository_base_end_element,
+  NULL,
+  NULL,
+  rtfm_gir_repository_base_error,
+};
+
+static void
 rtfm_gir_repository_init_worker (GTask        *task,
                                  gpointer      source_object,
                                  gpointer      task_data,
                                  GCancellable *cancellable)
 {
   RtfmGirRepository *self = source_object;
+  g_autoptr(GMarkupParseContext) context = NULL;
   g_autoptr(GMutexLocker) locker = NULL;
-  g_autofree gchar *path = NULL;
-  g_autofree gchar *error_string = NULL;
-  g_autoptr(xmlTextReader) reader = NULL;
+  g_autofree gchar *contents = NULL;
   GError *error = NULL;
   GSList *list;
   GSList *iter;
+  gsize contents_len = 0;
 
   g_assert (G_IS_TASK (task));
   g_assert (RTFM_IS_GIR_REPOSITORY (self));
 
-  if (!G_IS_FILE (self->file) ||
-      !g_file_is_native (self->file) ||
-      NULL == (path = g_file_get_path (self->file)))
+  if (self->file == NULL)
     {
       error = g_error_new (G_IO_ERROR,
                            G_IO_ERROR_INVALID_FILENAME,
-                           "Missing filename or not a local file");
+                           "RtfmGirRepository:file must be set before initializing");
       goto failure;
     }
 
-  reader = xmlNewTextReaderFilename (path);
+  if (!g_file_load_contents (self->file,
+                             cancellable,
+                             &contents,
+                             &contents_len,
+                             NULL,
+                             &error))
+    goto failure;
 
-  if (reader == NULL)
+  context = g_markup_parse_context_new (&base_parser, 0, self, NULL);
+
+  if (!g_markup_parse_context_parse (context, contents, contents_len, &error))
+    goto failure;
+
+  if (self->loading_error != NULL)
     {
-      error = g_error_new (G_IO_ERROR,
-                           G_IO_ERROR_INVALID_FILENAME,
-                           "Failed to create xmlTextReader");
+      error = g_error_copy (self->loading_error);
       goto failure;
     }
 
-skip_node:
-  if (xmlTextReaderNext (reader) != 1)
-    {
-      error = g_error_new (G_IO_ERROR,
-                           G_IO_ERROR_INVALID_FILENAME,
-                           "Failed to read from xmlTextReader");
-      goto failure;
-    }
-
-  if (xmlTextReaderNodeType (reader) == XML_COMMENT_NODE)
-    goto skip_node;
-
-  if (!IS_ELEMENT_NAMED (reader, "repository"))
-    {
-      error = g_error_new (G_IO_ERROR,
-                           G_IO_ERROR_FAILED,
-                           "Failed to locate repository element");
-      goto failure;
-    }
-
-  if (!rtfm_gir_repository_ingest (RTFM_GIR_BASE (self), reader, &error))
+  if (!g_markup_parse_context_end_parse (context, &error))
     goto failure;
 
   g_assert_no_error (error);
@@ -422,11 +585,6 @@ failure:
 
   if (error != NULL)
     g_task_return_error (task, error);
-  else if (error_string != NULL)
-    g_task_return_new_error (task,
-                             G_IO_ERROR,
-                             G_IO_ERROR_FAILED,
-                             "%s", error_string);
   else
     g_task_return_new_error (task,
                              G_IO_ERROR,
@@ -453,7 +611,10 @@ rtfm_gir_repository_init_async (GAsyncInitable      *initable,
 
   if (self->loaded)
     {
-      g_task_return_boolean (task, TRUE);
+      if (self->loading_error != NULL)
+        g_task_return_error (task, g_error_copy (self->loading_error));
+      else
+        g_task_return_boolean (task, TRUE);
       return;
     }
 

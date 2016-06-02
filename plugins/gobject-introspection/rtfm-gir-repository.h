@@ -31,11 +31,11 @@ G_BEGIN_DECLS
 
 G_DECLARE_FINAL_TYPE (RtfmGirRepository, rtfm_gir_repository, RTFM, GIR_REPOSITORY, RtfmGirBase)
 
-RtfmGirRepository *rtfm_gir_repository_new           (GFile              *file);
-RtfmGirInclude    *rtfm_gir_repository_get_include   (RtfmGirRepository  *self);
-RtfmGirPackage    *rtfm_gir_repository_get_package   (RtfmGirRepository  *self);
-RtfmGirCInclude   *rtfm_gir_repository_get_c_include (RtfmGirRepository  *self);
-RtfmGirNamespace  *rtfm_gir_repository_get_namespace (RtfmGirRepository  *self);
+RtfmGirRepository *rtfm_gir_repository_new            (GFile              *file);
+GPtrArray         *rtfm_gir_repository_get_includes   (RtfmGirRepository  *self);
+GPtrArray         *rtfm_gir_repository_get_packages   (RtfmGirRepository  *self);
+GPtrArray         *rtfm_gir_repository_get_c_includes (RtfmGirRepository  *self);
+RtfmGirNamespace  *rtfm_gir_repository_get_namespace  (RtfmGirRepository  *self);
 
 G_END_DECLS
 

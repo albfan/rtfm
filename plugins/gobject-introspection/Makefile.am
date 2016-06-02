@@ -28,8 +28,6 @@ data_objects_sources = \
 	rtfm-gir-implements.h \
 	rtfm-gir-include.c \
 	rtfm-gir-include.h \
-	rtfm-gir-item.c \
-	rtfm-gir-item.h \
 	rtfm-gir-member.c \
 	rtfm-gir-member.h \
 	rtfm-gir-method.c \
@@ -58,6 +56,10 @@ data_objects_sources = \
 
 librtfm_plugin_gir_la_SOURCES = \
 	$(data_objects_sources) \
+	rtfm-gir-markup.c \
+	rtfm-gir-markup.h \
+	rtfm-gir-item.c \
+	rtfm-gir-item.h \
 	rtfm-gir-provider.c \
 	rtfm-gir-provider.h \
 	rtfm-gir-plugin.c \

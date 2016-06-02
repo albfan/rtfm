@@ -21,7 +21,11 @@
 #include <glib/gi18n.h>
 
 #include "rtfm-gir-alias.h"
+#include "rtfm-gir-bitfield.h"
+#include "rtfm-gir-callback.h"
 #include "rtfm-gir-class.h"
+#include "rtfm-gir-constant.h"
+#include "rtfm-gir-enumeration.h"
 #include "rtfm-gir-item.h"
 #include "rtfm-gir-record.h"
 #include "rtfm-gir-repository.h"
@@ -85,6 +89,13 @@ rtfm_gir_item_new (GObject *object)
                     "c-type", &title,
                     NULL);
     }
+  else if (RTFM_IS_GIR_FIELD (object))
+    {
+      g_object_get (object,
+                    "name", &title,
+                    NULL);
+      icon_name = "lang-struct-field-symbolic";
+    }
   else if (RTFM_IS_GIR_CLASS (object))
     {
       g_object_get (object,
@@ -99,7 +110,42 @@ rtfm_gir_item_new (GObject *object)
                     NULL);
       icon_name = "lang-struct-symbolic";
     }
+  else if (RTFM_IS_GIR_CALLBACK (object))
+    {
+      g_object_get (object,
+                    "c-type", &title,
+                    NULL);
+      icon_name = "lang-function-symbolic";
+    }
+  else if (RTFM_IS_GIR_CONSTANT (object))
+    {
+      g_object_get (object,
+                    "c-type", &title,
+                    NULL);
+      icon_name = "lang-define-symbolic";
+    }
   else if (RTFM_IS_GIR_CONSTRUCTOR (object))
+    {
+      g_object_get (object,
+                    "c-identifier", &title,
+                    NULL);
+      icon_name = "lang-function-symbolic";
+    }
+  else if (RTFM_IS_GIR_BITFIELD (object) || RTFM_IS_GIR_ENUMERATION (object))
+    {
+      g_object_get (object,
+                    "c-type", &title,
+                    NULL);
+      icon_name = "lang-enum-symbolic";
+    }
+  else if (RTFM_IS_GIR_MEMBER (object))
+    {
+      g_object_get (object,
+                    "c-identifier", &title,
+                    NULL);
+      icon_name = "lang-enum-value-symbolic";
+    }
+  else if (RTFM_IS_GIR_METHOD (object) || RTFM_IS_GIR_FUNCTION (object))
     {
       g_object_get (object,
                     "c-identifier", &title,
@@ -397,6 +443,8 @@ rtfm_gir_item_populate_async (RtfmGirItem         *self,
         ar = rtfm_gir_class_get_properties (RTFM_GIR_CLASS (priv->object));
       else if (g_strcmp0 ("gir:constructors", id) == 0)
         ar = rtfm_gir_class_get_constructors (RTFM_GIR_CLASS (priv->object));
+      else if (g_strcmp0 ("gir:fields", id) == 0)
+        ar = rtfm_gir_class_get_fields (RTFM_GIR_CLASS (priv->object));
 
       if (ar != NULL)
         {
@@ -413,6 +461,18 @@ rtfm_gir_item_populate_async (RtfmGirItem         *self,
         }
       else
         {
+          if (rtfm_gir_class_has_fields (RTFM_GIR_CLASS (priv->object)))
+            {
+              g_autoptr(RtfmGirItem) item = NULL;
+
+              item = g_object_new (RTFM_TYPE_GIR_ITEM,
+                                   "id", "gir:fields",
+                                   "object", priv->object,
+                                   "title", _("Fields"),
+                                   NULL);
+              rtfm_collection_append (collection, g_steal_pointer (&item));
+            }
+
           if (rtfm_gir_class_has_properties (RTFM_GIR_CLASS (priv->object)))
             {
               g_autoptr(RtfmGirItem) item = NULL;
@@ -450,8 +510,71 @@ rtfm_gir_item_populate_async (RtfmGirItem         *self,
             }
         }
     }
-  else if (RTFM_IS_GIR_ALIAS (priv->object))
+  else if (RTFM_IS_GIR_RECORD (priv->object))
     {
+      RtfmGirRecord *record = RTFM_GIR_RECORD (priv->object);
+
+      if (rtfm_gir_record_has_fields (record))
+        {
+          g_autoptr(RtfmGirItem) item = NULL;
+
+          item = g_object_new (RTFM_TYPE_GIR_ITEM,
+                               "id", "gir:fields",
+                               "object", priv->object,
+                               "title", _("Fields"),
+                               NULL);
+          rtfm_collection_append (collection, g_steal_pointer (&item));
+        }
+
+      if (rtfm_gir_record_has_functions (record))
+        {
+          g_autoptr(RtfmGirItem) item = NULL;
+
+          item = g_object_new (RTFM_TYPE_GIR_ITEM,
+                               "id", "gir:functions",
+                               "object", priv->object,
+                               "title", _("Functions"),
+                               NULL);
+          rtfm_collection_append (collection, g_steal_pointer (&item));
+        }
+    }
+  else if (RTFM_IS_GIR_ENUMERATION (priv->object))
+    {
+      RtfmGirEnumeration *enumeration = RTFM_GIR_ENUMERATION (priv->object);
+
+      if (rtfm_gir_enumeration_has_members (enumeration))
+        {
+          GPtrArray *ar = rtfm_gir_enumeration_get_members (enumeration);
+          guint i;
+
+          for (i = 0; i < ar->len; i++)
+            {
+              GObject *object = g_ptr_array_index (ar, i);
+              g_autoptr(RtfmGirItem) item = NULL;
+
+              item = rtfm_gir_item_new (object);
+              rtfm_collection_append (collection, g_steal_pointer (&item));
+            }
+        }
+    }
+  else if (RTFM_IS_GIR_BITFIELD (priv->object))
+    {
+      RtfmGirBitfield *bitfield = RTFM_GIR_BITFIELD (priv->object);
+
+      if (rtfm_gir_bitfield_has_members (bitfield))
+        {
+          GPtrArray *ar = rtfm_gir_bitfield_get_members (bitfield);
+          guint i;
+
+          for (i = 0; i < ar->len; i++)
+            {
+              GObject *object = g_ptr_array_index (ar, i);
+              g_autoptr(RtfmGirItem) item = NULL;
+
+              item = rtfm_gir_item_new (object);
+              rtfm_collection_append (collection, g_steal_pointer (&item));
+            }
+        }
     }
 
   g_task_return_boolean (task, TRUE);

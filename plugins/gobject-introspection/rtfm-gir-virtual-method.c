@@ -19,12 +19,26 @@
 #define G_LOG_DOMAIN "rtfm-gir-virtual_method"
 
 #include "rtfm-gir-virtual-method.h"
+#include "rtfm-gir-markup.h"
 #include "rtfm-gir-return-value.h"
 #include "rtfm-gir-parameters.h"
+
+#if 0
+# define ENTRY     do { g_printerr ("ENTRY: %s(): %d: (%s)\n", G_STRFUNC, __LINE__, element_name); } while (0)
+# define EXIT      do { g_printerr (" EXIT: %s(): %d: (%s)\n", G_STRFUNC, __LINE__, element_name); return; } while (0)
+# define RETURN(r) do { g_printerr (" EXIT: %s(): %d: (%s)\n", G_STRFUNC, __LINE__, element_name); return r; } while (0)
+#else
+# define ENTRY
+# define EXIT return
+# define RETURN(r) do { return r; } while (0)
+#endif
 
 struct _RtfmGirVirtualMethod
 {
   RtfmGirBase base;
+
+  gchar *ingest_element_name;
+
   gchar *name;
   RtfmGirReturnValue *return_value;
   RtfmGirParameters *parameters;
@@ -41,9 +55,12 @@ G_DEFINE_TYPE (RtfmGirVirtualMethod, rtfm_gir_virtual_method, RTFM_TYPE_GIR_BASE
 static GParamSpec *properties [N_PROPS];
 
 static gboolean
-rtfm_gir_virtual_method_ingest (RtfmGirBase       *base,
-                                xmlTextReaderPtr   reader,
-                                GError           **error);
+rtfm_gir_virtual_method_ingest (RtfmGirBase          *base,
+                                GMarkupParseContext  *context,
+                                const gchar          *element_name,
+                                const gchar         **attribute_names,
+                                const gchar         **attribute_values,
+                                GError              **error);
 
 static void
 rtfm_gir_virtual_method_finalize (GObject *object)
@@ -121,72 +138,155 @@ rtfm_gir_virtual_method_init (RtfmGirVirtualMethod *self)
 {
 }
 
+static void
+rtfm_gir_virtual_method_start_element (GMarkupParseContext  *context,
+                                       const gchar          *element_name,
+                                       const gchar         **attribute_names,
+                                       const gchar         **attribute_values,
+                                       gpointer              user_data,
+                                       GError              **error)
+{
+  RtfmGirVirtualMethod *self = user_data;
+
+  ENTRY;
+
+  g_assert (context != NULL);
+  g_assert (element_name != NULL);
+  g_assert (attribute_names != NULL);
+  g_assert (attribute_values != NULL);
+  g_assert (RTFM_IS_GIR_VIRTUAL_METHOD (self));
+  g_assert (error != NULL);
+
+  if (FALSE) {}
+  else if (g_strcmp0 (element_name, "return-value") == 0)
+    {
+      g_autoptr(RtfmGirReturnValue) return_value = NULL;
+
+      return_value = g_object_new (RTFM_TYPE_GIR_RETURN_VALUE, NULL);
+
+      if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (return_value),
+                                 context,
+                                 element_name,
+                                 attribute_names,
+                                 attribute_values,
+                                 error))
+        return;
+
+      g_set_object (&self->return_value, return_value);
+    }
+  else if (g_strcmp0 (element_name, "parameters") == 0)
+    {
+      g_autoptr(RtfmGirParameters) parameters = NULL;
+
+      parameters = g_object_new (RTFM_TYPE_GIR_PARAMETERS, NULL);
+
+      if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (parameters),
+                                 context,
+                                 element_name,
+                                 attribute_names,
+                                 attribute_values,
+                                 error))
+        return;
+
+      g_set_object (&self->parameters, parameters);
+    }
+
+
+  EXIT;
+}
+
+static void
+rtfm_gir_virtual_method_end_element (GMarkupParseContext  *context,
+                                     const gchar          *element_name,
+                                     gpointer              user_data,
+                                     GError              **error)
+{
+  RtfmGirVirtualMethod *self = user_data;
+
+  g_assert (context != NULL);
+  g_assert (element_name != NULL);
+  g_assert (RTFM_IS_GIR_VIRTUAL_METHOD (self));
+  g_assert (error != NULL);
+
+  if (g_strcmp0 (element_name, self->ingest_element_name) == 0)
+    {
+      g_markup_parse_context_pop (context);
+      g_clear_pointer (&self->ingest_element_name, g_free);
+    }
+}
+
+static void
+rtfm_gir_virtual_method_text (GMarkupParseContext  *context,
+                              const gchar          *text,
+                              gsize                 text_len,
+                              gpointer              user_data,
+                              GError              **error)
+{
+  RtfmGirVirtualMethod *self = user_data;
+  const gchar *element_name;
+
+  g_assert (context != NULL);
+  g_assert (text != NULL);
+  g_assert (RTFM_IS_GIR_VIRTUAL_METHOD (self));
+  g_assert (error != NULL);
+
+}
+
+static void
+rtfm_gir_virtual_method_error (GMarkupParseContext *context,
+                               GError              *error,
+                               gpointer             user_data)
+{
+  RtfmGirVirtualMethod *self = user_data;
+
+  g_assert (context != NULL);
+  g_assert (RTFM_IS_GIR_VIRTUAL_METHOD (self));
+  g_assert (error != NULL);
+
+  g_clear_pointer (&self->ingest_element_name, g_free);
+}
+
+static const GMarkupParser markup_parser = {
+  rtfm_gir_virtual_method_start_element,
+  rtfm_gir_virtual_method_end_element,
+  rtfm_gir_virtual_method_text,
+  NULL,
+  rtfm_gir_virtual_method_error,
+};
+
 static gboolean
-rtfm_gir_virtual_method_ingest (RtfmGirBase       *base,
-                                xmlTextReaderPtr   reader,
-                                GError           **error)
+rtfm_gir_virtual_method_ingest (RtfmGirBase          *base,
+                                GMarkupParseContext  *context,
+                                const gchar          *element_name,
+                                const gchar         **attribute_names,
+                                const gchar         **attribute_values,
+                                GError              **error)
 {
   RtfmGirVirtualMethod *self = (RtfmGirVirtualMethod *)base;
-  xmlChar *name;
+
+  ENTRY;
 
   g_assert (RTFM_IS_GIR_VIRTUAL_METHOD (self));
-  g_assert (reader != NULL);
+  g_assert (context != NULL);
+  g_assert (element_name != NULL);
+  g_assert (attribute_names != NULL);
+  g_assert (attribute_values != NULL);
 
-  /* Read properties from element */
-  name = xmlTextReaderGetAttribute (reader, (const xmlChar *)"name");
+  self->ingest_element_name = g_strdup (element_name);
 
-  /* Copy properties to object */
-  self->name = g_strdup ((gchar *)name);
+  g_clear_pointer (&self->name, g_free);
 
-  /* Free libxml allocated strings */
-  xmlFree (name);
+  if (!rtfm_g_markup_collect_some_attributes (element_name,
+                                              attribute_names,
+                                              attribute_values,
+                                              error,
+                                              G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "name", &self->name,
+                                              G_MARKUP_COLLECT_INVALID))
+    RETURN (FALSE);
 
-  if (xmlTextReaderRead (reader) != 1)
-    return FALSE;
+  g_markup_parse_context_push (context, &markup_parser, self);
 
-  while (xmlTextReaderNodeType (reader) != XML_ELEMENT_NODE)
-    {
-      if (xmlTextReaderNext (reader) != 1)
-        return FALSE;
-    }
-
-  do
-    {
-      const gchar *element_name;
-
-      if (xmlTextReaderNodeType (reader) != XML_ELEMENT_NODE)
-        continue;
-
-      element_name = (const gchar *)xmlTextReaderConstName (reader);
-
-      if (FALSE) { }
-      else if (g_strcmp0 (element_name, "return-value") == 0)
-        {
-          g_autoptr(RtfmGirReturnValue) return_value = NULL;
-
-          return_value = g_object_new (RTFM_TYPE_GIR_RETURN_VALUE, NULL);
-
-          if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (return_value), reader, error))
-            return FALSE;
-
-          g_set_object (&self->return_value, return_value);
-        }
-      else if (g_strcmp0 (element_name, "parameters") == 0)
-        {
-          g_autoptr(RtfmGirParameters) parameters = NULL;
-
-          parameters = g_object_new (RTFM_TYPE_GIR_PARAMETERS, NULL);
-
-          if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (parameters), reader, error))
-            return FALSE;
-
-          g_set_object (&self->parameters, parameters);
-        }
-    }
-  while (xmlTextReaderNext (reader) == 1);
-
-
-  return TRUE;
+  RETURN (TRUE);
 }
 
 /**

@@ -89,15 +89,26 @@ rtfm_gir_base_init (RtfmGirBase *self)
 }
 
 gboolean
-rtfm_gir_base_ingest (RtfmGirBase       *self,
-                      xmlTextReaderPtr   reader,
-                      GError           **error)
+rtfm_gir_base_ingest (RtfmGirBase          *self,
+                      GMarkupParseContext  *context,
+                      const gchar          *element_name,
+                      const gchar         **attribute_names,
+                      const gchar         **attribute_values,
+                      GError              **error)
 {
   g_return_val_if_fail (RTFM_IS_GIR_BASE (self), FALSE);
-  g_return_val_if_fail (reader != NULL, FALSE);
+  g_return_val_if_fail (context != NULL, FALSE);
+  g_return_val_if_fail (element_name != NULL, FALSE);
+  g_return_val_if_fail (attribute_names != NULL, FALSE);
+  g_return_val_if_fail (attribute_values != NULL, FALSE);
 
   if (RTFM_GIR_BASE_GET_CLASS (self)->ingest)
-    return RTFM_GIR_BASE_GET_CLASS (self)->ingest (self, reader, error);
+    return RTFM_GIR_BASE_GET_CLASS (self)->ingest (self,
+                                                   context,
+                                                   element_name,
+                                                   attribute_names,
+                                                   attribute_values,
+                                                   error);
 
   return TRUE;
 }

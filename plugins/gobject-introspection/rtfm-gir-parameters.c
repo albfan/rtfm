@@ -19,11 +19,25 @@
 #define G_LOG_DOMAIN "rtfm-gir-parameters"
 
 #include "rtfm-gir-parameters.h"
+#include "rtfm-gir-markup.h"
 #include "rtfm-gir-parameter.h"
+
+#if 0
+# define ENTRY     do { g_printerr ("ENTRY: %s(): %d: (%s)\n", G_STRFUNC, __LINE__, element_name); } while (0)
+# define EXIT      do { g_printerr (" EXIT: %s(): %d: (%s)\n", G_STRFUNC, __LINE__, element_name); return; } while (0)
+# define RETURN(r) do { g_printerr (" EXIT: %s(): %d: (%s)\n", G_STRFUNC, __LINE__, element_name); return r; } while (0)
+#else
+# define ENTRY
+# define EXIT return
+# define RETURN(r) do { return r; } while (0)
+#endif
 
 struct _RtfmGirParameters
 {
   RtfmGirBase base;
+
+  gchar *ingest_element_name;
+
   GPtrArray *parameter;
 };
 
@@ -37,9 +51,12 @@ G_DEFINE_TYPE (RtfmGirParameters, rtfm_gir_parameters, RTFM_TYPE_GIR_BASE)
 static GParamSpec *properties [N_PROPS];
 
 static gboolean
-rtfm_gir_parameters_ingest (RtfmGirBase       *base,
-                            xmlTextReaderPtr   reader,
-                            GError           **error);
+rtfm_gir_parameters_ingest (RtfmGirBase          *base,
+                            GMarkupParseContext  *context,
+                            const gchar          *element_name,
+                            const gchar         **attribute_names,
+                            const gchar         **attribute_values,
+                            GError              **error);
 
 static void
 rtfm_gir_parameters_finalize (GObject *object)
@@ -101,60 +118,132 @@ rtfm_gir_parameters_init (RtfmGirParameters *self)
 {
 }
 
+static void
+rtfm_gir_parameters_start_element (GMarkupParseContext  *context,
+                                   const gchar          *element_name,
+                                   const gchar         **attribute_names,
+                                   const gchar         **attribute_values,
+                                   gpointer              user_data,
+                                   GError              **error)
+{
+  RtfmGirParameters *self = user_data;
+
+  ENTRY;
+
+  g_assert (context != NULL);
+  g_assert (element_name != NULL);
+  g_assert (attribute_names != NULL);
+  g_assert (attribute_values != NULL);
+  g_assert (RTFM_IS_GIR_PARAMETERS (self));
+  g_assert (error != NULL);
+
+  if (FALSE) {}
+  else if ((g_strcmp0 (element_name, "parameter") == 0) || (g_strcmp0 (element_name, "instance-parameter") == 0))
+    {
+      g_autoptr(RtfmGirParameter) parameter = NULL;
+
+      parameter = g_object_new (RTFM_TYPE_GIR_PARAMETER, NULL);
+
+      if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (parameter),
+                                 context,
+                                 element_name,
+                                 attribute_names,
+                                 attribute_values,
+                                 error))
+        return;
+
+      if (self->parameter == NULL)
+        self->parameter = g_ptr_array_new_with_free_func (g_object_unref);
+
+      g_ptr_array_add (self->parameter, g_steal_pointer (&parameter));
+    }
+
+
+  EXIT;
+}
+
+static void
+rtfm_gir_parameters_end_element (GMarkupParseContext  *context,
+                                 const gchar          *element_name,
+                                 gpointer              user_data,
+                                 GError              **error)
+{
+  RtfmGirParameters *self = user_data;
+
+  g_assert (context != NULL);
+  g_assert (element_name != NULL);
+  g_assert (RTFM_IS_GIR_PARAMETERS (self));
+  g_assert (error != NULL);
+
+  if (g_strcmp0 (element_name, self->ingest_element_name) == 0)
+    {
+      g_markup_parse_context_pop (context);
+      g_clear_pointer (&self->ingest_element_name, g_free);
+    }
+}
+
+static void
+rtfm_gir_parameters_text (GMarkupParseContext  *context,
+                          const gchar          *text,
+                          gsize                 text_len,
+                          gpointer              user_data,
+                          GError              **error)
+{
+  RtfmGirParameters *self = user_data;
+  const gchar *element_name;
+
+  g_assert (context != NULL);
+  g_assert (text != NULL);
+  g_assert (RTFM_IS_GIR_PARAMETERS (self));
+  g_assert (error != NULL);
+
+}
+
+static void
+rtfm_gir_parameters_error (GMarkupParseContext *context,
+                           GError              *error,
+                           gpointer             user_data)
+{
+  RtfmGirParameters *self = user_data;
+
+  g_assert (context != NULL);
+  g_assert (RTFM_IS_GIR_PARAMETERS (self));
+  g_assert (error != NULL);
+
+  g_clear_pointer (&self->ingest_element_name, g_free);
+}
+
+static const GMarkupParser markup_parser = {
+  rtfm_gir_parameters_start_element,
+  rtfm_gir_parameters_end_element,
+  rtfm_gir_parameters_text,
+  NULL,
+  rtfm_gir_parameters_error,
+};
+
 static gboolean
-rtfm_gir_parameters_ingest (RtfmGirBase       *base,
-                            xmlTextReaderPtr   reader,
-                            GError           **error)
+rtfm_gir_parameters_ingest (RtfmGirBase          *base,
+                            GMarkupParseContext  *context,
+                            const gchar          *element_name,
+                            const gchar         **attribute_names,
+                            const gchar         **attribute_values,
+                            GError              **error)
 {
   RtfmGirParameters *self = (RtfmGirParameters *)base;
 
+  ENTRY;
+
   g_assert (RTFM_IS_GIR_PARAMETERS (self));
-  g_assert (reader != NULL);
+  g_assert (context != NULL);
+  g_assert (element_name != NULL);
+  g_assert (attribute_names != NULL);
+  g_assert (attribute_values != NULL);
 
-  /* Read properties from element */
+  self->ingest_element_name = g_strdup (element_name);
 
-  /* Copy properties to object */
+  g_markup_parse_context_push (context, &markup_parser, self);
 
-  /* Free libxml allocated strings */
-
-  if (xmlTextReaderRead (reader) != 1)
-    return FALSE;
-
-  while (xmlTextReaderNodeType (reader) != XML_ELEMENT_NODE)
-    {
-      if (xmlTextReaderNext (reader) != 1)
-        return FALSE;
-    }
-
-  do
-    {
-      const gchar *element_name;
-
-      if (xmlTextReaderNodeType (reader) != XML_ELEMENT_NODE)
-        continue;
-
-      element_name = (const gchar *)xmlTextReaderConstName (reader);
-
-      if (FALSE) { }
-      else if ((g_strcmp0 (element_name, "parameter") == 0) || (g_strcmp0 (element_name, "instance-parameter") == 0))
-        {
-          g_autoptr(RtfmGirParameter) parameter = NULL;
-
-          parameter = g_object_new (RTFM_TYPE_GIR_PARAMETER, NULL);
-
-          if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (parameter), reader, error))
-            return FALSE;
-
-          if (self->parameter == NULL)
-            self->parameter = g_ptr_array_new_with_free_func (g_object_unref);
-
-          g_ptr_array_add (self->parameter, g_steal_pointer (&parameter));
-        }
-    }
-  while (xmlTextReaderNext (reader) == 1);
-
-
-  return TRUE;
+  RETURN (TRUE);
 }
 
 gboolean

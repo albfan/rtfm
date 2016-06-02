@@ -19,6 +19,7 @@
 #define G_LOG_DOMAIN "rtfm-gir-namespace"
 
 #include "rtfm-gir-namespace.h"
+#include "rtfm-gir-markup.h"
 #include "rtfm-gir-alias.h"
 #include "rtfm-gir-bitfield.h"
 #include "rtfm-gir-callback.h"
@@ -28,9 +29,22 @@
 #include "rtfm-gir-function.h"
 #include "rtfm-gir-record.h"
 
+#if 0
+# define ENTRY     do { g_printerr ("ENTRY: %s(): %d: (%s)\n", G_STRFUNC, __LINE__, element_name); } while (0)
+# define EXIT      do { g_printerr (" EXIT: %s(): %d: (%s)\n", G_STRFUNC, __LINE__, element_name); return; } while (0)
+# define RETURN(r) do { g_printerr (" EXIT: %s(): %d: (%s)\n", G_STRFUNC, __LINE__, element_name); return r; } while (0)
+#else
+# define ENTRY
+# define EXIT return
+# define RETURN(r) do { return r; } while (0)
+#endif
+
 struct _RtfmGirNamespace
 {
   RtfmGirBase base;
+
+  gchar *ingest_element_name;
+
   gchar *name;
   gchar *version;
   gchar *shared_library;
@@ -61,9 +75,12 @@ G_DEFINE_TYPE (RtfmGirNamespace, rtfm_gir_namespace, RTFM_TYPE_GIR_BASE)
 static GParamSpec *properties [N_PROPS];
 
 static gboolean
-rtfm_gir_namespace_ingest (RtfmGirBase       *base,
-                           xmlTextReaderPtr   reader,
-                           GError           **error);
+rtfm_gir_namespace_ingest (RtfmGirBase          *base,
+                           GMarkupParseContext  *context,
+                           const gchar          *element_name,
+                           const gchar         **attribute_names,
+                           const gchar         **attribute_values,
+                           GError              **error);
 
 static void
 rtfm_gir_namespace_finalize (GObject *object)
@@ -75,14 +92,14 @@ rtfm_gir_namespace_finalize (GObject *object)
   g_clear_pointer (&self->shared_library, g_free);
   g_clear_pointer (&self->c_identifier_prefixes, g_free);
   g_clear_pointer (&self->c_symbol_prefixes, g_free);
-  g_clear_pointer (&self->c_symbol_prefixes, g_ptr_array_unref);
-  g_clear_pointer (&self->c_symbol_prefixes, g_ptr_array_unref);
-  g_clear_pointer (&self->c_symbol_prefixes, g_ptr_array_unref);
-  g_clear_pointer (&self->c_symbol_prefixes, g_ptr_array_unref);
-  g_clear_pointer (&self->c_symbol_prefixes, g_ptr_array_unref);
-  g_clear_pointer (&self->c_symbol_prefixes, g_ptr_array_unref);
-  g_clear_pointer (&self->c_symbol_prefixes, g_ptr_array_unref);
-  g_clear_pointer (&self->c_symbol_prefixes, g_ptr_array_unref);
+  g_clear_pointer (&self->alias, g_ptr_array_unref);
+  g_clear_pointer (&self->bitfield, g_ptr_array_unref);
+  g_clear_pointer (&self->callback, g_ptr_array_unref);
+  g_clear_pointer (&self->class, g_ptr_array_unref);
+  g_clear_pointer (&self->constant, g_ptr_array_unref);
+  g_clear_pointer (&self->enumeration, g_ptr_array_unref);
+  g_clear_pointer (&self->function, g_ptr_array_unref);
+  g_clear_pointer (&self->record, g_ptr_array_unref);
 
   G_OBJECT_CLASS (rtfm_gir_namespace_parent_class)->finalize (object);
 }
@@ -217,178 +234,283 @@ rtfm_gir_namespace_init (RtfmGirNamespace *self)
 {
 }
 
+static void
+rtfm_gir_namespace_start_element (GMarkupParseContext  *context,
+                                  const gchar          *element_name,
+                                  const gchar         **attribute_names,
+                                  const gchar         **attribute_values,
+                                  gpointer              user_data,
+                                  GError              **error)
+{
+  RtfmGirNamespace *self = user_data;
+
+  ENTRY;
+
+  g_assert (context != NULL);
+  g_assert (element_name != NULL);
+  g_assert (attribute_names != NULL);
+  g_assert (attribute_values != NULL);
+  g_assert (RTFM_IS_GIR_NAMESPACE (self));
+  g_assert (error != NULL);
+
+  if (FALSE) {}
+  else if (g_strcmp0 (element_name, "alias") == 0)
+    {
+      g_autoptr(RtfmGirAlias) alias = NULL;
+
+      alias = g_object_new (RTFM_TYPE_GIR_ALIAS, NULL);
+
+      if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (alias),
+                                 context,
+                                 element_name,
+                                 attribute_names,
+                                 attribute_values,
+                                 error))
+        return;
+
+      if (self->alias == NULL)
+        self->alias = g_ptr_array_new_with_free_func (g_object_unref);
+
+      g_ptr_array_add (self->alias, g_steal_pointer (&alias));
+    }
+  else if (g_strcmp0 (element_name, "bitfield") == 0)
+    {
+      g_autoptr(RtfmGirBitfield) bitfield = NULL;
+
+      bitfield = g_object_new (RTFM_TYPE_GIR_BITFIELD, NULL);
+
+      if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (bitfield),
+                                 context,
+                                 element_name,
+                                 attribute_names,
+                                 attribute_values,
+                                 error))
+        return;
+
+      if (self->bitfield == NULL)
+        self->bitfield = g_ptr_array_new_with_free_func (g_object_unref);
+
+      g_ptr_array_add (self->bitfield, g_steal_pointer (&bitfield));
+    }
+  else if (g_strcmp0 (element_name, "callback") == 0)
+    {
+      g_autoptr(RtfmGirCallback) callback = NULL;
+
+      callback = g_object_new (RTFM_TYPE_GIR_CALLBACK, NULL);
+
+      if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (callback),
+                                 context,
+                                 element_name,
+                                 attribute_names,
+                                 attribute_values,
+                                 error))
+        return;
+
+      if (self->callback == NULL)
+        self->callback = g_ptr_array_new_with_free_func (g_object_unref);
+
+      g_ptr_array_add (self->callback, g_steal_pointer (&callback));
+    }
+  else if (g_strcmp0 (element_name, "class") == 0)
+    {
+      g_autoptr(RtfmGirClass) class = NULL;
+
+      class = g_object_new (RTFM_TYPE_GIR_CLASS, NULL);
+
+      if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (class),
+                                 context,
+                                 element_name,
+                                 attribute_names,
+                                 attribute_values,
+                                 error))
+        return;
+
+      if (self->class == NULL)
+        self->class = g_ptr_array_new_with_free_func (g_object_unref);
+
+      g_ptr_array_add (self->class, g_steal_pointer (&class));
+    }
+  else if (g_strcmp0 (element_name, "constant") == 0)
+    {
+      g_autoptr(RtfmGirConstant) constant = NULL;
+
+      constant = g_object_new (RTFM_TYPE_GIR_CONSTANT, NULL);
+
+      if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (constant),
+                                 context,
+                                 element_name,
+                                 attribute_names,
+                                 attribute_values,
+                                 error))
+        return;
+
+      if (self->constant == NULL)
+        self->constant = g_ptr_array_new_with_free_func (g_object_unref);
+
+      g_ptr_array_add (self->constant, g_steal_pointer (&constant));
+    }
+  else if (g_strcmp0 (element_name, "enumeration") == 0)
+    {
+      g_autoptr(RtfmGirEnumeration) enumeration = NULL;
+
+      enumeration = g_object_new (RTFM_TYPE_GIR_ENUMERATION, NULL);
+
+      if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (enumeration),
+                                 context,
+                                 element_name,
+                                 attribute_names,
+                                 attribute_values,
+                                 error))
+        return;
+
+      if (self->enumeration == NULL)
+        self->enumeration = g_ptr_array_new_with_free_func (g_object_unref);
+
+      g_ptr_array_add (self->enumeration, g_steal_pointer (&enumeration));
+    }
+  else if (g_strcmp0 (element_name, "function") == 0)
+    {
+      g_autoptr(RtfmGirFunction) function = NULL;
+
+      function = g_object_new (RTFM_TYPE_GIR_FUNCTION, NULL);
+
+      if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (function),
+                                 context,
+                                 element_name,
+                                 attribute_names,
+                                 attribute_values,
+                                 error))
+        return;
+
+      if (self->function == NULL)
+        self->function = g_ptr_array_new_with_free_func (g_object_unref);
+
+      g_ptr_array_add (self->function, g_steal_pointer (&function));
+    }
+  else if (g_strcmp0 (element_name, "record") == 0)
+    {
+      g_autoptr(RtfmGirRecord) record = NULL;
+
+      record = g_object_new (RTFM_TYPE_GIR_RECORD, NULL);
+
+      if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (record),
+                                 context,
+                                 element_name,
+                                 attribute_names,
+                                 attribute_values,
+                                 error))
+        return;
+
+      if (self->record == NULL)
+        self->record = g_ptr_array_new_with_free_func (g_object_unref);
+
+      g_ptr_array_add (self->record, g_steal_pointer (&record));
+    }
+
+
+  EXIT;
+}
+
+static void
+rtfm_gir_namespace_end_element (GMarkupParseContext  *context,
+                                const gchar          *element_name,
+                                gpointer              user_data,
+                                GError              **error)
+{
+  RtfmGirNamespace *self = user_data;
+
+  g_assert (context != NULL);
+  g_assert (element_name != NULL);
+  g_assert (RTFM_IS_GIR_NAMESPACE (self));
+  g_assert (error != NULL);
+
+  if (g_strcmp0 (element_name, self->ingest_element_name) == 0)
+    {
+      g_markup_parse_context_pop (context);
+      g_clear_pointer (&self->ingest_element_name, g_free);
+    }
+}
+
+static void
+rtfm_gir_namespace_text (GMarkupParseContext  *context,
+                         const gchar          *text,
+                         gsize                 text_len,
+                         gpointer              user_data,
+                         GError              **error)
+{
+  RtfmGirNamespace *self = user_data;
+  const gchar *element_name;
+
+  g_assert (context != NULL);
+  g_assert (text != NULL);
+  g_assert (RTFM_IS_GIR_NAMESPACE (self));
+  g_assert (error != NULL);
+
+}
+
+static void
+rtfm_gir_namespace_error (GMarkupParseContext *context,
+                          GError              *error,
+                          gpointer             user_data)
+{
+  RtfmGirNamespace *self = user_data;
+
+  g_assert (context != NULL);
+  g_assert (RTFM_IS_GIR_NAMESPACE (self));
+  g_assert (error != NULL);
+
+  g_clear_pointer (&self->ingest_element_name, g_free);
+}
+
+static const GMarkupParser markup_parser = {
+  rtfm_gir_namespace_start_element,
+  rtfm_gir_namespace_end_element,
+  rtfm_gir_namespace_text,
+  NULL,
+  rtfm_gir_namespace_error,
+};
+
 static gboolean
-rtfm_gir_namespace_ingest (RtfmGirBase       *base,
-                           xmlTextReaderPtr   reader,
-                           GError           **error)
+rtfm_gir_namespace_ingest (RtfmGirBase          *base,
+                           GMarkupParseContext  *context,
+                           const gchar          *element_name,
+                           const gchar         **attribute_names,
+                           const gchar         **attribute_values,
+                           GError              **error)
 {
   RtfmGirNamespace *self = (RtfmGirNamespace *)base;
-  xmlChar *name;
-  xmlChar *version;
-  xmlChar *shared_library;
-  xmlChar *c_identifier_prefixes;
-  xmlChar *c_symbol_prefixes;
+
+  ENTRY;
 
   g_assert (RTFM_IS_GIR_NAMESPACE (self));
-  g_assert (reader != NULL);
+  g_assert (context != NULL);
+  g_assert (element_name != NULL);
+  g_assert (attribute_names != NULL);
+  g_assert (attribute_values != NULL);
 
-  /* Read properties from element */
-  name = xmlTextReaderGetAttribute (reader, (const xmlChar *)"name");
-  version = xmlTextReaderGetAttribute (reader, (const xmlChar *)"version");
-  shared_library = xmlTextReaderGetAttribute (reader, (const xmlChar *)"shared-library");
-  c_identifier_prefixes = xmlTextReaderGetAttribute (reader, (const xmlChar *)"c:identifier-prefixes");
-  c_symbol_prefixes = xmlTextReaderGetAttribute (reader, (const xmlChar *)"c:symbol-prefixes");
+  self->ingest_element_name = g_strdup (element_name);
 
-  /* Copy properties to object */
-  self->name = g_strdup ((gchar *)name);
-  self->version = g_strdup ((gchar *)version);
-  self->shared_library = g_strdup ((gchar *)shared_library);
-  self->c_identifier_prefixes = g_strdup ((gchar *)c_identifier_prefixes);
-  self->c_symbol_prefixes = g_strdup ((gchar *)c_symbol_prefixes);
+  g_clear_pointer (&self->name, g_free);
+  g_clear_pointer (&self->version, g_free);
+  g_clear_pointer (&self->shared_library, g_free);
+  g_clear_pointer (&self->c_identifier_prefixes, g_free);
+  g_clear_pointer (&self->c_symbol_prefixes, g_free);
 
-  /* Free libxml allocated strings */
-  xmlFree (name);
-  xmlFree (version);
-  xmlFree (shared_library);
-  xmlFree (c_identifier_prefixes);
-  xmlFree (c_symbol_prefixes);
+  if (!rtfm_g_markup_collect_some_attributes (element_name,
+                                              attribute_names,
+                                              attribute_values,
+                                              error,
+                                              G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "name", &self->name,
+                                              G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "version", &self->version,
+                                              G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "shared-library", &self->shared_library,
+                                              G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "c:identifier-prefixes", &self->c_identifier_prefixes,
+                                              G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "c:symbol-prefixes", &self->c_symbol_prefixes,
+                                              G_MARKUP_COLLECT_INVALID))
+    RETURN (FALSE);
 
-  if (xmlTextReaderRead (reader) != 1)
-    return FALSE;
+  g_markup_parse_context_push (context, &markup_parser, self);
 
-  while (xmlTextReaderNodeType (reader) != XML_ELEMENT_NODE)
-    {
-      if (xmlTextReaderNext (reader) != 1)
-        return FALSE;
-    }
-
-  do
-    {
-      const gchar *element_name;
-
-      if (xmlTextReaderNodeType (reader) != XML_ELEMENT_NODE)
-        continue;
-
-      element_name = (const gchar *)xmlTextReaderConstName (reader);
-
-      if (FALSE) { }
-      else if (g_strcmp0 (element_name, "alias") == 0)
-        {
-          g_autoptr(RtfmGirAlias) alias = NULL;
-
-          alias = g_object_new (RTFM_TYPE_GIR_ALIAS, NULL);
-
-          if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (alias), reader, error))
-            return FALSE;
-
-          if (self->alias == NULL)
-            self->alias = g_ptr_array_new_with_free_func (g_object_unref);
-
-          g_ptr_array_add (self->alias, g_steal_pointer (&alias));
-        }
-      else if (g_strcmp0 (element_name, "bitfield") == 0)
-        {
-          g_autoptr(RtfmGirBitfield) bitfield = NULL;
-
-          bitfield = g_object_new (RTFM_TYPE_GIR_BITFIELD, NULL);
-
-          if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (bitfield), reader, error))
-            return FALSE;
-
-          if (self->bitfield == NULL)
-            self->bitfield = g_ptr_array_new_with_free_func (g_object_unref);
-
-          g_ptr_array_add (self->bitfield, g_steal_pointer (&bitfield));
-        }
-      else if (g_strcmp0 (element_name, "callback") == 0)
-        {
-          g_autoptr(RtfmGirCallback) callback = NULL;
-
-          callback = g_object_new (RTFM_TYPE_GIR_CALLBACK, NULL);
-
-          if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (callback), reader, error))
-            return FALSE;
-
-          if (self->callback == NULL)
-            self->callback = g_ptr_array_new_with_free_func (g_object_unref);
-
-          g_ptr_array_add (self->callback, g_steal_pointer (&callback));
-        }
-      else if (g_strcmp0 (element_name, "class") == 0)
-        {
-          g_autoptr(RtfmGirClass) class = NULL;
-
-          class = g_object_new (RTFM_TYPE_GIR_CLASS, NULL);
-
-          if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (class), reader, error))
-            return FALSE;
-
-          if (self->class == NULL)
-            self->class = g_ptr_array_new_with_free_func (g_object_unref);
-
-          g_ptr_array_add (self->class, g_steal_pointer (&class));
-        }
-      else if (g_strcmp0 (element_name, "constant") == 0)
-        {
-          g_autoptr(RtfmGirConstant) constant = NULL;
-
-          constant = g_object_new (RTFM_TYPE_GIR_CONSTANT, NULL);
-
-          if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (constant), reader, error))
-            return FALSE;
-
-          if (self->constant == NULL)
-            self->constant = g_ptr_array_new_with_free_func (g_object_unref);
-
-          g_ptr_array_add (self->constant, g_steal_pointer (&constant));
-        }
-      else if (g_strcmp0 (element_name, "enumeration") == 0)
-        {
-          g_autoptr(RtfmGirEnumeration) enumeration = NULL;
-
-          enumeration = g_object_new (RTFM_TYPE_GIR_ENUMERATION, NULL);
-
-          if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (enumeration), reader, error))
-            return FALSE;
-
-          if (self->enumeration == NULL)
-            self->enumeration = g_ptr_array_new_with_free_func (g_object_unref);
-
-          g_ptr_array_add (self->enumeration, g_steal_pointer (&enumeration));
-        }
-      else if (g_strcmp0 (element_name, "function") == 0)
-        {
-          g_autoptr(RtfmGirFunction) function = NULL;
-
-          function = g_object_new (RTFM_TYPE_GIR_FUNCTION, NULL);
-
-          if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (function), reader, error))
-            return FALSE;
-
-          if (self->function == NULL)
-            self->function = g_ptr_array_new_with_free_func (g_object_unref);
-
-          g_ptr_array_add (self->function, g_steal_pointer (&function));
-        }
-      else if (g_strcmp0 (element_name, "record") == 0)
-        {
-          g_autoptr(RtfmGirRecord) record = NULL;
-
-          record = g_object_new (RTFM_TYPE_GIR_RECORD, NULL);
-
-          if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (record), reader, error))
-            return FALSE;
-
-          if (self->record == NULL)
-            self->record = g_ptr_array_new_with_free_func (g_object_unref);
-
-          g_ptr_array_add (self->record, g_steal_pointer (&record));
-        }
-    }
-  while (xmlTextReaderNext (reader) == 1);
-
-
-  return TRUE;
+  RETURN (TRUE);
 }
 
 gboolean

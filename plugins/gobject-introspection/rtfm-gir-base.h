@@ -19,7 +19,6 @@
 #ifndef RTFM_GIR_BASE_H
 #define RTFM_GIR_BASE_H
 
-#include <libxml/xmlreader.h>
 #include <rtfm.h>
 
 G_BEGIN_DECLS
@@ -32,16 +31,22 @@ struct _RtfmGirBaseClass
 {
   GObjectClass parent;
 
-  gboolean (*ingest) (RtfmGirBase       *self,
-                      xmlTextReaderPtr   reader,
-                      GError           **error);
+  gboolean (*ingest) (RtfmGirBase          *self,
+                      GMarkupParseContext  *context,
+                      const gchar          *element_name,
+                      const gchar         **attribute_names,
+                      const gchar         **attribute_values,
+                      GError              **error);
 
   gpointer padding[7];
 };
 
-gboolean rtfm_gir_base_ingest (RtfmGirBase       *self,
-                               xmlTextReaderPtr   reader,
-                               GError           **error);
+gboolean rtfm_gir_base_ingest (RtfmGirBase          *self,
+                               GMarkupParseContext  *context,
+                               const gchar          *element_name,
+                               const gchar         **attribute_names,
+                               const gchar         **attribute_values,
+                               GError              **error);
 
 G_END_DECLS
 
