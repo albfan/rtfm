@@ -1,7 +1,0 @@
-[Plugin]
-Loader=python3
-Module=dummy
-Name=Dummy
-Description=Dummy data provider
-Authors=Christian Hergert
-Copyright=Copyright 2016 Christian Hergert <chergert@redhat.com>
