@@ -118,6 +118,13 @@ rtfm_gir_item_new (GObject *object)
                     NULL);
       icon_name = "lang-struct-symbolic";
     }
+  else if (RTFM_IS_GIR_UNION (object))
+    {
+      g_object_get (object,
+                    "c-type", &title,
+                    NULL);
+      icon_name = "lang-union-symbolic";
+    }
   else if (RTFM_IS_GIR_CALLBACK (object))
     {
       g_object_get (object,
@@ -469,7 +476,8 @@ rtfm_gir_item_populate_async (RtfmGirItem         *self,
         }
       else
         {
-          if (rtfm_gir_class_has_fields (RTFM_GIR_CLASS (priv->object)))
+          if (rtfm_gir_class_has_fields (RTFM_GIR_CLASS (priv->object)) ||
+              rtfm_gir_class_has_unions (RTFM_GIR_CLASS (priv->object)))
             {
               g_autoptr(RtfmGirItem) item = NULL;
 
@@ -521,8 +529,43 @@ rtfm_gir_item_populate_async (RtfmGirItem         *self,
   else if (RTFM_IS_GIR_RECORD (priv->object))
     {
       RtfmGirRecord *record = RTFM_GIR_RECORD (priv->object);
+      const gchar *id = rtfm_item_get_id (RTFM_ITEM (self));
 
-      if (rtfm_gir_record_has_fields (record))
+      if (g_strcmp0 ("gir:fields", id) == 0)
+        {
+          GPtrArray *ar = NULL;
+          guint i;
+
+          ar = rtfm_gir_record_get_fields (record);
+
+          if (ar != NULL)
+            {
+              for (i = 0; i < ar->len; i++)
+                {
+                  GObject *object = g_ptr_array_index (ar, i);
+                  g_autoptr(RtfmGirItem) item = NULL;
+
+                  item = rtfm_gir_item_new (object);
+                  rtfm_collection_append (collection, g_steal_pointer (&item));
+                }
+            }
+
+          ar = rtfm_gir_record_get_unions (record);
+
+          if (ar != NULL)
+            {
+              for (i = 0; i < ar->len; i++)
+                {
+                  GObject *object = g_ptr_array_index (ar, i);
+                  g_autoptr(RtfmGirItem) item = NULL;
+
+                  item = rtfm_gir_item_new (object);
+                  rtfm_collection_append (collection, g_steal_pointer (&item));
+                }
+            }
+        }
+      else if (rtfm_gir_record_has_fields (record) ||
+               rtfm_gir_record_has_unions (record))
         {
           g_autoptr(RtfmGirItem) item = NULL;
 
