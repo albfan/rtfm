@@ -27,6 +27,7 @@
 #include "rtfm-gir-virtual-method.h"
 #include "rtfm-gir-property.h"
 #include "rtfm-gir-constructor.h"
+#include "rtfm-gir-union.h"
 
 #if 0
 # define ENTRY     do { g_printerr ("ENTRY: %s(): %d: (%s)\n", G_STRFUNC, __LINE__, element_name); } while (0)
@@ -59,6 +60,7 @@ struct _RtfmGirClass
   GPtrArray *virtual_method;
   GPtrArray *property;
   GPtrArray *constructor;
+  GPtrArray *unions;
 };
 
 enum {
@@ -107,6 +109,7 @@ rtfm_gir_class_finalize (GObject *object)
   g_clear_pointer (&self->virtual_method, g_ptr_array_unref);
   g_clear_pointer (&self->property, g_ptr_array_unref);
   g_clear_pointer (&self->constructor, g_ptr_array_unref);
+  g_clear_pointer (&self->unions, g_ptr_array_unref);
 
   G_OBJECT_CLASS (rtfm_gir_class_parent_class)->finalize (object);
 }
@@ -449,6 +452,25 @@ rtfm_gir_class_start_element (GMarkupParseContext  *context,
 
       g_ptr_array_add (self->constructor, g_steal_pointer (&constructor));
     }
+  else if (g_strcmp0 (element_name, "union") == 0)
+    {
+      g_autoptr(RtfmGirUnion) unions = NULL;
+
+      unions = g_object_new (RTFM_TYPE_GIR_UNION, NULL);
+
+      if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (unions),
+                                 context,
+                                 element_name,
+                                 attribute_names,
+                                 attribute_values,
+                                 error))
+        return;
+
+      if (self->unions == NULL)
+        self->unions = g_ptr_array_new_with_free_func (g_object_unref);
+
+      g_ptr_array_add (self->unions, g_steal_pointer (&unions));
+    }
 
 
   EXIT;
@@ -719,4 +741,26 @@ rtfm_gir_class_get_constructors (RtfmGirClass *self)
   g_return_val_if_fail (RTFM_IS_GIR_CLASS (self), NULL);
 
   return self->constructor;
+}
+
+gboolean
+rtfm_gir_class_has_unions (RtfmGirClass *self)
+{
+  g_return_val_if_fail (RTFM_IS_GIR_CLASS (self), FALSE);
+
+  return self->unions != NULL && self->unions->len > 0;
+}
+
+/**
+ * rtfm_gir_class_get_unions:
+ *
+ * Returns: (nullable) (transfer none) (element-type Rtfm.GirUnion):
+ *  An array of #RtfmGirUnion or %NULL.
+ */
+GPtrArray *
+rtfm_gir_class_get_unions (RtfmGirClass *self)
+{
+  g_return_val_if_fail (RTFM_IS_GIR_CLASS (self), NULL);
+
+  return self->unions;
 }

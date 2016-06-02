@@ -1,4 +1,4 @@
-/* rtfm-gir-record.h
+/* rtfm-gir-union.h
  *
  * Copyright (C) 2016 Christian Hergert <chergert@redhat.com>
  *
@@ -16,27 +16,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef RTFM_GIR_RECORD_H
-#define RTFM_GIR_RECORD_H
+#ifndef RTFM_GIR_UNION_H
+#define RTFM_GIR_UNION_H
 
 #include "rtfm-gir-base.h"
+#include "rtfm-gir-record.h"
 #include "rtfm-gir-field.h"
-#include "rtfm-gir-function.h"
-#include "rtfm-gir-union.h"
 
 G_BEGIN_DECLS
 
-#define RTFM_TYPE_GIR_RECORD (rtfm_gir_record_get_type())
+#define RTFM_TYPE_GIR_UNION (rtfm_gir_union_get_type())
 
-G_DECLARE_FINAL_TYPE (RtfmGirRecord, rtfm_gir_record, RTFM, GIR_RECORD, RtfmGirBase)
+G_DECLARE_FINAL_TYPE (RtfmGirUnion, rtfm_gir_union, RTFM, GIR_UNION, RtfmGirBase)
 
-gboolean   rtfm_gir_record_has_fields (RtfmGirRecord *self);
-GPtrArray *rtfm_gir_record_get_fields (RtfmGirRecord *self);
-gboolean   rtfm_gir_record_has_functions (RtfmGirRecord *self);
-GPtrArray *rtfm_gir_record_get_functions (RtfmGirRecord *self);
-gboolean   rtfm_gir_record_has_unions (RtfmGirRecord *self);
-GPtrArray *rtfm_gir_record_get_unions (RtfmGirRecord *self);
+gboolean   rtfm_gir_union_has_records (RtfmGirUnion *self);
+GPtrArray *rtfm_gir_union_get_records (RtfmGirUnion *self);
+gboolean   rtfm_gir_union_has_fields (RtfmGirUnion *self);
+GPtrArray *rtfm_gir_union_get_fields (RtfmGirUnion *self);
 
 G_END_DECLS
 
-#endif /* RTFM_GIR_RECORD_H */
+#endif /* RTFM_GIR_UNION_H */

@@ -50,6 +50,8 @@ data_objects_sources = \
 	rtfm-gir-return-value.h \
 	rtfm-gir-type.c \
 	rtfm-gir-type.h \
+	rtfm-gir-union.c \
+	rtfm-gir-union.h \
 	rtfm-gir-virtual-method.c \
 	rtfm-gir-virtual-method.h \
 	$(NULL)

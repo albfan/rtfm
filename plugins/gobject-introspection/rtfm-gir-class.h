@@ -27,6 +27,7 @@
 #include "rtfm-gir-virtual-method.h"
 #include "rtfm-gir-property.h"
 #include "rtfm-gir-constructor.h"
+#include "rtfm-gir-union.h"
 
 G_BEGIN_DECLS
 
@@ -48,6 +49,8 @@ gboolean   rtfm_gir_class_has_properties (RtfmGirClass *self);
 GPtrArray *rtfm_gir_class_get_properties (RtfmGirClass *self);
 gboolean   rtfm_gir_class_has_constructors (RtfmGirClass *self);
 GPtrArray *rtfm_gir_class_get_constructors (RtfmGirClass *self);
+gboolean   rtfm_gir_class_has_unions (RtfmGirClass *self);
+GPtrArray *rtfm_gir_class_get_unions (RtfmGirClass *self);
 
 G_END_DECLS
 

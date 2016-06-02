@@ -22,6 +22,7 @@
 #include "rtfm-gir-markup.h"
 #include "rtfm-gir-field.h"
 #include "rtfm-gir-function.h"
+#include "rtfm-gir-union.h"
 
 #if 0
 # define ENTRY     do { g_printerr ("ENTRY: %s(): %d: (%s)\n", G_STRFUNC, __LINE__, element_name); } while (0)
@@ -44,6 +45,7 @@ struct _RtfmGirRecord
   GString *doc;
   GPtrArray *field;
   GPtrArray *function;
+  GPtrArray *unions;
 };
 
 enum {
@@ -77,6 +79,7 @@ rtfm_gir_record_finalize (GObject *object)
   self->doc = NULL;
   g_clear_pointer (&self->field, g_ptr_array_unref);
   g_clear_pointer (&self->function, g_ptr_array_unref);
+  g_clear_pointer (&self->unions, g_ptr_array_unref);
 
   G_OBJECT_CLASS (rtfm_gir_record_parent_class)->finalize (object);
 }
@@ -244,6 +247,25 @@ rtfm_gir_record_start_element (GMarkupParseContext  *context,
 
       g_ptr_array_add (self->function, g_steal_pointer (&function));
     }
+  else if (g_strcmp0 (element_name, "union") == 0)
+    {
+      g_autoptr(RtfmGirUnion) unions = NULL;
+
+      unions = g_object_new (RTFM_TYPE_GIR_UNION, NULL);
+
+      if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (unions),
+                                 context,
+                                 element_name,
+                                 attribute_names,
+                                 attribute_values,
+                                 error))
+        return;
+
+      if (self->unions == NULL)
+        self->unions = g_ptr_array_new_with_free_func (g_object_unref);
+
+      g_ptr_array_add (self->unions, g_steal_pointer (&unions));
+    }
 
 
   EXIT;
@@ -394,4 +416,26 @@ rtfm_gir_record_get_functions (RtfmGirRecord *self)
   g_return_val_if_fail (RTFM_IS_GIR_RECORD (self), NULL);
 
   return self->function;
+}
+
+gboolean
+rtfm_gir_record_has_unions (RtfmGirRecord *self)
+{
+  g_return_val_if_fail (RTFM_IS_GIR_RECORD (self), FALSE);
+
+  return self->unions != NULL && self->unions->len > 0;
+}
+
+/**
+ * rtfm_gir_record_get_unions:
+ *
+ * Returns: (nullable) (transfer none) (element-type Rtfm.GirUnion):
+ *  An array of #RtfmGirUnion or %NULL.
+ */
+GPtrArray *
+rtfm_gir_record_get_unions (RtfmGirRecord *self)
+{
+  g_return_val_if_fail (RTFM_IS_GIR_RECORD (self), NULL);
+
+  return self->unions;
 }
