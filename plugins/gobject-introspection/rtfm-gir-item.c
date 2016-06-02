@@ -90,6 +90,13 @@ rtfm_gir_item_new (GObject *object)
                     "c-type", &title,
                     NULL);
     }
+  else if (RTFM_IS_GIR_PROPERTY (object))
+    {
+      g_object_get (object,
+                    "name", &title,
+                    NULL);
+      icon_name = "lang-property-symbolic";
+    }
   else if (RTFM_IS_GIR_FIELD (object))
     {
       g_object_get (object,
