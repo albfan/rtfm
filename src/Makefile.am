@@ -1,4 +1,4 @@
-lib_LTLIBRARIES = librtfm-@API_VERSION@.la
+pkglib_LTLIBRARIES = librtfm-@API_VERSION@.la
 bin_PROGRAMS = rtfm
 
 librtfm_public_api = \
@@ -59,6 +59,8 @@ nodist_librtfm_@API_VERSION@_la_SOURCES = \
 	$(NULL)
 
 librtfm_@API_VERSION@_la_CFLAGS = \
+	-DPACKAGE_LIBDIR=\""$(pkglibdir)"\" \
+	-DPACKAGE_DATADIR=\""$(pkgdatadir)"\" \
 	$(RTFM_CFLAGS) \
 	$(WARN_CFLAGS) \
 	$(NULL)

@@ -18,6 +18,7 @@
 
 #define G_LOG_DOMAIN "rtfm-library"
 
+#include <girepository.h>
 #include <glib/gi18n.h>
 #include <gtk/gtk.h>
 #include <libpeas/peas.h>
@@ -152,8 +153,12 @@ rtfm_library_constructed (GObject *object)
   self->engine = peas_engine_new ();
   peas_engine_enable_loader (self->engine, "python3");
 
-  if (g_getenv ("RTFM_IN_TREE_PLUGINS"))
+  if (g_getenv ("RTFM_IN_TREE_PLUGINS") != NULL)
     peas_engine_prepend_search_path (self->engine, "plugins", "plugins");
+  else
+    peas_engine_add_search_path (self->engine,
+                                 PACKAGE_LIBDIR"/plugins",
+                                 PACKAGE_DATADIR"/plugins");
 
   plugin_infos = peas_engine_get_plugin_list (self->engine);
 
@@ -239,6 +244,12 @@ rtfm_library_class_init (RtfmLibraryClass *klass)
   if (NULL != (screen = gdk_screen_get_default ()) &&
       NULL != (icon_theme = gtk_icon_theme_get_default ()))
     gtk_icon_theme_add_resource_path (icon_theme, "/org/gnome/rtfm/icons/");
+
+  if (g_getenv ("RTFM_IN_TREE_PLUGINS") == NULL)
+    {
+      g_irepository_prepend_search_path (PACKAGE_LIBDIR"/girepository-1.0");
+      g_irepository_prepend_library_path (PACKAGE_LIBDIR);
+    }
 }
 
 static void

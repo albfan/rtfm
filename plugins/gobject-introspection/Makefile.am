@@ -1,5 +1,6 @@
 plugindir = $(libdir)/rtfm/plugins
 plugin_LTLIBRARIES = librtfm-plugin-gir.la
+plugin_DATA = gobject-introspection.plugin
 
 data_objects_sources = \
 	rtfm-gir-alias.c \
