@@ -22,17 +22,11 @@
 
 typedef struct
 {
-  RtfmGirBase *parent;
+  RtfmGirBase  *parent;
+  GStringChunk *string_chunk;
 } RtfmGirBasePrivate;
 
 G_DEFINE_ABSTRACT_TYPE_WITH_PRIVATE (RtfmGirBase, rtfm_gir_base, G_TYPE_OBJECT)
-
-enum {
-  PROP_0,
-  N_PROPS
-};
-
-static GParamSpec *properties [N_PROPS];
 
 static void
 rtfm_gir_base_finalize (GObject *object)
@@ -40,37 +34,9 @@ rtfm_gir_base_finalize (GObject *object)
   RtfmGirBase *self = (RtfmGirBase *)object;
   RtfmGirBasePrivate *priv = rtfm_gir_base_get_instance_private (self);
 
+  g_clear_pointer (&priv->string_chunk, g_string_chunk_free);
+
   G_OBJECT_CLASS (rtfm_gir_base_parent_class)->finalize (object);
-}
-
-static void
-rtfm_gir_base_get_property (GObject    *object,
-                            guint       prop_id,
-                            GValue     *value,
-                            GParamSpec *pspec)
-{
-  RtfmGirBase *self = RTFM_GIR_BASE (object);
-
-  switch (prop_id)
-    {
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-    }
-}
-
-static void
-rtfm_gir_base_set_property (GObject      *object,
-                            guint         prop_id,
-                            const GValue *value,
-                            GParamSpec   *pspec)
-{
-  RtfmGirBase *self = RTFM_GIR_BASE (object);
-
-  switch (prop_id)
-    {
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-    }
 }
 
 static void
@@ -79,8 +45,6 @@ rtfm_gir_base_class_init (RtfmGirBaseClass *klass)
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
   object_class->finalize = rtfm_gir_base_finalize;
-  object_class->get_property = rtfm_gir_base_get_property;
-  object_class->set_property = rtfm_gir_base_set_property;
 }
 
 static void
@@ -111,4 +75,72 @@ rtfm_gir_base_ingest (RtfmGirBase          *self,
                                                    error);
 
   return TRUE;
+}
+
+/**
+ * rtfm_gir_base_get_toplevel:
+ *
+ * Returns: (transfer none): An #RtfmGirBase.
+ */
+RtfmGirBase *
+rtfm_gir_base_get_toplevel (RtfmGirBase *self)
+{
+  RtfmGirBase *iter;
+  RtfmGirBase *ret = NULL;
+
+  g_return_val_if_fail (RTFM_IS_GIR_BASE (self), NULL);
+
+  for (iter = self; iter != NULL; iter = rtfm_gir_base_get_parent (iter))
+    ret = iter;
+
+  return ret;
+}
+
+/**
+ * rtfm_gir_base_get_parent:
+ *
+ * Returns: (nullable) (transfer none): An #RtfmGirBase or %NULL.
+ */
+RtfmGirBase *
+rtfm_gir_base_get_parent (RtfmGirBase *self)
+{
+  RtfmGirBasePrivate *priv = rtfm_gir_base_get_instance_private (self);
+
+  g_return_val_if_fail (RTFM_IS_GIR_BASE (self), NULL);
+
+  return priv->parent;
+}
+
+void
+rtfm_gir_base_set_parent (RtfmGirBase *self,
+                          RtfmGirBase *parent)
+{
+  RtfmGirBasePrivate *priv = rtfm_gir_base_get_instance_private (self);
+
+  g_return_if_fail (RTFM_IS_GIR_BASE (self));
+
+  priv->parent = parent;
+}
+
+const gchar *
+rtfm_gir_base_intern_string (RtfmGirBase *self,
+                             const gchar *string)
+{
+  g_return_val_if_fail (RTFM_IS_GIR_BASE (self), NULL);
+
+  if (string != NULL)
+    {
+      RtfmGirBase *toplevel;
+      RtfmGirBasePrivate *priv;
+
+      toplevel = rtfm_gir_base_get_toplevel (self);
+      priv = rtfm_gir_base_get_instance_private (toplevel);
+
+      if (priv->string_chunk == NULL)
+        priv->string_chunk = g_string_chunk_new (4096);
+
+      return g_string_chunk_insert_const (priv->string_chunk, string);
+    }
+
+  return NULL;
 }

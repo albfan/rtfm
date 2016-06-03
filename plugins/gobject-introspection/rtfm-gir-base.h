@@ -41,12 +41,18 @@ struct _RtfmGirBaseClass
   gpointer padding[7];
 };
 
-gboolean rtfm_gir_base_ingest (RtfmGirBase          *self,
-                               GMarkupParseContext  *context,
-                               const gchar          *element_name,
-                               const gchar         **attribute_names,
-                               const gchar         **attribute_values,
-                               GError              **error);
+RtfmGirBase *rtfm_gir_base_get_toplevel  (RtfmGirBase          *self);
+RtfmGirBase *rtfm_gir_base_get_parent    (RtfmGirBase          *self);
+void         rtfm_gir_base_set_parent    (RtfmGirBase          *self,
+                                          RtfmGirBase          *parent);
+gboolean     rtfm_gir_base_ingest        (RtfmGirBase          *self,
+                                          GMarkupParseContext  *context,
+                                          const gchar          *element_name,
+                                          const gchar         **attribute_names,
+                                          const gchar         **attribute_values,
+                                          GError              **error);
+const gchar *rtfm_gir_base_intern_string (RtfmGirBase          *self,
+                                          const gchar          *string);
 
 G_END_DECLS
 
