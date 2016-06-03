@@ -213,6 +213,7 @@ rtfm_gir_repository_start_element (GMarkupParseContext  *context,
       g_autoptr(RtfmGirNamespace) namespace = NULL;
 
       namespace = g_object_new (RTFM_TYPE_GIR_NAMESPACE, NULL);
+      rtfm_gir_base_set_parent (RTFM_GIR_BASE (namespace), RTFM_GIR_BASE (self));
 
       if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (namespace),
                                  context,
@@ -229,6 +230,7 @@ rtfm_gir_repository_start_element (GMarkupParseContext  *context,
       g_autoptr(RtfmGirInclude) include = NULL;
 
       include = g_object_new (RTFM_TYPE_GIR_INCLUDE, NULL);
+      rtfm_gir_base_set_parent (RTFM_GIR_BASE (include), RTFM_GIR_BASE (self));
 
       if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (include),
                                  context,
@@ -248,6 +250,7 @@ rtfm_gir_repository_start_element (GMarkupParseContext  *context,
       g_autoptr(RtfmGirPackage) package = NULL;
 
       package = g_object_new (RTFM_TYPE_GIR_PACKAGE, NULL);
+      rtfm_gir_base_set_parent (RTFM_GIR_BASE (package), RTFM_GIR_BASE (self));
 
       if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (package),
                                  context,
@@ -267,6 +270,7 @@ rtfm_gir_repository_start_element (GMarkupParseContext  *context,
       g_autoptr(RtfmGirCInclude) c_include = NULL;
 
       c_include = g_object_new (RTFM_TYPE_GIR_C_INCLUDE, NULL);
+      rtfm_gir_base_set_parent (RTFM_GIR_BASE (c_include), RTFM_GIR_BASE (self));
 
       if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (c_include),
                                  context,

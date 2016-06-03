@@ -39,7 +39,7 @@ struct _RtfmGirVirtualMethod
 
   gchar *ingest_element_name;
 
-  gchar *name;
+  const gchar *name;
   RtfmGirReturnValue *return_value;
   RtfmGirParameters *parameters;
 };
@@ -67,7 +67,7 @@ rtfm_gir_virtual_method_finalize (GObject *object)
 {
   RtfmGirVirtualMethod *self = (RtfmGirVirtualMethod *)object;
 
-  g_clear_pointer (&self->name, g_free);
+  self->name = NULL;
 
   G_OBJECT_CLASS (rtfm_gir_virtual_method_parent_class)->finalize (object);
 }
@@ -92,26 +92,6 @@ rtfm_gir_virtual_method_get_property (GObject    *object,
 }
 
 static void
-rtfm_gir_virtual_method_set_property (GObject       *object,
-                                      guint         prop_id,
-                                      const GValue *value,
-                                      GParamSpec   *pspec)
-{
-  RtfmGirVirtualMethod *self = (RtfmGirVirtualMethod *)object;
-
-  switch (prop_id)
-    {
-    case PROP_NAME:
-      g_free (self->name);
-      self->name = g_value_dup_string (value);
-      break;
-
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-    }
-}
-
-static void
 rtfm_gir_virtual_method_class_init (RtfmGirVirtualMethodClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
@@ -119,7 +99,6 @@ rtfm_gir_virtual_method_class_init (RtfmGirVirtualMethodClass *klass)
 
   object_class->finalize = rtfm_gir_virtual_method_finalize;
   object_class->get_property = rtfm_gir_virtual_method_get_property;
-  object_class->set_property = rtfm_gir_virtual_method_set_property;
 
   base_class->ingest = rtfm_gir_virtual_method_ingest;
 
@@ -128,7 +107,7 @@ rtfm_gir_virtual_method_class_init (RtfmGirVirtualMethodClass *klass)
                          "name",
                          "name",
                          NULL,
-                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+                         (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   g_object_class_install_properties (object_class, N_PROPS, properties);
 }
@@ -265,6 +244,7 @@ rtfm_gir_virtual_method_ingest (RtfmGirBase          *base,
                                 GError              **error)
 {
   RtfmGirVirtualMethod *self = (RtfmGirVirtualMethod *)base;
+  const gchar *name = NULL;
 
   ENTRY;
 
@@ -276,15 +256,17 @@ rtfm_gir_virtual_method_ingest (RtfmGirBase          *base,
 
   self->ingest_element_name = g_strdup (element_name);
 
-  g_clear_pointer (&self->name, g_free);
+  self->name = NULL;
 
   if (!rtfm_g_markup_collect_some_attributes (element_name,
                                               attribute_names,
                                               attribute_values,
                                               error,
-                                              G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "name", &self->name,
+                                              G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "name", &name,
                                               G_MARKUP_COLLECT_INVALID))
     RETURN (FALSE);
+
+  self->name = rtfm_gir_base_intern_string (RTFM_GIR_BASE (self), name);
 
   g_markup_parse_context_push (context, &markup_parser, self);
 

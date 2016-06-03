@@ -37,10 +37,10 @@ struct _RtfmGirMember
 
   gchar *ingest_element_name;
 
-  gchar *name;
-  gchar *value;
-  gchar *c_identifier;
-  gchar *glib_nick;
+  const gchar *name;
+  const gchar *value;
+  const gchar *c_identifier;
+  const gchar *glib_nick;
   GString *doc;
 };
 
@@ -71,10 +71,10 @@ rtfm_gir_member_finalize (GObject *object)
 {
   RtfmGirMember *self = (RtfmGirMember *)object;
 
-  g_clear_pointer (&self->name, g_free);
-  g_clear_pointer (&self->value, g_free);
-  g_clear_pointer (&self->c_identifier, g_free);
-  g_clear_pointer (&self->glib_nick, g_free);
+  self->name = NULL;
+  self->value = NULL;
+  self->c_identifier = NULL;
+  self->glib_nick = NULL;
   g_string_free (self->doc, TRUE);
   self->doc = NULL;
 
@@ -117,49 +117,6 @@ rtfm_gir_member_get_property (GObject    *object,
 }
 
 static void
-rtfm_gir_member_set_property (GObject       *object,
-                              guint         prop_id,
-                              const GValue *value,
-                              GParamSpec   *pspec)
-{
-  RtfmGirMember *self = (RtfmGirMember *)object;
-
-  switch (prop_id)
-    {
-    case PROP_NAME:
-      g_free (self->name);
-      self->name = g_value_dup_string (value);
-      break;
-
-    case PROP_VALUE:
-      g_free (self->value);
-      self->value = g_value_dup_string (value);
-      break;
-
-    case PROP_C_IDENTIFIER:
-      g_free (self->c_identifier);
-      self->c_identifier = g_value_dup_string (value);
-      break;
-
-    case PROP_GLIB_NICK:
-      g_free (self->glib_nick);
-      self->glib_nick = g_value_dup_string (value);
-      break;
-
-    case PROP_DOC:
-      if (self->doc != NULL)
-        g_string_set_size (self->doc, 0);
-      else
-        self->doc = g_string_new (NULL);
-      g_string_append (self->doc, g_value_get_string (value));
-      break;
-
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-    }
-}
-
-static void
 rtfm_gir_member_class_init (RtfmGirMemberClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
@@ -167,7 +124,6 @@ rtfm_gir_member_class_init (RtfmGirMemberClass *klass)
 
   object_class->finalize = rtfm_gir_member_finalize;
   object_class->get_property = rtfm_gir_member_get_property;
-  object_class->set_property = rtfm_gir_member_set_property;
 
   base_class->ingest = rtfm_gir_member_ingest;
 
@@ -176,35 +132,35 @@ rtfm_gir_member_class_init (RtfmGirMemberClass *klass)
                          "name",
                          "name",
                          NULL,
-                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+                         (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   properties [PROP_VALUE] =
     g_param_spec_string ("value",
                          "value",
                          "value",
                          NULL,
-                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+                         (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   properties [PROP_C_IDENTIFIER] =
     g_param_spec_string ("c-identifier",
                          "c-identifier",
                          "c-identifier",
                          NULL,
-                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+                         (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   properties [PROP_GLIB_NICK] =
     g_param_spec_string ("glib-nick",
                          "glib-nick",
                          "glib-nick",
                          NULL,
-                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+                         (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   properties [PROP_DOC] =
     g_param_spec_string ("doc",
                          "doc",
                          "doc",
                          NULL,
-                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+                         (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   g_object_class_install_properties (object_class, N_PROPS, properties);
 }
@@ -321,6 +277,10 @@ rtfm_gir_member_ingest (RtfmGirBase          *base,
                         GError              **error)
 {
   RtfmGirMember *self = (RtfmGirMember *)base;
+  const gchar *name = NULL;
+  const gchar *value = NULL;
+  const gchar *c_identifier = NULL;
+  const gchar *glib_nick = NULL;
 
   ENTRY;
 
@@ -332,21 +292,26 @@ rtfm_gir_member_ingest (RtfmGirBase          *base,
 
   self->ingest_element_name = g_strdup (element_name);
 
-  g_clear_pointer (&self->name, g_free);
-  g_clear_pointer (&self->value, g_free);
-  g_clear_pointer (&self->c_identifier, g_free);
-  g_clear_pointer (&self->glib_nick, g_free);
+  self->name = NULL;
+  self->value = NULL;
+  self->c_identifier = NULL;
+  self->glib_nick = NULL;
 
   if (!rtfm_g_markup_collect_some_attributes (element_name,
                                               attribute_names,
                                               attribute_values,
                                               error,
-                                              G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "name", &self->name,
-                                              G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "value", &self->value,
-                                              G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "c:identifier", &self->c_identifier,
-                                              G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "glib:nick", &self->glib_nick,
+                                              G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "name", &name,
+                                              G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "value", &value,
+                                              G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "c:identifier", &c_identifier,
+                                              G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "glib:nick", &glib_nick,
                                               G_MARKUP_COLLECT_INVALID))
     RETURN (FALSE);
+
+  self->name = rtfm_gir_base_intern_string (RTFM_GIR_BASE (self), name);
+  self->value = rtfm_gir_base_intern_string (RTFM_GIR_BASE (self), value);
+  self->c_identifier = rtfm_gir_base_intern_string (RTFM_GIR_BASE (self), c_identifier);
+  self->glib_nick = rtfm_gir_base_intern_string (RTFM_GIR_BASE (self), glib_nick);
 
   g_markup_parse_context_push (context, &markup_parser, self);
 

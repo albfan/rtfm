@@ -38,11 +38,11 @@ struct _RtfmGirProperty
 
   gchar *ingest_element_name;
 
-  gchar *name;
-  gchar *version;
-  gchar *writable;
-  gchar *construct_only;
-  gchar *transfer_ownership;
+  const gchar *name;
+  const gchar *version;
+  const gchar *writable;
+  const gchar *construct_only;
+  const gchar *transfer_ownership;
   GString *doc;
   RtfmGirType *type;
 };
@@ -75,11 +75,11 @@ rtfm_gir_property_finalize (GObject *object)
 {
   RtfmGirProperty *self = (RtfmGirProperty *)object;
 
-  g_clear_pointer (&self->name, g_free);
-  g_clear_pointer (&self->version, g_free);
-  g_clear_pointer (&self->writable, g_free);
-  g_clear_pointer (&self->construct_only, g_free);
-  g_clear_pointer (&self->transfer_ownership, g_free);
+  self->name = NULL;
+  self->version = NULL;
+  self->writable = NULL;
+  self->construct_only = NULL;
+  self->transfer_ownership = NULL;
   g_string_free (self->doc, TRUE);
   self->doc = NULL;
 
@@ -126,54 +126,6 @@ rtfm_gir_property_get_property (GObject    *object,
 }
 
 static void
-rtfm_gir_property_set_property (GObject       *object,
-                                guint         prop_id,
-                                const GValue *value,
-                                GParamSpec   *pspec)
-{
-  RtfmGirProperty *self = (RtfmGirProperty *)object;
-
-  switch (prop_id)
-    {
-    case PROP_NAME:
-      g_free (self->name);
-      self->name = g_value_dup_string (value);
-      break;
-
-    case PROP_VERSION:
-      g_free (self->version);
-      self->version = g_value_dup_string (value);
-      break;
-
-    case PROP_WRITABLE:
-      g_free (self->writable);
-      self->writable = g_value_dup_string (value);
-      break;
-
-    case PROP_CONSTRUCT_ONLY:
-      g_free (self->construct_only);
-      self->construct_only = g_value_dup_string (value);
-      break;
-
-    case PROP_TRANSFER_OWNERSHIP:
-      g_free (self->transfer_ownership);
-      self->transfer_ownership = g_value_dup_string (value);
-      break;
-
-    case PROP_DOC:
-      if (self->doc != NULL)
-        g_string_set_size (self->doc, 0);
-      else
-        self->doc = g_string_new (NULL);
-      g_string_append (self->doc, g_value_get_string (value));
-      break;
-
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-    }
-}
-
-static void
 rtfm_gir_property_class_init (RtfmGirPropertyClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
@@ -181,7 +133,6 @@ rtfm_gir_property_class_init (RtfmGirPropertyClass *klass)
 
   object_class->finalize = rtfm_gir_property_finalize;
   object_class->get_property = rtfm_gir_property_get_property;
-  object_class->set_property = rtfm_gir_property_set_property;
 
   base_class->ingest = rtfm_gir_property_ingest;
 
@@ -190,42 +141,42 @@ rtfm_gir_property_class_init (RtfmGirPropertyClass *klass)
                          "name",
                          "name",
                          NULL,
-                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+                         (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   properties [PROP_VERSION] =
     g_param_spec_string ("version",
                          "version",
                          "version",
                          NULL,
-                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+                         (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   properties [PROP_WRITABLE] =
     g_param_spec_string ("writable",
                          "writable",
                          "writable",
                          NULL,
-                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+                         (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   properties [PROP_CONSTRUCT_ONLY] =
     g_param_spec_string ("construct-only",
                          "construct-only",
                          "construct-only",
                          NULL,
-                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+                         (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   properties [PROP_TRANSFER_OWNERSHIP] =
     g_param_spec_string ("transfer-ownership",
                          "transfer-ownership",
                          "transfer-ownership",
                          NULL,
-                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+                         (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   properties [PROP_DOC] =
     g_param_spec_string ("doc",
                          "doc",
                          "doc",
                          NULL,
-                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+                         (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   g_object_class_install_properties (object_class, N_PROPS, properties);
 }
@@ -359,6 +310,11 @@ rtfm_gir_property_ingest (RtfmGirBase          *base,
                           GError              **error)
 {
   RtfmGirProperty *self = (RtfmGirProperty *)base;
+  const gchar *name = NULL;
+  const gchar *version = NULL;
+  const gchar *writable = NULL;
+  const gchar *construct_only = NULL;
+  const gchar *transfer_ownership = NULL;
 
   ENTRY;
 
@@ -370,23 +326,29 @@ rtfm_gir_property_ingest (RtfmGirBase          *base,
 
   self->ingest_element_name = g_strdup (element_name);
 
-  g_clear_pointer (&self->name, g_free);
-  g_clear_pointer (&self->version, g_free);
-  g_clear_pointer (&self->writable, g_free);
-  g_clear_pointer (&self->construct_only, g_free);
-  g_clear_pointer (&self->transfer_ownership, g_free);
+  self->name = NULL;
+  self->version = NULL;
+  self->writable = NULL;
+  self->construct_only = NULL;
+  self->transfer_ownership = NULL;
 
   if (!rtfm_g_markup_collect_some_attributes (element_name,
                                               attribute_names,
                                               attribute_values,
                                               error,
-                                              G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "name", &self->name,
-                                              G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "version", &self->version,
-                                              G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "writable", &self->writable,
-                                              G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "construct-only", &self->construct_only,
-                                              G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "transfer-ownership", &self->transfer_ownership,
+                                              G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "name", &name,
+                                              G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "version", &version,
+                                              G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "writable", &writable,
+                                              G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "construct-only", &construct_only,
+                                              G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "transfer-ownership", &transfer_ownership,
                                               G_MARKUP_COLLECT_INVALID))
     RETURN (FALSE);
+
+  self->name = rtfm_gir_base_intern_string (RTFM_GIR_BASE (self), name);
+  self->version = rtfm_gir_base_intern_string (RTFM_GIR_BASE (self), version);
+  self->writable = rtfm_gir_base_intern_string (RTFM_GIR_BASE (self), writable);
+  self->construct_only = rtfm_gir_base_intern_string (RTFM_GIR_BASE (self), construct_only);
+  self->transfer_ownership = rtfm_gir_base_intern_string (RTFM_GIR_BASE (self), transfer_ownership);
 
   g_markup_parse_context_push (context, &markup_parser, self);
 

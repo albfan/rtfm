@@ -45,11 +45,11 @@ struct _RtfmGirNamespace
 
   gchar *ingest_element_name;
 
-  gchar *name;
-  gchar *version;
-  gchar *shared_library;
-  gchar *c_identifier_prefixes;
-  gchar *c_symbol_prefixes;
+  const gchar *name;
+  const gchar *version;
+  const gchar *shared_library;
+  const gchar *c_identifier_prefixes;
+  const gchar *c_symbol_prefixes;
   GPtrArray *alias;
   GPtrArray *bitfield;
   GPtrArray *callback;
@@ -87,11 +87,11 @@ rtfm_gir_namespace_finalize (GObject *object)
 {
   RtfmGirNamespace *self = (RtfmGirNamespace *)object;
 
-  g_clear_pointer (&self->name, g_free);
-  g_clear_pointer (&self->version, g_free);
-  g_clear_pointer (&self->shared_library, g_free);
-  g_clear_pointer (&self->c_identifier_prefixes, g_free);
-  g_clear_pointer (&self->c_symbol_prefixes, g_free);
+  self->name = NULL;
+  self->version = NULL;
+  self->shared_library = NULL;
+  self->c_identifier_prefixes = NULL;
+  self->c_symbol_prefixes = NULL;
   g_clear_pointer (&self->alias, g_ptr_array_unref);
   g_clear_pointer (&self->bitfield, g_ptr_array_unref);
   g_clear_pointer (&self->callback, g_ptr_array_unref);
@@ -140,46 +140,6 @@ rtfm_gir_namespace_get_property (GObject    *object,
 }
 
 static void
-rtfm_gir_namespace_set_property (GObject       *object,
-                                 guint         prop_id,
-                                 const GValue *value,
-                                 GParamSpec   *pspec)
-{
-  RtfmGirNamespace *self = (RtfmGirNamespace *)object;
-
-  switch (prop_id)
-    {
-    case PROP_NAME:
-      g_free (self->name);
-      self->name = g_value_dup_string (value);
-      break;
-
-    case PROP_VERSION:
-      g_free (self->version);
-      self->version = g_value_dup_string (value);
-      break;
-
-    case PROP_SHARED_LIBRARY:
-      g_free (self->shared_library);
-      self->shared_library = g_value_dup_string (value);
-      break;
-
-    case PROP_C_IDENTIFIER_PREFIXES:
-      g_free (self->c_identifier_prefixes);
-      self->c_identifier_prefixes = g_value_dup_string (value);
-      break;
-
-    case PROP_C_SYMBOL_PREFIXES:
-      g_free (self->c_symbol_prefixes);
-      self->c_symbol_prefixes = g_value_dup_string (value);
-      break;
-
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-    }
-}
-
-static void
 rtfm_gir_namespace_class_init (RtfmGirNamespaceClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
@@ -187,7 +147,6 @@ rtfm_gir_namespace_class_init (RtfmGirNamespaceClass *klass)
 
   object_class->finalize = rtfm_gir_namespace_finalize;
   object_class->get_property = rtfm_gir_namespace_get_property;
-  object_class->set_property = rtfm_gir_namespace_set_property;
 
   base_class->ingest = rtfm_gir_namespace_ingest;
 
@@ -196,35 +155,35 @@ rtfm_gir_namespace_class_init (RtfmGirNamespaceClass *klass)
                          "name",
                          "name",
                          NULL,
-                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+                         (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   properties [PROP_VERSION] =
     g_param_spec_string ("version",
                          "version",
                          "version",
                          NULL,
-                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+                         (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   properties [PROP_SHARED_LIBRARY] =
     g_param_spec_string ("shared-library",
                          "shared-library",
                          "shared-library",
                          NULL,
-                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+                         (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   properties [PROP_C_IDENTIFIER_PREFIXES] =
     g_param_spec_string ("c-identifier-prefixes",
                          "c-identifier-prefixes",
                          "c-identifier-prefixes",
                          NULL,
-                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+                         (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   properties [PROP_C_SYMBOL_PREFIXES] =
     g_param_spec_string ("c-symbol-prefixes",
                          "c-symbol-prefixes",
                          "c-symbol-prefixes",
                          NULL,
-                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+                         (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   g_object_class_install_properties (object_class, N_PROPS, properties);
 }
@@ -487,6 +446,11 @@ rtfm_gir_namespace_ingest (RtfmGirBase          *base,
                            GError              **error)
 {
   RtfmGirNamespace *self = (RtfmGirNamespace *)base;
+  const gchar *name = NULL;
+  const gchar *version = NULL;
+  const gchar *shared_library = NULL;
+  const gchar *c_identifier_prefixes = NULL;
+  const gchar *c_symbol_prefixes = NULL;
 
   ENTRY;
 
@@ -498,23 +462,29 @@ rtfm_gir_namespace_ingest (RtfmGirBase          *base,
 
   self->ingest_element_name = g_strdup (element_name);
 
-  g_clear_pointer (&self->name, g_free);
-  g_clear_pointer (&self->version, g_free);
-  g_clear_pointer (&self->shared_library, g_free);
-  g_clear_pointer (&self->c_identifier_prefixes, g_free);
-  g_clear_pointer (&self->c_symbol_prefixes, g_free);
+  self->name = NULL;
+  self->version = NULL;
+  self->shared_library = NULL;
+  self->c_identifier_prefixes = NULL;
+  self->c_symbol_prefixes = NULL;
 
   if (!rtfm_g_markup_collect_some_attributes (element_name,
                                               attribute_names,
                                               attribute_values,
                                               error,
-                                              G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "name", &self->name,
-                                              G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "version", &self->version,
-                                              G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "shared-library", &self->shared_library,
-                                              G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "c:identifier-prefixes", &self->c_identifier_prefixes,
-                                              G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "c:symbol-prefixes", &self->c_symbol_prefixes,
+                                              G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "name", &name,
+                                              G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "version", &version,
+                                              G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "shared-library", &shared_library,
+                                              G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "c:identifier-prefixes", &c_identifier_prefixes,
+                                              G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "c:symbol-prefixes", &c_symbol_prefixes,
                                               G_MARKUP_COLLECT_INVALID))
     RETURN (FALSE);
+
+  self->name = rtfm_gir_base_intern_string (RTFM_GIR_BASE (self), name);
+  self->version = rtfm_gir_base_intern_string (RTFM_GIR_BASE (self), version);
+  self->shared_library = rtfm_gir_base_intern_string (RTFM_GIR_BASE (self), shared_library);
+  self->c_identifier_prefixes = rtfm_gir_base_intern_string (RTFM_GIR_BASE (self), c_identifier_prefixes);
+  self->c_symbol_prefixes = rtfm_gir_base_intern_string (RTFM_GIR_BASE (self), c_symbol_prefixes);
 
   g_markup_parse_context_push (context, &markup_parser, self);
 

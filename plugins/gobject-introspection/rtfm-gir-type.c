@@ -37,8 +37,8 @@ struct _RtfmGirType
 
   gchar *ingest_element_name;
 
-  gchar *name;
-  gchar *c_type;
+  const gchar *name;
+  const gchar *c_type;
 };
 
 enum {
@@ -65,8 +65,8 @@ rtfm_gir_type_finalize (GObject *object)
 {
   RtfmGirType *self = (RtfmGirType *)object;
 
-  g_clear_pointer (&self->name, g_free);
-  g_clear_pointer (&self->c_type, g_free);
+  self->name = NULL;
+  self->c_type = NULL;
 
   G_OBJECT_CLASS (rtfm_gir_type_parent_class)->finalize (object);
 }
@@ -95,31 +95,6 @@ rtfm_gir_type_get_property (GObject    *object,
 }
 
 static void
-rtfm_gir_type_set_property (GObject       *object,
-                            guint         prop_id,
-                            const GValue *value,
-                            GParamSpec   *pspec)
-{
-  RtfmGirType *self = (RtfmGirType *)object;
-
-  switch (prop_id)
-    {
-    case PROP_NAME:
-      g_free (self->name);
-      self->name = g_value_dup_string (value);
-      break;
-
-    case PROP_C_TYPE:
-      g_free (self->c_type);
-      self->c_type = g_value_dup_string (value);
-      break;
-
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-    }
-}
-
-static void
 rtfm_gir_type_class_init (RtfmGirTypeClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
@@ -127,7 +102,6 @@ rtfm_gir_type_class_init (RtfmGirTypeClass *klass)
 
   object_class->finalize = rtfm_gir_type_finalize;
   object_class->get_property = rtfm_gir_type_get_property;
-  object_class->set_property = rtfm_gir_type_set_property;
 
   base_class->ingest = rtfm_gir_type_ingest;
 
@@ -136,14 +110,14 @@ rtfm_gir_type_class_init (RtfmGirTypeClass *klass)
                          "name",
                          "name",
                          NULL,
-                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+                         (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   properties [PROP_C_TYPE] =
     g_param_spec_string ("c-type",
                          "c-type",
                          "c-type",
                          NULL,
-                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+                         (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   g_object_class_install_properties (object_class, N_PROPS, properties);
 }
@@ -162,6 +136,8 @@ rtfm_gir_type_ingest (RtfmGirBase          *base,
                       GError              **error)
 {
   RtfmGirType *self = (RtfmGirType *)base;
+  const gchar *name = NULL;
+  const gchar *c_type = NULL;
 
   ENTRY;
 
@@ -173,17 +149,20 @@ rtfm_gir_type_ingest (RtfmGirBase          *base,
 
   self->ingest_element_name = g_strdup (element_name);
 
-  g_clear_pointer (&self->name, g_free);
-  g_clear_pointer (&self->c_type, g_free);
+  self->name = NULL;
+  self->c_type = NULL;
 
   if (!rtfm_g_markup_collect_some_attributes (element_name,
                                               attribute_names,
                                               attribute_values,
                                               error,
-                                              G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "name", &self->name,
-                                              G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "c:type", &self->c_type,
+                                              G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "name", &name,
+                                              G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "c:type", &c_type,
                                               G_MARKUP_COLLECT_INVALID))
     RETURN (FALSE);
+
+  self->name = rtfm_gir_base_intern_string (RTFM_GIR_BASE (self), name);
+  self->c_type = rtfm_gir_base_intern_string (RTFM_GIR_BASE (self), c_type);
 
   RETURN (TRUE);
 }

@@ -45,13 +45,13 @@ struct _RtfmGirClass
 
   gchar *ingest_element_name;
 
-  gchar *name;
-  gchar *c_symbol_prefix;
-  gchar *c_type;
-  gchar *version;
-  gchar *parent;
-  gchar *glib_type_name;
-  gchar *glib_get_type;
+  const gchar *name;
+  const gchar *c_symbol_prefix;
+  const gchar *c_type;
+  const gchar *version;
+  const gchar *parent;
+  const gchar *glib_type_name;
+  const gchar *glib_get_type;
   GString *doc;
   GPtrArray *field;
   GPtrArray *implements;
@@ -93,13 +93,13 @@ rtfm_gir_class_finalize (GObject *object)
 {
   RtfmGirClass *self = (RtfmGirClass *)object;
 
-  g_clear_pointer (&self->name, g_free);
-  g_clear_pointer (&self->c_symbol_prefix, g_free);
-  g_clear_pointer (&self->c_type, g_free);
-  g_clear_pointer (&self->version, g_free);
-  g_clear_pointer (&self->parent, g_free);
-  g_clear_pointer (&self->glib_type_name, g_free);
-  g_clear_pointer (&self->glib_get_type, g_free);
+  self->name = NULL;
+  self->c_symbol_prefix = NULL;
+  self->c_type = NULL;
+  self->version = NULL;
+  self->parent = NULL;
+  self->glib_type_name = NULL;
+  self->glib_get_type = NULL;
   g_string_free (self->doc, TRUE);
   self->doc = NULL;
   g_clear_pointer (&self->field, g_ptr_array_unref);
@@ -162,64 +162,6 @@ rtfm_gir_class_get_property (GObject    *object,
 }
 
 static void
-rtfm_gir_class_set_property (GObject       *object,
-                             guint         prop_id,
-                             const GValue *value,
-                             GParamSpec   *pspec)
-{
-  RtfmGirClass *self = (RtfmGirClass *)object;
-
-  switch (prop_id)
-    {
-    case PROP_NAME:
-      g_free (self->name);
-      self->name = g_value_dup_string (value);
-      break;
-
-    case PROP_C_SYMBOL_PREFIX:
-      g_free (self->c_symbol_prefix);
-      self->c_symbol_prefix = g_value_dup_string (value);
-      break;
-
-    case PROP_C_TYPE:
-      g_free (self->c_type);
-      self->c_type = g_value_dup_string (value);
-      break;
-
-    case PROP_VERSION:
-      g_free (self->version);
-      self->version = g_value_dup_string (value);
-      break;
-
-    case PROP_PARENT:
-      g_free (self->parent);
-      self->parent = g_value_dup_string (value);
-      break;
-
-    case PROP_GLIB_TYPE_NAME:
-      g_free (self->glib_type_name);
-      self->glib_type_name = g_value_dup_string (value);
-      break;
-
-    case PROP_GLIB_GET_TYPE:
-      g_free (self->glib_get_type);
-      self->glib_get_type = g_value_dup_string (value);
-      break;
-
-    case PROP_DOC:
-      if (self->doc != NULL)
-        g_string_set_size (self->doc, 0);
-      else
-        self->doc = g_string_new (NULL);
-      g_string_append (self->doc, g_value_get_string (value));
-      break;
-
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-    }
-}
-
-static void
 rtfm_gir_class_class_init (RtfmGirClassClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
@@ -227,7 +169,6 @@ rtfm_gir_class_class_init (RtfmGirClassClass *klass)
 
   object_class->finalize = rtfm_gir_class_finalize;
   object_class->get_property = rtfm_gir_class_get_property;
-  object_class->set_property = rtfm_gir_class_set_property;
 
   base_class->ingest = rtfm_gir_class_ingest;
 
@@ -236,56 +177,56 @@ rtfm_gir_class_class_init (RtfmGirClassClass *klass)
                          "name",
                          "name",
                          NULL,
-                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+                         (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   properties [PROP_C_SYMBOL_PREFIX] =
     g_param_spec_string ("c-symbol-prefix",
                          "c-symbol-prefix",
                          "c-symbol-prefix",
                          NULL,
-                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+                         (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   properties [PROP_C_TYPE] =
     g_param_spec_string ("c-type",
                          "c-type",
                          "c-type",
                          NULL,
-                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+                         (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   properties [PROP_VERSION] =
     g_param_spec_string ("version",
                          "version",
                          "version",
                          NULL,
-                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+                         (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   properties [PROP_PARENT] =
     g_param_spec_string ("parent",
                          "parent",
                          "parent",
                          NULL,
-                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+                         (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   properties [PROP_GLIB_TYPE_NAME] =
     g_param_spec_string ("glib-type-name",
                          "glib-type-name",
                          "glib-type-name",
                          NULL,
-                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+                         (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   properties [PROP_GLIB_GET_TYPE] =
     g_param_spec_string ("glib-get-type",
                          "glib-get-type",
                          "glib-get-type",
                          NULL,
-                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+                         (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   properties [PROP_DOC] =
     g_param_spec_string ("doc",
                          "doc",
                          "doc",
                          NULL,
-                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+                         (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   g_object_class_install_properties (object_class, N_PROPS, properties);
 }
@@ -562,6 +503,13 @@ rtfm_gir_class_ingest (RtfmGirBase          *base,
                        GError              **error)
 {
   RtfmGirClass *self = (RtfmGirClass *)base;
+  const gchar *name = NULL;
+  const gchar *c_symbol_prefix = NULL;
+  const gchar *c_type = NULL;
+  const gchar *version = NULL;
+  const gchar *parent = NULL;
+  const gchar *glib_type_name = NULL;
+  const gchar *glib_get_type = NULL;
 
   ENTRY;
 
@@ -573,27 +521,35 @@ rtfm_gir_class_ingest (RtfmGirBase          *base,
 
   self->ingest_element_name = g_strdup (element_name);
 
-  g_clear_pointer (&self->name, g_free);
-  g_clear_pointer (&self->c_symbol_prefix, g_free);
-  g_clear_pointer (&self->c_type, g_free);
-  g_clear_pointer (&self->version, g_free);
-  g_clear_pointer (&self->parent, g_free);
-  g_clear_pointer (&self->glib_type_name, g_free);
-  g_clear_pointer (&self->glib_get_type, g_free);
+  self->name = NULL;
+  self->c_symbol_prefix = NULL;
+  self->c_type = NULL;
+  self->version = NULL;
+  self->parent = NULL;
+  self->glib_type_name = NULL;
+  self->glib_get_type = NULL;
 
   if (!rtfm_g_markup_collect_some_attributes (element_name,
                                               attribute_names,
                                               attribute_values,
                                               error,
-                                              G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "name", &self->name,
-                                              G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "c:symbol-prefix", &self->c_symbol_prefix,
-                                              G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "c:type", &self->c_type,
-                                              G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "version", &self->version,
-                                              G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "parent", &self->parent,
-                                              G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "glib:type-name", &self->glib_type_name,
-                                              G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "glib:get-type", &self->glib_get_type,
+                                              G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "name", &name,
+                                              G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "c:symbol-prefix", &c_symbol_prefix,
+                                              G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "c:type", &c_type,
+                                              G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "version", &version,
+                                              G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "parent", &parent,
+                                              G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "glib:type-name", &glib_type_name,
+                                              G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "glib:get-type", &glib_get_type,
                                               G_MARKUP_COLLECT_INVALID))
     RETURN (FALSE);
+
+  self->name = rtfm_gir_base_intern_string (RTFM_GIR_BASE (self), name);
+  self->c_symbol_prefix = rtfm_gir_base_intern_string (RTFM_GIR_BASE (self), c_symbol_prefix);
+  self->c_type = rtfm_gir_base_intern_string (RTFM_GIR_BASE (self), c_type);
+  self->version = rtfm_gir_base_intern_string (RTFM_GIR_BASE (self), version);
+  self->parent = rtfm_gir_base_intern_string (RTFM_GIR_BASE (self), parent);
+  self->glib_type_name = rtfm_gir_base_intern_string (RTFM_GIR_BASE (self), glib_type_name);
+  self->glib_get_type = rtfm_gir_base_intern_string (RTFM_GIR_BASE (self), glib_get_type);
 
   g_markup_parse_context_push (context, &markup_parser, self);
 

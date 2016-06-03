@@ -39,9 +39,9 @@ struct _RtfmGirMethod
 
   gchar *ingest_element_name;
 
-  gchar *name;
-  gchar *c_identifier;
-  gchar *version;
+  const gchar *name;
+  const gchar *c_identifier;
+  const gchar *version;
   GString *doc;
   RtfmGirReturnValue *return_value;
   RtfmGirParameters *parameters;
@@ -73,9 +73,9 @@ rtfm_gir_method_finalize (GObject *object)
 {
   RtfmGirMethod *self = (RtfmGirMethod *)object;
 
-  g_clear_pointer (&self->name, g_free);
-  g_clear_pointer (&self->c_identifier, g_free);
-  g_clear_pointer (&self->version, g_free);
+  self->name = NULL;
+  self->c_identifier = NULL;
+  self->version = NULL;
   g_string_free (self->doc, TRUE);
   self->doc = NULL;
 
@@ -114,44 +114,6 @@ rtfm_gir_method_get_property (GObject    *object,
 }
 
 static void
-rtfm_gir_method_set_property (GObject       *object,
-                              guint         prop_id,
-                              const GValue *value,
-                              GParamSpec   *pspec)
-{
-  RtfmGirMethod *self = (RtfmGirMethod *)object;
-
-  switch (prop_id)
-    {
-    case PROP_NAME:
-      g_free (self->name);
-      self->name = g_value_dup_string (value);
-      break;
-
-    case PROP_C_IDENTIFIER:
-      g_free (self->c_identifier);
-      self->c_identifier = g_value_dup_string (value);
-      break;
-
-    case PROP_VERSION:
-      g_free (self->version);
-      self->version = g_value_dup_string (value);
-      break;
-
-    case PROP_DOC:
-      if (self->doc != NULL)
-        g_string_set_size (self->doc, 0);
-      else
-        self->doc = g_string_new (NULL);
-      g_string_append (self->doc, g_value_get_string (value));
-      break;
-
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-    }
-}
-
-static void
 rtfm_gir_method_class_init (RtfmGirMethodClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
@@ -159,7 +121,6 @@ rtfm_gir_method_class_init (RtfmGirMethodClass *klass)
 
   object_class->finalize = rtfm_gir_method_finalize;
   object_class->get_property = rtfm_gir_method_get_property;
-  object_class->set_property = rtfm_gir_method_set_property;
 
   base_class->ingest = rtfm_gir_method_ingest;
 
@@ -168,28 +129,28 @@ rtfm_gir_method_class_init (RtfmGirMethodClass *klass)
                          "name",
                          "name",
                          NULL,
-                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+                         (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   properties [PROP_C_IDENTIFIER] =
     g_param_spec_string ("c-identifier",
                          "c-identifier",
                          "c-identifier",
                          NULL,
-                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+                         (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   properties [PROP_VERSION] =
     g_param_spec_string ("version",
                          "version",
                          "version",
                          NULL,
-                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+                         (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   properties [PROP_DOC] =
     g_param_spec_string ("doc",
                          "doc",
                          "doc",
                          NULL,
-                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+                         (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   g_object_class_install_properties (object_class, N_PROPS, properties);
 }
@@ -340,6 +301,9 @@ rtfm_gir_method_ingest (RtfmGirBase          *base,
                         GError              **error)
 {
   RtfmGirMethod *self = (RtfmGirMethod *)base;
+  const gchar *name = NULL;
+  const gchar *c_identifier = NULL;
+  const gchar *version = NULL;
 
   ENTRY;
 
@@ -351,19 +315,23 @@ rtfm_gir_method_ingest (RtfmGirBase          *base,
 
   self->ingest_element_name = g_strdup (element_name);
 
-  g_clear_pointer (&self->name, g_free);
-  g_clear_pointer (&self->c_identifier, g_free);
-  g_clear_pointer (&self->version, g_free);
+  self->name = NULL;
+  self->c_identifier = NULL;
+  self->version = NULL;
 
   if (!rtfm_g_markup_collect_some_attributes (element_name,
                                               attribute_names,
                                               attribute_values,
                                               error,
-                                              G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "name", &self->name,
-                                              G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "c:identifier", &self->c_identifier,
-                                              G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "version", &self->version,
+                                              G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "name", &name,
+                                              G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "c:identifier", &c_identifier,
+                                              G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "version", &version,
                                               G_MARKUP_COLLECT_INVALID))
     RETURN (FALSE);
+
+  self->name = rtfm_gir_base_intern_string (RTFM_GIR_BASE (self), name);
+  self->c_identifier = rtfm_gir_base_intern_string (RTFM_GIR_BASE (self), c_identifier);
+  self->version = rtfm_gir_base_intern_string (RTFM_GIR_BASE (self), version);
 
   g_markup_parse_context_push (context, &markup_parser, self);
 
