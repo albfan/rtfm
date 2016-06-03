@@ -29,6 +29,7 @@ G_BEGIN_DECLS
 G_DECLARE_FINAL_TYPE (RtfmGirParameter, rtfm_gir_parameter, RTFM, GIR_PARAMETER, RtfmGirBase)
 
 RtfmGirType *rtfm_gir_parameter_get_referenced (RtfmGirParameter *self);
+gboolean     rtfm_gir_parameter_is_instance    (RtfmGirParameter *self);
 
 G_END_DECLS
 

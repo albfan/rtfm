@@ -42,6 +42,8 @@ struct _RtfmGirParameter
   const gchar *transfer_ownership;
   GString *doc;
   RtfmGirType *type;
+
+  guint is_instance : 1;
 };
 
 enum {
@@ -284,6 +286,8 @@ rtfm_gir_parameter_ingest (RtfmGirBase          *base,
   self->name = NULL;
   self->transfer_ownership = NULL;
 
+  self->is_instance = g_str_equal (element_name, "instance-parameter");
+
   if (!rtfm_g_markup_collect_some_attributes (element_name,
                                               attribute_names,
                                               attribute_values,
@@ -312,4 +316,12 @@ rtfm_gir_parameter_get_referenced (RtfmGirParameter *self)
   g_return_val_if_fail (RTFM_IS_GIR_PARAMETER (self), NULL);
 
   return self->type;
+}
+
+gboolean
+rtfm_gir_parameter_is_instance (RtfmGirParameter *self)
+{
+  g_return_val_if_fail (RTFM_IS_GIR_PARAMETER (self), FALSE);
+
+  return self->is_instance;
 }
