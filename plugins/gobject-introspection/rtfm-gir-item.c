@@ -641,3 +641,18 @@ rtfm_gir_item_populate_finish (RtfmGirItem   *self,
 
   return g_task_propagate_boolean (G_TASK (result), error);
 }
+
+/**
+ * rtfm_gir_item_get_object:
+ *
+ * Returns: (transfer none) (nullable): A #GObject or %NULL.
+ */
+GObject *
+rtfm_gir_item_get_object (RtfmGirItem *self)
+{
+  RtfmGirItemPrivate *priv = rtfm_gir_item_get_instance_private (self);
+
+  g_return_val_if_fail (RTFM_IS_GIR_ITEM (self), NULL);
+
+  return priv->object;
+}

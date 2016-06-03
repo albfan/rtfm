@@ -33,6 +33,7 @@ struct _RtfmGirItemClass
 };
 
 RtfmGirItem *rtfm_gir_item_new             (GObject              *object);
+GObject     *rtfm_gir_item_get_object      (RtfmGirItem          *self);
 void         rtfm_gir_item_populate_async  (RtfmGirItem          *self,
                                             RtfmCollection       *collection,
                                             GCancellable         *cancellable,
