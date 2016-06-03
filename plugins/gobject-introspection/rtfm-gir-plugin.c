@@ -20,6 +20,7 @@
 #include <rtfm.h>
 
 #include "rtfm-gir-provider.h"
+#include "rtfm-gir-view-addin.h"
 
 static GStringChunk *strings;
 
@@ -37,4 +38,7 @@ peas_register_types (PeasObjectModule *module)
   peas_object_module_register_extension_type (module,
                                               RTFM_TYPE_PROVIDER,
                                               RTFM_TYPE_GIR_PROVIDER);
+  peas_object_module_register_extension_type (module,
+                                              RTFM_TYPE_VIEW_ADDIN,
+                                              RTFM_TYPE_GIR_VIEW_ADDIN);
 }
