@@ -35,15 +35,6 @@
             <property name="show-close-button">true</property>
             <property name="visible">true</property>
             <child>
-              <object class="RtfmPathBar" id="path_bar">
-                <property name="hexpand">true</property>
-                <property name="visible">true</property>
-              </object>
-              <packing>
-                <property name="pack-type">start</property>
-              </packing>
-            </child>
-            <child>
               <object class="GtkMenuButton" id="language_button">
                 <property name="label">Python</property>
                 <property name="visible">true</property>

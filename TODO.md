@@ -9,11 +9,6 @@ index in the background when new .gir files are added. The search query
 will access this rather than parse .gir files and manually look. This way
 we only parse gir files when necesary (to browse the hierarchy).
 
-## Remove Path Bar
-
-It looks like we won't be needing the path bar since we have the StackList
-working relatively well now.
-
 ## Views
 
 Only basic plumbing for views exist. We need to create data items when the

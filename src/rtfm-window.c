@@ -22,7 +22,6 @@
 #include "rtfm-library.h"
 #include "rtfm-path.h"
 #include "rtfm-path-element.h"
-#include "rtfm-path-bar.h"
 #include "rtfm-sidebar.h"
 #include "rtfm-view.h"
 #include "rtfm-widget.h"
@@ -34,7 +33,6 @@ struct _RtfmWindow
 
   RtfmLibrary          *library;
 
-  RtfmPathBar          *path_bar;
   RtfmSidebar          *sidebar;
   RtfmView             *view;
 };
@@ -75,7 +73,6 @@ rtfm_window_set_library (RtfmWindow  *self,
   if (g_set_object (&self->library, library))
     {
       rtfm_sidebar_set_library (self->sidebar, library);
-      rtfm_path_bar_set_path (self->path_bar, NULL);
       rtfm_view_set_item (self->view, NULL);
       g_object_notify_by_pspec (G_OBJECT (self), properties [PROP_LIBRARY]);
     }
@@ -86,55 +83,11 @@ rtfm_window_sidebar_item_activated (RtfmWindow  *self,
                                     RtfmItem    *item,
                                     RtfmSidebar *sidebar)
 {
-  g_autoptr(RtfmPath) path = NULL;
-  RtfmPath *old_path;
-
   g_assert (RTFM_IS_WINDOW (self));
   g_assert (RTFM_IS_ITEM (item));
   g_assert (RTFM_IS_SIDEBAR (sidebar));
 
   rtfm_view_set_item (self->view, item);
-
-  old_path = rtfm_path_bar_get_path (self->path_bar);
-  path = rtfm_item_get_path (item);
-
-  if (path == NULL || old_path == NULL || !rtfm_path_has_prefix (old_path, path))
-    {
-      rtfm_path_bar_set_path (self->path_bar, path);
-    }
-  else
-    {
-      guint index = rtfm_path_get_length (path);
-
-      if (index > 0)
-        index--;
-
-      rtfm_path_bar_set_selected_index (self->path_bar, index);
-    }
-}
-
-static void
-rtfm_window_path_bar_element_selected (RtfmWindow      *self,
-                                       RtfmPath        *path,
-                                       RtfmPathElement *element,
-                                       RtfmPathBar     *path_bar)
-{
-  const gchar *id;
-
-  g_assert (RTFM_IS_WINDOW (self));
-  g_assert (RTFM_IS_PATH (path));
-  g_assert (RTFM_IS_PATH_ELEMENT (element));
-  g_assert (RTFM_IS_PATH_BAR (path_bar));
-
-  if (NULL != (id = rtfm_path_element_get_id (element)))
-    {
-      g_autoptr(RtfmItem) item = NULL;
-
-      item = rtfm_library_get_item_by_id (self->library, id);
-
-      if (item != NULL)
-        rtfm_view_set_item (self->view, item);
-    }
 }
 
 static void
@@ -217,7 +170,6 @@ rtfm_window_class_init (RtfmWindowClass *klass)
   g_object_class_install_properties (object_class, N_PROPS, properties);
 
   gtk_widget_class_set_template_from_resource (widget_class, "/org/gnome/rtfm/ui/rtfm-window.ui");
-  gtk_widget_class_bind_template_child (widget_class, RtfmWindow, path_bar);
   gtk_widget_class_bind_template_child (widget_class, RtfmWindow, sidebar);
   gtk_widget_class_bind_template_child (widget_class, RtfmWindow, view);
 
@@ -234,12 +186,6 @@ rtfm_window_init (RtfmWindow *self)
   g_signal_connect_object (self->sidebar,
                            "item-activated",
                            G_CALLBACK (rtfm_window_sidebar_item_activated),
-                           self,
-                           G_CONNECT_SWAPPED);
-
-  g_signal_connect_object (self->path_bar,
-                           "element-selected",
-                           G_CALLBACK (rtfm_window_path_bar_element_selected),
                            self,
                            G_CONNECT_SWAPPED);
 }
