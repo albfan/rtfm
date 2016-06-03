@@ -59,6 +59,9 @@
           <object class="RtfmSidebar" id="sidebar">
             <property name="visible">true</property>
           </object>
+          <packing>
+            <property name="shrink">false</property>
+          </packing>
         </child>
         <child>
           <object class="GtkScrolledWindow">
@@ -78,6 +81,9 @@
               </object>
             </child>
           </object>
+          <packing>
+            <property name="shrink">false</property>
+          </packing>
         </child>
       </object>
     </child>
