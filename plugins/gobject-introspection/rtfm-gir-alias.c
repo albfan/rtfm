@@ -96,7 +96,8 @@ rtfm_gir_alias_get_property (GObject    *object,
       break;
 
     case PROP_DOC:
-      g_value_set_string (value, self->doc->str);
+      if (self->doc != NULL)
+        g_value_set_string (value, self->doc->str);
       break;
 
     default:
