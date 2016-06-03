@@ -1,11 +1,5 @@
 # Rtfm Todo
 
-## String Compression
-
-We load a lot of duplicate strings. It would be nice if we could share a
-string index in some places such as the G-I data objects. We could plumb
-this through using a GStringChunk owned by the RtfmGirRepository.
-
 ## Search
 
 We have only created our search interface, we haven't implemented any of the
