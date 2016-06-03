@@ -33,6 +33,8 @@ struct _RtfmWindow
 
   RtfmLibrary          *library;
 
+  GSimpleAction        *focus_search;
+  GtkSearchEntry       *search_entry;
   RtfmSidebar          *sidebar;
   RtfmView             *view;
 };
@@ -88,6 +90,19 @@ rtfm_window_sidebar_item_activated (RtfmWindow  *self,
   g_assert (RTFM_IS_SIDEBAR (sidebar));
 
   rtfm_view_set_item (self->view, item);
+}
+
+static void
+rtfm_window_action_focus_search (GSimpleAction *action,
+                                 GVariant      *param,
+                                 gpointer       user_data)
+{
+  RtfmWindow *self = user_data;
+
+  g_assert (RTFM_IS_WINDOW (self));
+  g_assert (G_IS_SIMPLE_ACTION (action));
+
+  gtk_widget_grab_focus (GTK_WIDGET (self->search_entry));
 }
 
 static void
@@ -170,8 +185,10 @@ rtfm_window_class_init (RtfmWindowClass *klass)
   g_object_class_install_properties (object_class, N_PROPS, properties);
 
   gtk_widget_class_set_template_from_resource (widget_class, "/org/gnome/rtfm/ui/rtfm-window.ui");
+  gtk_widget_class_bind_template_child (widget_class, RtfmWindow, search_entry);
   gtk_widget_class_bind_template_child (widget_class, RtfmWindow, sidebar);
   gtk_widget_class_bind_template_child (widget_class, RtfmWindow, view);
+  gtk_widget_class_bind_template_callback (widget_class, rtfm_window_sidebar_item_activated);
 
   rtfm_gtk_widget_class_set_css_from_resource (widget_class,
                                                NULL,
@@ -181,13 +198,16 @@ rtfm_window_class_init (RtfmWindowClass *klass)
 static void
 rtfm_window_init (RtfmWindow *self)
 {
+  static GActionEntry actions[] = {
+    { "focus-search", rtfm_window_action_focus_search },
+  };
+
   gtk_widget_init_template (GTK_WIDGET (self));
 
-  g_signal_connect_object (self->sidebar,
-                           "item-activated",
-                           G_CALLBACK (rtfm_window_sidebar_item_activated),
-                           self,
-                           G_CONNECT_SWAPPED);
+  g_action_map_add_action_entries (G_ACTION_MAP (self),
+                                   actions,
+                                   G_N_ELEMENTS (actions),
+                                   self);
 }
 
 GtkWidget *

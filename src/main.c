@@ -55,6 +55,7 @@ gint
 main (gint   argc,
       gchar *argv[])
 {
+  static const gchar *focus_search_accels[] = { "<ctrl>k", NULL };
   GApplication *app;
   gint ret;
 
@@ -64,6 +65,9 @@ main (gint   argc,
   app = g_object_new (GTK_TYPE_APPLICATION,
                       "application-id", "org.gnome.Rtfm",
                       NULL);
+  gtk_application_set_accels_for_action (GTK_APPLICATION (app),
+                                         "win.focus-search",
+                                         focus_search_accels);
   g_signal_connect (app, "activate", G_CALLBACK (activate_cb), NULL);
   ret = g_application_run (app, argc, argv);
   g_object_unref (app);
