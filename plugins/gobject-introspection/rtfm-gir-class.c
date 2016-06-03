@@ -324,6 +324,7 @@ rtfm_gir_class_start_element (GMarkupParseContext  *context,
       g_autoptr(RtfmGirField) field = NULL;
 
       field = g_object_new (RTFM_TYPE_GIR_FIELD, NULL);
+      rtfm_gir_base_set_parent (RTFM_GIR_BASE (field), RTFM_GIR_BASE (self));
 
       if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (field),
                                  context,
@@ -343,6 +344,7 @@ rtfm_gir_class_start_element (GMarkupParseContext  *context,
       g_autoptr(RtfmGirImplements) implements = NULL;
 
       implements = g_object_new (RTFM_TYPE_GIR_IMPLEMENTS, NULL);
+      rtfm_gir_base_set_parent (RTFM_GIR_BASE (implements), RTFM_GIR_BASE (self));
 
       if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (implements),
                                  context,
@@ -362,6 +364,7 @@ rtfm_gir_class_start_element (GMarkupParseContext  *context,
       g_autoptr(RtfmGirMethod) method = NULL;
 
       method = g_object_new (RTFM_TYPE_GIR_METHOD, NULL);
+      rtfm_gir_base_set_parent (RTFM_GIR_BASE (method), RTFM_GIR_BASE (self));
 
       if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (method),
                                  context,
@@ -381,6 +384,7 @@ rtfm_gir_class_start_element (GMarkupParseContext  *context,
       g_autoptr(RtfmGirFunction) function = NULL;
 
       function = g_object_new (RTFM_TYPE_GIR_FUNCTION, NULL);
+      rtfm_gir_base_set_parent (RTFM_GIR_BASE (function), RTFM_GIR_BASE (self));
 
       if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (function),
                                  context,
@@ -400,6 +404,7 @@ rtfm_gir_class_start_element (GMarkupParseContext  *context,
       g_autoptr(RtfmGirVirtualMethod) virtual_method = NULL;
 
       virtual_method = g_object_new (RTFM_TYPE_GIR_VIRTUAL_METHOD, NULL);
+      rtfm_gir_base_set_parent (RTFM_GIR_BASE (virtual_method), RTFM_GIR_BASE (self));
 
       if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (virtual_method),
                                  context,
@@ -419,6 +424,7 @@ rtfm_gir_class_start_element (GMarkupParseContext  *context,
       g_autoptr(RtfmGirProperty) property = NULL;
 
       property = g_object_new (RTFM_TYPE_GIR_PROPERTY, NULL);
+      rtfm_gir_base_set_parent (RTFM_GIR_BASE (property), RTFM_GIR_BASE (self));
 
       if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (property),
                                  context,
@@ -438,6 +444,7 @@ rtfm_gir_class_start_element (GMarkupParseContext  *context,
       g_autoptr(RtfmGirConstructor) constructor = NULL;
 
       constructor = g_object_new (RTFM_TYPE_GIR_CONSTRUCTOR, NULL);
+      rtfm_gir_base_set_parent (RTFM_GIR_BASE (constructor), RTFM_GIR_BASE (self));
 
       if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (constructor),
                                  context,
@@ -457,6 +464,7 @@ rtfm_gir_class_start_element (GMarkupParseContext  *context,
       g_autoptr(RtfmGirUnion) unions = NULL;
 
       unions = g_object_new (RTFM_TYPE_GIR_UNION, NULL);
+      rtfm_gir_base_set_parent (RTFM_GIR_BASE (unions), RTFM_GIR_BASE (self));
 
       if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (unions),
                                  context,

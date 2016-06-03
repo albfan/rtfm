@@ -265,6 +265,7 @@ rtfm_gir_bitfield_start_element (GMarkupParseContext  *context,
       g_autoptr(RtfmGirMember) member = NULL;
 
       member = g_object_new (RTFM_TYPE_GIR_MEMBER, NULL);
+      rtfm_gir_base_set_parent (RTFM_GIR_BASE (member), RTFM_GIR_BASE (self));
 
       if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (member),
                                  context,

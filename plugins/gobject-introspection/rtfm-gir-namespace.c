@@ -259,6 +259,7 @@ rtfm_gir_namespace_start_element (GMarkupParseContext  *context,
       g_autoptr(RtfmGirAlias) alias = NULL;
 
       alias = g_object_new (RTFM_TYPE_GIR_ALIAS, NULL);
+      rtfm_gir_base_set_parent (RTFM_GIR_BASE (alias), RTFM_GIR_BASE (self));
 
       if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (alias),
                                  context,
@@ -278,6 +279,7 @@ rtfm_gir_namespace_start_element (GMarkupParseContext  *context,
       g_autoptr(RtfmGirBitfield) bitfield = NULL;
 
       bitfield = g_object_new (RTFM_TYPE_GIR_BITFIELD, NULL);
+      rtfm_gir_base_set_parent (RTFM_GIR_BASE (bitfield), RTFM_GIR_BASE (self));
 
       if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (bitfield),
                                  context,
@@ -297,6 +299,7 @@ rtfm_gir_namespace_start_element (GMarkupParseContext  *context,
       g_autoptr(RtfmGirCallback) callback = NULL;
 
       callback = g_object_new (RTFM_TYPE_GIR_CALLBACK, NULL);
+      rtfm_gir_base_set_parent (RTFM_GIR_BASE (callback), RTFM_GIR_BASE (self));
 
       if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (callback),
                                  context,
@@ -316,6 +319,7 @@ rtfm_gir_namespace_start_element (GMarkupParseContext  *context,
       g_autoptr(RtfmGirClass) class = NULL;
 
       class = g_object_new (RTFM_TYPE_GIR_CLASS, NULL);
+      rtfm_gir_base_set_parent (RTFM_GIR_BASE (class), RTFM_GIR_BASE (self));
 
       if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (class),
                                  context,
@@ -335,6 +339,7 @@ rtfm_gir_namespace_start_element (GMarkupParseContext  *context,
       g_autoptr(RtfmGirConstant) constant = NULL;
 
       constant = g_object_new (RTFM_TYPE_GIR_CONSTANT, NULL);
+      rtfm_gir_base_set_parent (RTFM_GIR_BASE (constant), RTFM_GIR_BASE (self));
 
       if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (constant),
                                  context,
@@ -354,6 +359,7 @@ rtfm_gir_namespace_start_element (GMarkupParseContext  *context,
       g_autoptr(RtfmGirEnumeration) enumeration = NULL;
 
       enumeration = g_object_new (RTFM_TYPE_GIR_ENUMERATION, NULL);
+      rtfm_gir_base_set_parent (RTFM_GIR_BASE (enumeration), RTFM_GIR_BASE (self));
 
       if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (enumeration),
                                  context,
@@ -373,6 +379,7 @@ rtfm_gir_namespace_start_element (GMarkupParseContext  *context,
       g_autoptr(RtfmGirFunction) function = NULL;
 
       function = g_object_new (RTFM_TYPE_GIR_FUNCTION, NULL);
+      rtfm_gir_base_set_parent (RTFM_GIR_BASE (function), RTFM_GIR_BASE (self));
 
       if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (function),
                                  context,
@@ -392,6 +399,7 @@ rtfm_gir_namespace_start_element (GMarkupParseContext  *context,
       g_autoptr(RtfmGirRecord) record = NULL;
 
       record = g_object_new (RTFM_TYPE_GIR_RECORD, NULL);
+      rtfm_gir_base_set_parent (RTFM_GIR_BASE (record), RTFM_GIR_BASE (self));
 
       if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (record),
                                  context,

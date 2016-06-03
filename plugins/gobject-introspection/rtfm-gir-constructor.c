@@ -207,6 +207,7 @@ rtfm_gir_constructor_start_element (GMarkupParseContext  *context,
       g_autoptr(RtfmGirReturnValue) return_value = NULL;
 
       return_value = g_object_new (RTFM_TYPE_GIR_RETURN_VALUE, NULL);
+      rtfm_gir_base_set_parent (RTFM_GIR_BASE (return_value), RTFM_GIR_BASE (self));
 
       if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (return_value),
                                  context,

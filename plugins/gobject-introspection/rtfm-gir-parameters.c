@@ -103,6 +103,7 @@ rtfm_gir_parameters_start_element (GMarkupParseContext  *context,
       g_autoptr(RtfmGirParameter) parameter = NULL;
 
       parameter = g_object_new (RTFM_TYPE_GIR_PARAMETER, NULL);
+      rtfm_gir_base_set_parent (RTFM_GIR_BASE (parameter), RTFM_GIR_BASE (self));
 
       if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (parameter),
                                  context,

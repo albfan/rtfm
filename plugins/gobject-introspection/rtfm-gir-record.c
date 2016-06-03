@@ -214,6 +214,7 @@ rtfm_gir_record_start_element (GMarkupParseContext  *context,
       g_autoptr(RtfmGirField) field = NULL;
 
       field = g_object_new (RTFM_TYPE_GIR_FIELD, NULL);
+      rtfm_gir_base_set_parent (RTFM_GIR_BASE (field), RTFM_GIR_BASE (self));
 
       if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (field),
                                  context,
@@ -233,6 +234,7 @@ rtfm_gir_record_start_element (GMarkupParseContext  *context,
       g_autoptr(RtfmGirFunction) function = NULL;
 
       function = g_object_new (RTFM_TYPE_GIR_FUNCTION, NULL);
+      rtfm_gir_base_set_parent (RTFM_GIR_BASE (function), RTFM_GIR_BASE (self));
 
       if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (function),
                                  context,
@@ -252,6 +254,7 @@ rtfm_gir_record_start_element (GMarkupParseContext  *context,
       g_autoptr(RtfmGirUnion) unions = NULL;
 
       unions = g_object_new (RTFM_TYPE_GIR_UNION, NULL);
+      rtfm_gir_base_set_parent (RTFM_GIR_BASE (unions), RTFM_GIR_BASE (self));
 
       if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (unions),
                                  context,

@@ -264,6 +264,7 @@ rtfm_gir_property_start_element (GMarkupParseContext  *context,
       g_autoptr(RtfmGirType) type = NULL;
 
       type = g_object_new (RTFM_TYPE_GIR_TYPE, NULL);
+      rtfm_gir_base_set_parent (RTFM_GIR_BASE (type), RTFM_GIR_BASE (self));
 
       if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (type),
                                  context,
