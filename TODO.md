@@ -16,12 +16,6 @@ view language matches. So the gobject-introspection should add widgets to
 the view when the current language is C. Otherwise, the Python version should
 add the items to the tree.
 
-## Node Visibility
-
-We should add visibility to RtfmItem so that items can be hidden by plugins
-that do not want the item visible. This can be bound to the
-RtfmSidebarRow:visible property.
-
 ## Source Code Examples
 
 Using the chergert/sightline work, we can start parsing modules from

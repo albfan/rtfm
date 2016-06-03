@@ -48,6 +48,7 @@ typedef struct
 
   guint       populated : 1;
   guint       is_root : 1;
+  guint       visible : 1;
 } RtfmItemPrivate;
 
 static void list_model_iface_init  (GListModelInterface *iface);
@@ -67,6 +68,7 @@ enum {
   PROP_ID,
   PROP_SUBTITLE,
   PROP_TITLE,
+  PROP_VISIBLE,
   N_PROPS
 };
 
@@ -124,6 +126,10 @@ rtfm_item_get_property (GObject    *object,
       g_value_set_string (value, rtfm_item_get_title (self));
       break;
 
+    case PROP_VISIBLE:
+      g_value_set_boolean (value, rtfm_item_get_visible (self));
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
     }
@@ -153,6 +159,10 @@ rtfm_item_set_property (GObject      *object,
 
     case PROP_TITLE:
       rtfm_item_set_title (self, g_value_get_string (value));
+      break;
+
+    case PROP_VISIBLE:
+      rtfm_item_set_visible (self, g_value_get_boolean (value));
       break;
 
     default:
@@ -198,12 +208,22 @@ rtfm_item_class_init (RtfmItemClass *klass)
                          NULL,
                          (G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS));
 
+  properties [PROP_VISIBLE] =
+    g_param_spec_boolean ("visible",
+                          "Visible",
+                          "If the item should be made visible",
+                          TRUE,
+                          (G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS));
+
   g_object_class_install_properties (object_class, N_PROPS, properties);
 }
 
 static void
 rtfm_item_init (RtfmItem *self)
 {
+  RtfmItemPrivate *priv = rtfm_item_get_instance_private (self);
+
+  priv->visible = TRUE;
 }
 
 RtfmItem *
@@ -860,4 +880,31 @@ _rtfm_item_set_is_root (RtfmItem *self,
   g_return_if_fail (RTFM_IS_ITEM (self));
 
   priv->is_root = !!is_root;
+}
+
+gboolean
+rtfm_item_get_visible (RtfmItem *self)
+{
+  RtfmItemPrivate *priv = rtfm_item_get_instance_private (self);
+
+  g_return_val_if_fail (RTFM_IS_ITEM (self), FALSE);
+
+  return priv->visible;
+}
+
+void
+rtfm_item_set_visible (RtfmItem *self,
+                       gboolean  visible)
+{
+  RtfmItemPrivate *priv = rtfm_item_get_instance_private (self);
+
+  g_return_if_fail (RTFM_IS_ITEM (self));
+
+  visible = !!visible;
+
+  if (priv->visible != visible)
+    {
+      priv->visible = visible;
+      g_object_notify_by_pspec (G_OBJECT (self), properties [PROP_VISIBLE]);
+    }
 }

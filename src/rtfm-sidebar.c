@@ -56,12 +56,27 @@ static GtkWidget *
 rtfm_sidebar_create_row (gpointer item,
                          gpointer user_data)
 {
+  gboolean visible = FALSE;
+
   g_assert (G_IS_OBJECT (item));
   g_assert (RTFM_IS_SIDEBAR (user_data));
 
+  /*
+   * Instead of using a GBinding here (which requires an additional object
+   * and lifecycle tracking) we just assign from the visibility. We should
+   * be able to do this as long as update all items when we perform operations
+   * like changing the current language or other plugin hooks.
+   *
+   * When we load these items, the items should have already been looked at
+   * by all the plugins and analyzed in the RtfmCollection before being moved
+   * into the RtfmItem children.
+   */
+  if (RTFM_IS_ITEM (item))
+    visible = rtfm_item_get_visible (RTFM_ITEM (item));
+
   return g_object_new (RTFM_TYPE_SIDEBAR_ROW,
                        "object", item,
-                       "visible", TRUE,
+                       "visible", visible,
                        NULL);
 }
 

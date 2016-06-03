@@ -69,6 +69,9 @@ void         rtfm_item_insert_before       (RtfmItem    *self,
                                             RtfmItem    *sibling,
                                             RtfmItem    *child);
 void         rtfm_item_remove_all          (RtfmItem    *self);
+gboolean     rtfm_item_get_visible         (RtfmItem    *self);
+void         rtfm_item_set_visible         (RtfmItem    *self,
+                                            gboolean     visible);
 
 G_END_DECLS
 
