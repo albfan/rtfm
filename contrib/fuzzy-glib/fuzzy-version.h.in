@@ -1,0 +1,97 @@
+/* fuzzy-version.h.in
+ *
+ * Copyright (C) 2016 Christian Hergert
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#ifndef FUZZY_GLIB_VERSION_H
+#define FUZZY_GLIB_VERSION_H
+
+#if !defined(FUZZY_GLIB_INSIDE) && !defined(FUZZY_GLIB_COMPILATION)
+# error "Only <fuzzy-glib.h> can be included directly."
+#endif
+
+/**
+ * SECTION:fuzzy-version
+ * @short_description: fuzzy-glib version checking
+ *
+ * fuzzy-glib provides macros to check the version of the library
+ * at compile-time
+ */
+
+/**
+ * FUZZY_MAJOR_VERSION:
+ *
+ * fuzzy-glib major version component (e.g. 1 if %FUZZY_VERSION is 1.2.3)
+ */
+#define FUZZY_MAJOR_VERSION (@MAJOR_VERSION@)
+
+/**
+ * FUZZY_MINOR_VERSION:
+ *
+ * fuzzy-glib minor version component (e.g. 2 if %FUZZY_VERSION is 1.2.3)
+ */
+#define FUZZY_MINOR_VERSION (@MINOR_VERSION@)
+
+/**
+ * FUZZY_MICRO_VERSION:
+ *
+ * fuzzy-glib micro version component (e.g. 3 if %FUZZY_VERSION is 1.2.3)
+ */
+#define FUZZY_MICRO_VERSION (@MICRO_VERSION@)
+
+/**
+ * FUZZY_VERSION
+ *
+ * fuzzy-glib version.
+ */
+#define FUZZY_VERSION (@VERSION@)
+
+/**
+ * FUZZY_VERSION_S:
+ *
+ * fuzzy-glib version, encoded as a string, useful for printing and
+ * concatenation.
+ */
+#define FUZZY_VERSION_S "@VERSION@"
+
+#define FUZZY_ENCODE_VERSION(major,minor,micro) \
+        ((major) << 24 | (minor) << 16 | (micro) << 8)
+
+/**
+ * FUZZY_VERSION_HEX:
+ *
+ * fuzzy-glib version, encoded as an hexadecimal number, useful for
+ * integer comparisons.
+ */
+#define FUZZY_VERSION_HEX \
+        (FUZZY_ENCODE_VERSION (FUZZY_MAJOR_VERSION, FUZZY_MINOR_VERSION, FUZZY_MICRO_VERSION))
+
+/**
+ * FUZZY_CHECK_VERSION:
+ * @major: required major version
+ * @minor: required minor version
+ * @micro: required micro version
+ *
+ * Compile-time version checking. Evaluates to %TRUE if the version
+ * of fuzzy-glib is greater than the required one.
+ */
+#define FUZZY_CHECK_VERSION(major,minor,micro)   \
+        (FUZZY_MAJOR_VERSION > (major) || \
+         (FUZZY_MAJOR_VERSION == (major) && FUZZY_MINOR_VERSION > (minor)) || \
+         (FUZZY_MAJOR_VERSION == (major) && FUZZY_MINOR_VERSION == (minor) && \
+          FUZZY_MICRO_VERSION >= (micro)))
+
+#endif /* FUZZY_GLIB_VERSION_H */

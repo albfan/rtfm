@@ -121,6 +121,7 @@ AC_CONFIG_FILES([
 
 	contrib/Makefile
 	contrib/fuzzy-glib/Makefile
+	contrib/fuzzy-glib/fuzzy-version.h
 
 	data/Makefile
 	data/rtfm-$API_VERSION.pc:data/rtfm.pc.in
