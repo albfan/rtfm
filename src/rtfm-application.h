@@ -1,4 +1,4 @@
-/* main.c
+/* rtfm-application.h
  *
  * Copyright (C) 2016 Christian Hergert <chergert@redhat.com>
  *
@@ -16,27 +16,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef RTFM_APPLICATION_H
+#define RTFM_APPLICATION_H
+
 #include <gtk/gtk.h>
 
-#include "rtfm-application.h"
+G_BEGIN_DECLS
 
-gint
-main (gint   argc,
-      gchar *argv[])
-{
-  static const gchar *focus_search_accels[] = { "<ctrl>k", NULL };
-  RtfmApplication *app;
-  gint ret;
+#define RTFM_TYPE_APPLICATION (rtfm_application_get_type())
 
-  g_set_prgname ("rtfm");
-  g_set_application_name ("Rtfm");
+G_DECLARE_FINAL_TYPE (RtfmApplication, rtfm_application, RTFM, APPLICATION, GtkApplication)
 
-  app = rtfm_application_new ();
-  gtk_application_set_accels_for_action (GTK_APPLICATION (app),
-                                         "win.focus-search",
-                                         focus_search_accels);
-  ret = g_application_run (G_APPLICATION (app), argc, argv);
-  g_object_unref (app);
+RtfmApplication *rtfm_application_new (void);
 
-  return ret;
-}
+G_END_DECLS
+
+#endif /* RTFM_APPLICATION_H */

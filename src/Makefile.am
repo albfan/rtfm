@@ -41,6 +41,8 @@ librtfm_@API_VERSION@_la_SOURCES = \
 	$(librtfm_public_api) \
 	rtfm-animation.c \
 	rtfm-animation.h \
+	rtfm-application.c \
+	rtfm-application.h \
 	rtfm-bolding-label.c \
 	rtfm-bolding-label.h \
 	rtfm-frame-source.c \
