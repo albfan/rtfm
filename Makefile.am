@@ -1,4 +1,4 @@
-SUBDIRS = data src plugins tests po
+SUBDIRS = data contrib src plugins tests po
 
 EXTRA_DIST = AUTHORS
 

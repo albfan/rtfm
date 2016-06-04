@@ -1,0 +1,372 @@
+/* fuzzy-index-builder.c
+ *
+ * Copyright (C) 2016 Christian Hergert <christian@hergert.me>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#define G_LOG_DOMAIN "fuzzy-index-builder"
+
+#include <stdlib.h>
+
+#include "fuzzy-index-builder.h"
+
+struct _FuzzyIndexBuilder
+{
+  GObject       object;
+
+  GHashTable   *documents_hash;
+  GPtrArray    *documents;
+  GStringChunk *keys;
+  GArray       *kv_pairs;
+};
+
+typedef struct
+{
+  const gchar *key;
+  guint        document_id;
+} KVPair;
+
+typedef struct
+{
+  /* The character position within the string in terms of unicode
+   * characters, not byte-position.
+   */
+  guint position;
+
+  /* The document id (which is the hash of the document. */
+  guint document_id;
+} PosDocPair;
+
+G_DEFINE_TYPE (FuzzyIndexBuilder, fuzzy_index_builder, G_TYPE_OBJECT)
+
+static void
+fuzzy_index_builder_finalize (GObject *object)
+{
+  FuzzyIndexBuilder *self = (FuzzyIndexBuilder *)object;
+
+  g_clear_pointer (&self->documents_hash, g_hash_table_unref);
+  g_clear_pointer (&self->documents, g_ptr_array_unref);
+  g_clear_pointer (&self->keys, g_string_chunk_free);
+  g_clear_pointer (&self->kv_pairs, g_array_unref);
+
+  G_OBJECT_CLASS (fuzzy_index_builder_parent_class)->finalize (object);
+}
+
+static void
+fuzzy_index_builder_class_init (FuzzyIndexBuilderClass *klass)
+{
+  GObjectClass *object_class = G_OBJECT_CLASS (klass);
+
+  object_class->finalize = fuzzy_index_builder_finalize;
+}
+
+static void
+fuzzy_index_builder_init (FuzzyIndexBuilder *self)
+{
+  self->documents = g_ptr_array_new_with_free_func ((GDestroyNotify)g_variant_unref);
+  self->documents_hash = g_hash_table_new (g_variant_hash, g_variant_equal);
+  self->kv_pairs = g_array_new (FALSE, FALSE, sizeof (KVPair));
+  self->keys = g_string_chunk_new (4096);
+}
+
+FuzzyIndexBuilder *
+fuzzy_index_builder_new (void)
+{
+  return g_object_new (FUZZY_TYPE_INDEX_BUILDER, NULL);
+}
+
+/**
+ * fuzzy_index_builder_insert:
+ * @self: A #FuzzyIndexBuilder
+ * @key: The UTF-8 encoded key for the document
+ * @document: The document to store
+ *
+ * Inserts @document into the index using @key as the lookup key.
+ *
+ * If a matching document (checked by hashing @document) has already
+ * been inserted, only a single instance of the document will be stored.
+ *
+ * If @document is floating, it's floating reference will be sunk using
+ * g_variant_ref_sink().
+ *
+ * Returns: The document id registered for @document.
+ */
+guint64
+fuzzy_index_builder_insert (FuzzyIndexBuilder *self,
+                            const gchar       *key,
+                            GVariant          *document)
+{
+  GVariant *real_document = NULL;
+  gpointer document_id = NULL;
+  KVPair pair;
+
+  g_return_val_if_fail (FUZZY_IS_INDEX_BUILDER (self), 0);
+  g_return_val_if_fail (key != NULL, 0);
+  g_return_val_if_fail (document != NULL, 0);
+
+  if (!g_hash_table_lookup_extended (self->documents_hash,
+                                     document,
+                                     (gpointer *)&real_document,
+                                     &document_id))
+    {
+      document_id = GUINT_TO_POINTER (self->documents->len);
+      real_document = g_variant_ref_sink (document);
+      g_ptr_array_add (self->documents, real_document);
+      g_hash_table_insert (self->documents_hash, real_document, document_id);
+    }
+
+  pair.key = g_string_chunk_insert_const (self->keys, key);
+  pair.document_id = GPOINTER_TO_SIZE (document_id);
+
+  g_array_append_val (self->kv_pairs, pair);
+
+  return pair.document_id;
+}
+
+static gint
+pos_doc_pair_compare (gconstpointer a,
+                      gconstpointer b)
+{
+  const PosDocPair *paira = a;
+  const PosDocPair *pairb = b;
+  gint ret;
+
+  ret = paira->document_id - pairb->document_id;
+
+  if (ret == 0)
+    ret = paira->position - pairb->position;
+
+  return ret;
+}
+
+static gint
+document_id_compare (gconstpointer a,
+                     gconstpointer b)
+{
+  if (a > b)
+    return 1;
+  else if (a < b)
+    return -1;
+  else
+    return 0;
+}
+
+static GVariant *
+fuzzy_index_builder_build_keys (FuzzyIndexBuilder *self)
+{
+  GVariantDict dict;
+  guint i;
+
+  g_assert (FUZZY_IS_INDEX_BUILDER (self));
+
+  g_variant_dict_init (&dict, NULL);
+
+  for (i = 0; i < self->kv_pairs->len; i++)
+    {
+      const KVPair *pair = &g_array_index (self->kv_pairs, KVPair, i);
+      gchar key[16];
+
+      g_snprintf (key, sizeof key, "%u", pair->document_id);
+      g_variant_dict_insert_value (&dict, key, g_variant_new_string (pair->key));
+    }
+
+  return g_variant_dict_end (&dict);
+}
+
+static GVariant *
+fuzzy_index_builder_build_index (FuzzyIndexBuilder *self)
+{
+  g_autoptr(GPtrArray) ar = NULL;
+  g_autoptr(GHashTable) rows = NULL;
+  GVariantDict dict;
+  gpointer *keys;
+  GArray *row;
+  guint i;
+  guint len;
+
+  g_assert (FUZZY_IS_INDEX_BUILDER (self));
+
+  ar = g_ptr_array_new_with_free_func ((GDestroyNotify)g_array_unref);
+  rows = g_hash_table_new (NULL, NULL);
+
+  for (i = 0; i < self->kv_pairs->len; i++)
+    {
+      KVPair *kvpair = &g_array_index (self->kv_pairs, KVPair, i);
+      PosDocPair cdpair = { 0, kvpair->document_id };
+      const gchar *iter;
+      guint pos = 0;
+
+      for (iter = kvpair->key; *iter != '\0'; iter = g_utf8_next_char (iter))
+        {
+          gunichar ch = g_utf8_get_char (iter);
+
+          row = g_hash_table_lookup (rows, GUINT_TO_POINTER (ch));
+
+          if G_UNLIKELY (row == NULL)
+            {
+              row = g_array_new (FALSE, FALSE, sizeof (PosDocPair));
+              g_hash_table_insert (rows, GUINT_TO_POINTER (ch), row);
+            }
+
+          cdpair.position = pos++;
+          g_array_append_val (row, cdpair);
+        }
+    }
+
+  keys = g_hash_table_get_keys_as_array (rows, &len);
+  qsort (keys, len, sizeof (gpointer), document_id_compare);
+
+  g_variant_dict_init (&dict, NULL);
+
+  for (i = 0; i < len; i++)
+    {
+      GVariant *variant;
+      gchar key[16];
+
+      g_snprintf (key, sizeof key, "%c", GPOINTER_TO_UINT (keys[i]));
+      row = g_hash_table_lookup (rows, keys[i]);
+      g_array_sort (row, pos_doc_pair_compare);
+
+      variant = g_variant_new_fixed_array ((const GVariantType *)"(ii)",
+                                           row->data,
+                                           row->len,
+                                           sizeof (PosDocPair));
+      g_variant_dict_insert_value (&dict, key, variant);
+    }
+
+  return g_variant_dict_end (&dict);
+}
+
+static void
+fuzzy_index_builder_write_worker (GTask        *task,
+                                  gpointer      source_object,
+                                  gpointer      task_data,
+                                  GCancellable *cancellable)
+{
+  FuzzyIndexBuilder *self = source_object;
+  g_autoptr(GVariant) variant = NULL;
+  g_autoptr(GPtrArray) array_of_keys = NULL;
+  GVariantDict dict;
+  GVariantDict docs_dict;
+  GFile *file = task_data;
+  GError *error = NULL;
+  guint i;
+
+  g_assert (G_IS_TASK (task));
+  g_assert (FUZZY_IS_INDEX_BUILDER (self));
+  g_assert (G_IS_FILE (file));
+  g_assert (!cancellable || G_IS_CANCELLABLE (cancellable));
+
+  g_variant_dict_init (&dict, NULL);
+
+  /* Set our version number for the document */
+  g_variant_dict_insert (&dict, "version", "i", 1);
+
+  /* Add our doc_id → string reverse map */
+  g_variant_dict_insert_value (&dict, "keys", fuzzy_index_builder_build_keys (self));
+
+  /* Build our dicitionary of character → [(pos,doc_id),..] tuples */
+  g_variant_dict_insert_value (&dict, "tables", fuzzy_index_builder_build_index (self));
+
+  /* Build our dictionary of doc_id → documents */
+  g_variant_dict_init (&docs_dict, NULL);
+  for (i = 0; i < self->documents->len; i++)
+    {
+      GVariant *document = g_ptr_array_index (self->documents, i);
+      gchar key[32];
+
+      g_snprintf (key, sizeof key, "%u", i);
+      g_variant_dict_insert_value (&docs_dict, key, document);
+    }
+  g_variant_dict_insert_value (&dict, "documents", g_variant_dict_end (&docs_dict));
+
+  /* Now write the variant to disk */
+  variant = g_variant_ref_sink (g_variant_dict_end (&dict));
+  if (!g_file_replace_contents (file,
+                                g_variant_get_data (variant),
+                                g_variant_get_size (variant),
+                                NULL,
+                                FALSE,
+                                G_FILE_CREATE_NONE,
+                                NULL,
+                                cancellable,
+                                &error))
+    g_task_return_error (task, error);
+  else
+    g_task_return_boolean (task, TRUE);
+}
+
+/**
+ * fuzzy_index_builder_write_async:
+ * @self: A #FuzzyIndexBuilder
+ * @file: A #GFile to write the index to
+ * @io_priority: The priority for IO operations
+ * @cancellable: (nullable): An optional #GCancellable or %NULL
+ * @callback: A callback for completion or %NULL
+ * @user_data: User data for @callback
+ *
+ * Builds and writes the index to @file. The file format is a
+ * GVariant on disk and can be loaded and searched using
+ * #FuzzyIndex.
+ */
+void
+fuzzy_index_builder_write_async (FuzzyIndexBuilder   *self,
+                                 GFile               *file,
+                                 gint                 io_priority,
+                                 GCancellable        *cancellable,
+                                 GAsyncReadyCallback  callback,
+                                 gpointer             user_data)
+{
+  g_autoptr(GTask) task = NULL;
+
+  g_return_if_fail (FUZZY_IS_INDEX_BUILDER (self));
+  g_return_if_fail (G_IS_FILE (file));
+  g_return_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable));
+
+  task = g_task_new (self, cancellable, callback, user_data);
+  g_task_set_source_tag (task, fuzzy_index_builder_write_async);
+  g_task_set_priority (task, io_priority);
+  g_task_set_task_data (task, g_object_ref (file), g_object_unref);
+  g_task_run_in_thread (task, fuzzy_index_builder_write_worker);
+}
+
+gboolean
+fuzzy_index_builder_write_finish (FuzzyIndexBuilder  *self,
+                                  GAsyncResult       *result,
+                                  GError            **error)
+{
+  g_return_val_if_fail (FUZZY_IS_INDEX_BUILDER (self), FALSE);
+  g_return_val_if_fail (G_IS_TASK (result), FALSE);
+
+  return g_task_propagate_boolean (G_TASK (result), error);
+}
+
+/**
+ * fuzzy_index_builder_get_document:
+ *
+ * Returns the document that was inserted in a previous call to
+ * fuzzy_index_builder_insert().
+ *
+ * Returns: (transfer none): A #GVariant
+ */
+const GVariant *
+fuzzy_index_builder_get_document (FuzzyIndexBuilder *self,
+                                  guint64            document_id)
+{
+  g_return_val_if_fail (FUZZY_IS_INDEX_BUILDER (self), NULL);
+  g_return_val_if_fail ((guint)document_id < self->documents->len, NULL);
+
+  return g_ptr_array_index (self->documents, (guint)document_id);
+}

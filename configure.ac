@@ -88,6 +88,7 @@ dnl Check for required packages
 dnl ***********************************************************************
 PKG_CHECK_MODULES(RTFM, [gtk+-3.0 >= 3.20
                          libpeas-1.0 >= 0.18])
+PKG_CHECK_MODULES(FUZZY_GLIB, [gio-2.0 >= 2.48])
 
 
 dnl ***********************************************************************
@@ -118,20 +119,22 @@ dnl ***********************************************************************
 AC_CONFIG_FILES([
 	Makefile
 
-	src/Makefile
+	contrib/Makefile
+	contrib/fuzzy-glib/Makefile
 
+	data/Makefile
+	data/rtfm-$API_VERSION.pc:data/rtfm.pc.in
+
+	src/Makefile
 	src/rtfm-version.h
 
 	plugins/Makefile
 	plugins/gnome-platform/Makefile
 	plugins/gobject-introspection/Makefile
 
-	data/Makefile
-	data/rtfm-$API_VERSION.pc:data/rtfm.pc.in
+	po/Makefile.in
 
 	tests/Makefile
-
-	po/Makefile.in
 ],[],
 [API_VERSION='$API_VERSION'])
 AC_OUTPUT
