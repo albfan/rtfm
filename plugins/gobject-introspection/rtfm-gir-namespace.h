@@ -19,6 +19,8 @@
 #ifndef RTFM_GIR_NAMESPACE_H
 #define RTFM_GIR_NAMESPACE_H
 
+#include <fuzzy-glib.h>
+
 #include "rtfm-gir-base.h"
 #include "rtfm-gir-alias.h"
 #include "rtfm-gir-bitfield.h"
@@ -51,6 +53,8 @@ gboolean   rtfm_gir_namespace_has_functions (RtfmGirNamespace *self);
 GPtrArray *rtfm_gir_namespace_get_functions (RtfmGirNamespace *self);
 gboolean   rtfm_gir_namespace_has_records (RtfmGirNamespace *self);
 GPtrArray *rtfm_gir_namespace_get_records (RtfmGirNamespace *self);
+void rtfm_gir_namespace_build_index (RtfmGirNamespace  *self,
+                                     FuzzyIndexBuilder *builder);
 
 G_END_DECLS
 

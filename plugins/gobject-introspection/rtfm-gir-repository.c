@@ -18,6 +18,8 @@
 
 #define G_LOG_DOMAIN "rtfm-gir-repository"
 
+#include <fuzzy-glib.h>
+
 #include "rtfm-gir-repository.h"
 #include "rtfm-gir-include.h"
 #include "rtfm-gir-package.h"
@@ -649,4 +651,116 @@ async_initable_iface_init (GAsyncInitableIface *iface)
 {
   iface->init_async = rtfm_gir_repository_init_async;
   iface->init_finish = rtfm_gir_repository_init_finish;
+}
+
+static void
+rtfm_gir_repository_write_cb (GObject      *object,
+                              GAsyncResult *result,
+                              gpointer      user_data)
+{
+  FuzzyIndexBuilder *builder = (FuzzyIndexBuilder *)object;
+  g_autoptr(GTask) task = user_data;
+  GError *error = NULL;
+
+  g_assert (FUZZY_IS_INDEX_BUILDER (builder));
+  g_assert (G_IS_TASK (task));
+
+  if (!fuzzy_index_builder_write_finish (builder, result, &error))
+    g_task_return_error (task, error);
+  else
+    g_task_return_boolean (task, TRUE);
+}
+
+static void
+rtfm_gir_repository_build_index_worker (GTask        *task,
+                                        gpointer      source_object,
+                                        gpointer      task_data,
+                                        GCancellable *cancellable)
+{
+  RtfmGirRepository *self = source_object;
+  g_autoptr(FuzzyIndexBuilder) builder = NULL;
+  GFile *file = task_data;
+
+  g_assert (G_IS_TASK (task));
+  g_assert (RTFM_IS_GIR_REPOSITORY (self));
+  g_assert (G_IS_FILE (file));
+
+  builder = fuzzy_index_builder_new ();
+  rtfm_gir_namespace_build_index (self->namespace, builder);
+  fuzzy_index_builder_write_async (builder,
+                                   file,
+                                   G_PRIORITY_DEFAULT,
+                                   cancellable,
+                                   rtfm_gir_repository_write_cb,
+                                   g_object_ref (task));
+}
+
+static void
+rtfm_gir_repository_build_index_init_cb (GObject      *object,
+                                         GAsyncResult *result,
+                                         gpointer      user_data)
+{
+  RtfmGirRepository *self = (RtfmGirRepository *)object;
+  g_autoptr(GTask) task = user_data;
+  GError *error = NULL;
+
+  g_assert (RTFM_IS_GIR_REPOSITORY (self));
+  g_assert (G_IS_TASK (task));
+
+  if (!g_async_initable_init_finish (G_ASYNC_INITABLE (self), result, &error))
+    g_task_return_error (task, error);
+  else
+    g_task_run_in_thread (task, rtfm_gir_repository_build_index_worker);
+}
+
+void
+rtfm_gir_repository_build_index_async (RtfmGirRepository   *self,
+                                       GFile               *file,
+                                       GCancellable        *cancellable,
+                                       GAsyncReadyCallback  callback,
+                                       gpointer             user_data)
+{
+  g_autoptr(GTask) task = NULL;
+
+  g_return_if_fail (RTFM_IS_GIR_REPOSITORY (self));
+  g_return_if_fail (G_IS_FILE (file));
+  g_return_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable));
+
+  task = g_task_new (self, cancellable, callback, user_data);
+  g_task_set_check_cancellable (task, FALSE);
+  g_task_set_source_tag (task, rtfm_gir_repository_build_index_async);
+  g_task_set_task_data (task, g_object_ref (file), g_object_unref);
+
+  if (!self->loaded)
+    g_async_initable_init_async (G_ASYNC_INITABLE (self),
+                                 G_PRIORITY_DEFAULT,
+                                 cancellable,
+                                 rtfm_gir_repository_build_index_init_cb,
+                                 g_object_ref (task));
+  else
+    g_task_run_in_thread (task, rtfm_gir_repository_build_index_worker);
+}
+
+gboolean
+rtfm_gir_repository_build_index_finish (RtfmGirRepository  *self,
+                                        GAsyncResult       *result,
+                                        GError            **error)
+{
+  g_return_val_if_fail (RTFM_IS_GIR_REPOSITORY (self), FALSE);
+  g_return_val_if_fail (G_IS_TASK (result), FALSE);
+
+  return g_task_propagate_boolean (G_TASK (result), error);
+}
+
+/**
+ * rtfm_gir_repository_get_file:
+ *
+ * Returns: (transfer none): A #GFile.
+ */
+GFile *
+rtfm_gir_repository_get_file (RtfmGirRepository *self)
+{
+  g_return_val_if_fail (RTFM_IS_GIR_REPOSITORY (self), NULL);
+
+  return self->file;
 }

@@ -53,12 +53,15 @@ rtfm_gir_provider_init (RtfmGirProvider *self)
 
 static void
 rtfm_gir_provider_load_directory (RtfmGirProvider *self,
-                                  const gchar     *path)
+                                  const gchar     *path,
+                                  GCancellable    *cancellable)
 {
   g_autoptr(GFile) parent = NULL;
   g_autoptr(GFileEnumerator) enumerator = NULL;
   g_autoptr(GError) error = NULL;
+  g_autofree gchar *index_dir = NULL;
   gpointer ptr;
+  guint i;
 
   g_assert (RTFM_IS_GIR_PROVIDER (self));
 
@@ -78,7 +81,7 @@ rtfm_gir_provider_load_directory (RtfmGirProvider *self,
       return;
     }
 
-  while (NULL != (ptr = g_file_enumerator_next_file (enumerator, NULL, &error)))
+  while (NULL != (ptr = g_file_enumerator_next_file (enumerator, cancellable, &error)))
     {
       g_autoptr(RtfmGirRepository) repository = NULL;
       g_autoptr(GFileInfo) file_info = ptr;
@@ -97,6 +100,47 @@ rtfm_gir_provider_load_directory (RtfmGirProvider *self,
       g_warning ("%s", error->message);
       return;
     }
+
+  index_dir = g_build_filename (g_get_user_cache_dir (),
+                                "rtfm",
+                                "gobject-introspection",
+                                NULL);
+
+  if (!g_file_test (index_dir, G_FILE_TEST_IS_DIR))
+    g_mkdir_with_parents (index_dir, 0750);
+
+  for (i = 0; i < self->repositories->len; i++)
+    {
+      RtfmGirRepository *repository = g_ptr_array_index (self->repositories, i);
+      g_autoptr(GFile) file = NULL;
+      g_autofree gchar *gir_path = NULL;
+      g_autofree gchar *index_path = NULL;
+      g_autofree gchar *name = NULL;
+      g_autoptr(GChecksum) checksum = NULL;
+      const gchar *hex;
+      GFile *gir_file = NULL;
+
+
+      gir_file = rtfm_gir_repository_get_file (repository);
+      gir_path = g_file_get_path (gir_file);
+
+      checksum = g_checksum_new (G_CHECKSUM_SHA1);
+      g_checksum_update (checksum, gir_path, strlen (gir_path));
+      hex = g_checksum_get_string (checksum);
+      name = g_strdup_printf ("%s.gvariant", hex);
+      index_path = g_build_filename (g_get_user_cache_dir (),
+                                     "rtfm",
+                                     "gobject-introspection",
+                                     name,
+                                     NULL);
+      file = g_file_new_for_path (index_path);
+
+      rtfm_gir_repository_build_index_async (repository,
+                                             file,
+                                             cancellable,
+                                             NULL,
+                                             NULL);
+    }
 }
 
 static void
@@ -104,7 +148,7 @@ rtfm_gir_provider_reload (RtfmGirProvider *self)
 {
   g_assert (RTFM_IS_GIR_PROVIDER (self));
 
-  rtfm_gir_provider_load_directory (self, "/usr/share/gir-1.0");
+  rtfm_gir_provider_load_directory (self, "/usr/share/gir-1.0", NULL);
 }
 
 static void

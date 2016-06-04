@@ -36,6 +36,15 @@ GPtrArray         *rtfm_gir_repository_get_includes   (RtfmGirRepository  *self)
 GPtrArray         *rtfm_gir_repository_get_packages   (RtfmGirRepository  *self);
 GPtrArray         *rtfm_gir_repository_get_c_includes (RtfmGirRepository  *self);
 RtfmGirNamespace  *rtfm_gir_repository_get_namespace  (RtfmGirRepository  *self);
+GFile *rtfm_gir_repository_get_file (RtfmGirRepository *self);
+void rtfm_gir_repository_build_index_async (RtfmGirRepository   *self,
+                                            GFile               *file,
+                                            GCancellable        *cancellable,
+                                            GAsyncReadyCallback  callback,
+                                            gpointer             user_data);
+gboolean rtfm_gir_repository_build_index_finish (RtfmGirRepository  *self,
+                                                 GAsyncResult       *result,
+                                                 GError            **error);
 
 G_END_DECLS
 

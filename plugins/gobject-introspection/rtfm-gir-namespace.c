@@ -18,6 +18,8 @@
 
 #define G_LOG_DOMAIN "rtfm-gir-namespace"
 
+#include <fuzzy-glib.h>
+
 #include "rtfm-gir-namespace.h"
 #include "rtfm-gir-markup.h"
 #include "rtfm-gir-alias.h"
@@ -665,4 +667,16 @@ rtfm_gir_namespace_get_records (RtfmGirNamespace *self)
   g_return_val_if_fail (RTFM_IS_GIR_NAMESPACE (self), NULL);
 
   return self->record;
+}
+
+void
+rtfm_gir_namespace_build_index (RtfmGirNamespace  *self,
+                                FuzzyIndexBuilder *builder)
+{
+  g_return_if_fail (RTFM_IS_GIR_NAMESPACE (self));
+  g_return_if_fail (FUZZY_IS_INDEX_BUILDER (builder));
+
+  fuzzy_index_builder_insert (builder,
+                              self->name,
+                              g_variant_new_string (self->name));
 }
