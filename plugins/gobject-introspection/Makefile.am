@@ -71,7 +71,16 @@ librtfm_plugin_gir_la_SOURCES = \
 	rtfm-gir-view-addin.h \
 	$(NULL)
 
-librtfm_plugin_gir_la_CFLAGS = $(PLUGIN_CFLAGS)
+librtfm_plugin_gir_la_CFLAGS = \
+	$(PLUGIN_CFLAGS) \
+	-I$(top_srcdir)/contrib/fuzzy-glib \
+	-I$(top_builddir)/contrib/fuzzy-glib \
+	$(NULL)
+
+librtfm_plugin_gir_la_LIBADD = \
+	$(top_builddir)/contrib/fuzzy-glib/libfuzzy-glib-@API_VERSION@.la \
+	$(NULL)
+
 librtfm_plugin_gir_la_LDFLAGS = $(PLUGIN_LDFLAGS)
 
 include $(top_srcdir)/plugins/Makefile.plugins
