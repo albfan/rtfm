@@ -172,6 +172,13 @@ rtfm_gir_file_init_async (GAsyncInitable      *initable,
   task = g_task_new (self, cancellable, callback, user_data);
   g_task_set_task_data (task, g_object_ref (self->file), g_object_unref);
   g_task_set_priority (task, io_priority);
+
+  if (self->repository != NULL)
+    {
+      g_task_return_pointer (task, g_object_ref (self->repository), g_object_unref);
+      return;
+    }
+
   g_task_run_in_thread (task, rtfm_gir_file_init_worker);
 }
 
@@ -181,20 +188,17 @@ rtfm_gir_file_init_finish (GAsyncInitable  *initable,
                            GError         **error)
 {
   RtfmGirFile *self = (RtfmGirFile *)initable;
-  RtfmGirRepository *repository;
+  g_autoptr(RtfmGirRepository) repository = NULL;
 
   g_assert (RTFM_GIR_IS_FILE (self));
   g_assert (G_IS_TASK (result));
 
   repository = g_task_propagate_pointer (G_TASK (result), error);
 
-  if (repository != NULL)
-    {
-      g_clear_object (&self->repository);
-      self->repository = repository;
-    }
+  if (self->repository == NULL)
+    self->repository = g_steal_pointer (&repository);
 
-  return repository != NULL;
+  return (self->repository != NULL);
 }
 
 static void
