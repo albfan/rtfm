@@ -206,7 +206,6 @@ rtfm_gir_provider_populate_async (RtfmProvider        *provider,
   RtfmGirProvider *self = (RtfmGirProvider *)provider;
   RtfmPath *path;
   RtfmItem *item;
-  guint i;
 
   g_assert (RTFM_IS_GIR_PROVIDER (self));
   g_assert (RTFM_IS_COLLECTION (collection));
@@ -220,13 +219,14 @@ rtfm_gir_provider_populate_async (RtfmProvider        *provider,
 
   if (rtfm_path_is_empty (path))
     {
+      guint i;
+
       for (i = 0; i < self->files->len; i++)
         {
           RtfmGirFile *file = g_ptr_array_index (self->files, i);
-          g_autoptr(RtfmGirItem) item = NULL;
+          g_autoptr(RtfmGirItem) item = rtfm_gir_item_new (G_OBJECT (file));
 
-          item = rtfm_gir_item_new (G_OBJECT (file));
-          rtfm_collection_append (collection, g_steal_pointer (&item));
+          rtfm_collection_append (collection, RTFM_ITEM (item));
         }
 
       g_task_return_boolean (task, TRUE);
