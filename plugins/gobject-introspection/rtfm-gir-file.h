@@ -19,6 +19,7 @@
 #ifndef RTFM_GIR_FILE_H
 #define RTFM_GIR_FILE_H
 
+#include <fuzzy-glib.h>
 #include <gio/gio.h>
 
 #include "rtfm-gir-item.h"
@@ -30,9 +31,16 @@ G_BEGIN_DECLS
 
 G_DECLARE_FINAL_TYPE (RtfmGirFile, rtfm_gir_file, RTFM_GIR, FILE, GObject)
 
-RtfmGirFile       *rtfm_gir_file_new            (GFile       *file);
-GFile             *rtfm_gir_file_get_file       (RtfmGirFile *self);
-RtfmGirRepository *rtfm_gir_file_get_repository (RtfmGirFile *self);
+RtfmGirFile       *rtfm_gir_file_new               (GFile                *file);
+GFile             *rtfm_gir_file_get_file          (RtfmGirFile          *self);
+RtfmGirRepository *rtfm_gir_file_get_repository    (RtfmGirFile          *self);
+void               rtfm_gir_file_load_index_async  (RtfmGirFile          *self,
+                                                    GCancellable          *cancellable,
+                                                    GAsyncReadyCallback   callback,
+                                                    gpointer              user_data);
+FuzzyIndex        *rtfm_gir_file_load_index_finish (RtfmGirFile          *self,
+                                                    GAsyncResult         *result,
+                                                    GError              **error);
 
 G_END_DECLS
 

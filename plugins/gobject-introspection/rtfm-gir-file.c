@@ -25,9 +25,10 @@
 
 struct _RtfmGirFile
 {
-  GObject parent_instance;
-  GFile *file;
+  GObject            parent_instance;
+  GFile             *file;
   RtfmGirRepository *repository;
+  FuzzyIndex        *index;
 };
 
 enum {
@@ -52,6 +53,7 @@ rtfm_gir_file_finalize (GObject *object)
 
   g_clear_object (&self->file);
   g_clear_object (&self->repository);
+  g_clear_object (&self->index);
 
   G_OBJECT_CLASS (rtfm_gir_file_parent_class)->finalize (object);
 }
@@ -242,4 +244,37 @@ rtfm_gir_file_new (GFile *file)
   return g_object_new (RTFM_GIR_TYPE_FILE,
                        "file", file,
                        NULL);
+}
+
+void
+rtfm_gir_file_load_index_async (RtfmGirFile         *self,
+                                GCancellable        *cancellable,
+                                GAsyncReadyCallback  callback,
+                                gpointer             user_data)
+{
+  g_autoptr(GTask) task = NULL;
+
+  g_return_if_fail (RTFM_GIR_IS_FILE (self));
+  g_return_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable));
+
+  task = g_task_new (self, cancellable, callback, user_data);
+
+  if (self->index != NULL)
+    {
+      g_task_return_pointer (task, g_object_ref (self->index), g_object_unref);
+      return;
+    }
+
+  /* TODO: Check index age, check file age, possibly build index */
+}
+
+FuzzyIndex *
+rtfm_gir_file_load_index_finish (RtfmGirFile   *self,
+                                 GAsyncResult  *result,
+                                 GError       **error)
+{
+  g_return_val_if_fail (RTFM_GIR_IS_FILE (self), NULL);
+  g_return_val_if_fail (G_IS_TASK (result), NULL);
+
+  return g_task_propagate_pointer (G_TASK (result), error);
 }
