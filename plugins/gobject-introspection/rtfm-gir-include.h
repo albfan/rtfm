@@ -23,7 +23,7 @@
 
 G_BEGIN_DECLS
 
-RtfmGirInclude *rtfm_gir_include_new (void);
+RtfmGirInclude *rtfm_gir_include_new (RtfmGirParserContext *parser_context);
 
 const gchar *rtfm_gir_include_get_name (RtfmGirInclude *self);
 

@@ -23,7 +23,7 @@
 
 G_BEGIN_DECLS
 
-RtfmGirVarargs *rtfm_gir_varargs_new (void);
+RtfmGirVarargs *rtfm_gir_varargs_new (RtfmGirParserContext *parser_context);
 
 G_END_DECLS
 

@@ -23,7 +23,7 @@
 
 G_BEGIN_DECLS
 
-RtfmGirAlias *rtfm_gir_alias_new (void);
+RtfmGirAlias *rtfm_gir_alias_new (RtfmGirParserContext *parser_context);
 
 const gchar *rtfm_gir_alias_get_introspectable (RtfmGirAlias *self);
 

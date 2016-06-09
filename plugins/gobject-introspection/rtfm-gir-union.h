@@ -23,7 +23,7 @@
 
 G_BEGIN_DECLS
 
-RtfmGirUnion *rtfm_gir_union_new (void);
+RtfmGirUnion *rtfm_gir_union_new (RtfmGirParserContext *parser_context);
 
 const gchar *rtfm_gir_union_get_introspectable (RtfmGirUnion *self);
 

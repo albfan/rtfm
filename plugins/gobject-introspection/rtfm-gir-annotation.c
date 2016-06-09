@@ -23,8 +23,8 @@
 struct _RtfmGirAnnotation
 {
   GObject parent_instance;
-  gchar *key;
-  gchar *value;
+  const gchar *key;
+  const gchar *value;
 };
 
 G_DEFINE_TYPE (RtfmGirAnnotation, rtfm_gir_annotation, RTFM_GIR_TYPE_PARSER_OBJECT)
@@ -47,18 +47,24 @@ rtfm_gir_annotation_ingest (RtfmGirParserObject *object,
                             GError **error)
 {
   RtfmGirAnnotation *self = (RtfmGirAnnotation *)object;
+  RtfmGirParserContext *parser_context;
+  const gchar *key = NULL;
+  const gchar *value = NULL;
 
   g_assert (RTFM_GIR_IS_ANNOTATION (self));
   g_assert (g_str_equal (element_name, "annotation"));
 
-  g_clear_pointer (&self->key, g_free);
-  g_clear_pointer (&self->value, g_free);
+  parser_context = rtfm_gir_parser_object_get_parser_context (RTFM_GIR_PARSER_OBJECT (self));
+
 
   if (!rtfm_gir_g_markup_collect_attributes (element_name, attribute_names, attribute_values, error,
-                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "key", &self->key,
-                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "value", &self->value,
+                                             G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "key", &key,
+                                             G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "value", &value,
                                              G_MARKUP_COLLECT_INVALID, NULL, NULL))
     return FALSE;
+
+  self->key = rtfm_gir_parser_context_intern_string (parser_context, key);
+  self->value = rtfm_gir_parser_context_intern_string (parser_context, value);
 
   return TRUE;
 }
@@ -115,17 +121,16 @@ rtfm_gir_annotation_set_property (GObject      *object,
                                   GParamSpec   *pspec)
 {
   RtfmGirAnnotation *self = (RtfmGirAnnotation *)object;
+  RtfmGirParserContext *context = rtfm_gir_parser_object_get_parser_context (RTFM_GIR_PARSER_OBJECT (self));
 
   switch (prop_id)
     {
     case PROP_KEY:
-      g_free (self->key);
-      self->key = g_value_dup_string (value);
+      self->key = rtfm_gir_parser_context_intern_string (context, g_value_get_string (value));
       break;
 
     case PROP_VALUE:
-      g_free (self->value);
-      self->value = g_value_dup_string (value);
+      self->value = rtfm_gir_parser_context_intern_string (context, g_value_get_string (value));
       break;
 
     default:
@@ -136,10 +141,6 @@ rtfm_gir_annotation_set_property (GObject      *object,
 static void
 rtfm_gir_annotation_finalize (GObject *object)
 {
-  RtfmGirAnnotation *self = (RtfmGirAnnotation *)object;
-
-  g_clear_pointer (&self->key, g_free);
-  g_clear_pointer (&self->value, g_free);
 
   G_OBJECT_CLASS (rtfm_gir_annotation_parent_class)->finalize (object);
 }
@@ -196,7 +197,9 @@ rtfm_gir_annotation_get_value (RtfmGirAnnotation *self)
 }
 
 RtfmGirAnnotation *
-rtfm_gir_annotation_new (void)
+rtfm_gir_annotation_new (RtfmGirParserContext *parser_context)
 {
-  return g_object_new (RTFM_GIR_TYPE_ANNOTATION, NULL);
+  return g_object_new (RTFM_GIR_TYPE_ANNOTATION,
+                       "parser-context", parser_context,
+                       NULL);
 }

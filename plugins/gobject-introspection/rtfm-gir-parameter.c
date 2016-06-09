@@ -31,18 +31,18 @@
 struct _RtfmGirParameter
 {
   GObject parent_instance;
-  gchar *name;
-  gchar *nullable;
-  gchar *allow_none;
-  gchar *introspectable;
-  gchar *closure;
-  gchar *destroy;
-  gchar *scope;
-  gchar *direction;
-  gchar *caller_allocates;
-  gchar *optional;
-  gchar *skip;
-  gchar *transfer_ownership;
+  const gchar *name;
+  const gchar *nullable;
+  const gchar *allow_none;
+  const gchar *introspectable;
+  const gchar *closure;
+  const gchar *destroy;
+  const gchar *scope;
+  const gchar *direction;
+  const gchar *caller_allocates;
+  const gchar *optional;
+  const gchar *skip;
+  const gchar *transfer_ownership;
   GPtrArray *children;
 };
 
@@ -86,6 +86,7 @@ rtfm_gir_parameter_start_element (GMarkupParseContext *context,
                                   GError **error)
 {
   RtfmGirParameter *self = user_data;
+  RtfmGirParserContext *parser_context;
 
   g_assert (RTFM_GIR_IS_PARAMETER (self));
   g_assert (context != NULL);
@@ -93,12 +94,14 @@ rtfm_gir_parameter_start_element (GMarkupParseContext *context,
   g_assert (attribute_names != NULL);
   g_assert (attribute_values != NULL);
 
+  parser_context = rtfm_gir_parser_object_get_parser_context (RTFM_GIR_PARSER_OBJECT (self));
+
   if (FALSE) {}
   else if (g_str_equal (element_name, "doc-version"))
     {
       g_autoptr(RtfmGirDocVersion) child = NULL;
 
-      child = rtfm_gir_doc_version_new ();
+      child = rtfm_gir_doc_version_new (parser_context);
 
       if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
         return;
@@ -109,7 +112,7 @@ rtfm_gir_parameter_start_element (GMarkupParseContext *context,
     {
       g_autoptr(RtfmGirDocStability) child = NULL;
 
-      child = rtfm_gir_doc_stability_new ();
+      child = rtfm_gir_doc_stability_new (parser_context);
 
       if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
         return;
@@ -120,7 +123,7 @@ rtfm_gir_parameter_start_element (GMarkupParseContext *context,
     {
       g_autoptr(RtfmGirDoc) child = NULL;
 
-      child = rtfm_gir_doc_new ();
+      child = rtfm_gir_doc_new (parser_context);
 
       if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
         return;
@@ -131,7 +134,7 @@ rtfm_gir_parameter_start_element (GMarkupParseContext *context,
     {
       g_autoptr(RtfmGirDocDeprecated) child = NULL;
 
-      child = rtfm_gir_doc_deprecated_new ();
+      child = rtfm_gir_doc_deprecated_new (parser_context);
 
       if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
         return;
@@ -142,7 +145,7 @@ rtfm_gir_parameter_start_element (GMarkupParseContext *context,
     {
       g_autoptr(RtfmGirType) child = NULL;
 
-      child = rtfm_gir_type_new ();
+      child = rtfm_gir_type_new (parser_context);
 
       if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
         return;
@@ -153,7 +156,7 @@ rtfm_gir_parameter_start_element (GMarkupParseContext *context,
     {
       g_autoptr(RtfmGirArray) child = NULL;
 
-      child = rtfm_gir_array_new ();
+      child = rtfm_gir_array_new (parser_context);
 
       if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
         return;
@@ -164,7 +167,7 @@ rtfm_gir_parameter_start_element (GMarkupParseContext *context,
     {
       g_autoptr(RtfmGirVarargs) child = NULL;
 
-      child = rtfm_gir_varargs_new ();
+      child = rtfm_gir_varargs_new (parser_context);
 
       if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
         return;
@@ -227,38 +230,54 @@ rtfm_gir_parameter_ingest (RtfmGirParserObject *object,
                            GError **error)
 {
   RtfmGirParameter *self = (RtfmGirParameter *)object;
+  RtfmGirParserContext *parser_context;
+  const gchar *name = NULL;
+  const gchar *nullable = NULL;
+  const gchar *allow_none = NULL;
+  const gchar *introspectable = NULL;
+  const gchar *closure = NULL;
+  const gchar *destroy = NULL;
+  const gchar *scope = NULL;
+  const gchar *direction = NULL;
+  const gchar *caller_allocates = NULL;
+  const gchar *optional = NULL;
+  const gchar *skip = NULL;
+  const gchar *transfer_ownership = NULL;
 
   g_assert (RTFM_GIR_IS_PARAMETER (self));
   g_assert (g_str_equal (element_name, "parameter"));
 
-  g_clear_pointer (&self->name, g_free);
-  g_clear_pointer (&self->nullable, g_free);
-  g_clear_pointer (&self->allow_none, g_free);
-  g_clear_pointer (&self->introspectable, g_free);
-  g_clear_pointer (&self->closure, g_free);
-  g_clear_pointer (&self->destroy, g_free);
-  g_clear_pointer (&self->scope, g_free);
-  g_clear_pointer (&self->direction, g_free);
-  g_clear_pointer (&self->caller_allocates, g_free);
-  g_clear_pointer (&self->optional, g_free);
-  g_clear_pointer (&self->skip, g_free);
-  g_clear_pointer (&self->transfer_ownership, g_free);
+  parser_context = rtfm_gir_parser_object_get_parser_context (RTFM_GIR_PARSER_OBJECT (self));
+
 
   if (!rtfm_gir_g_markup_collect_attributes (element_name, attribute_names, attribute_values, error,
-                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "name", &self->name,
-                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "nullable", &self->nullable,
-                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "allow-none", &self->allow_none,
-                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "introspectable", &self->introspectable,
-                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "closure", &self->closure,
-                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "destroy", &self->destroy,
-                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "scope", &self->scope,
-                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "direction", &self->direction,
-                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "caller-allocates", &self->caller_allocates,
-                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "optional", &self->optional,
-                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "skip", &self->skip,
-                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "transfer-ownership", &self->transfer_ownership,
+                                             G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "name", &name,
+                                             G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "nullable", &nullable,
+                                             G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "allow-none", &allow_none,
+                                             G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "introspectable", &introspectable,
+                                             G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "closure", &closure,
+                                             G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "destroy", &destroy,
+                                             G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "scope", &scope,
+                                             G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "direction", &direction,
+                                             G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "caller-allocates", &caller_allocates,
+                                             G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "optional", &optional,
+                                             G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "skip", &skip,
+                                             G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "transfer-ownership", &transfer_ownership,
                                              G_MARKUP_COLLECT_INVALID, NULL, NULL))
     return FALSE;
+
+  self->name = rtfm_gir_parser_context_intern_string (parser_context, name);
+  self->nullable = rtfm_gir_parser_context_intern_string (parser_context, nullable);
+  self->allow_none = rtfm_gir_parser_context_intern_string (parser_context, allow_none);
+  self->introspectable = rtfm_gir_parser_context_intern_string (parser_context, introspectable);
+  self->closure = rtfm_gir_parser_context_intern_string (parser_context, closure);
+  self->destroy = rtfm_gir_parser_context_intern_string (parser_context, destroy);
+  self->scope = rtfm_gir_parser_context_intern_string (parser_context, scope);
+  self->direction = rtfm_gir_parser_context_intern_string (parser_context, direction);
+  self->caller_allocates = rtfm_gir_parser_context_intern_string (parser_context, caller_allocates);
+  self->optional = rtfm_gir_parser_context_intern_string (parser_context, optional);
+  self->skip = rtfm_gir_parser_context_intern_string (parser_context, skip);
+  self->transfer_ownership = rtfm_gir_parser_context_intern_string (parser_context, transfer_ownership);
 
   g_markup_parse_context_push (context, &markup_parser, self);
 
@@ -391,67 +410,56 @@ rtfm_gir_parameter_set_property (GObject      *object,
                                  GParamSpec   *pspec)
 {
   RtfmGirParameter *self = (RtfmGirParameter *)object;
+  RtfmGirParserContext *context = rtfm_gir_parser_object_get_parser_context (RTFM_GIR_PARSER_OBJECT (self));
 
   switch (prop_id)
     {
     case PROP_NAME:
-      g_free (self->name);
-      self->name = g_value_dup_string (value);
+      self->name = rtfm_gir_parser_context_intern_string (context, g_value_get_string (value));
       break;
 
     case PROP_NULLABLE:
-      g_free (self->nullable);
-      self->nullable = g_value_dup_string (value);
+      self->nullable = rtfm_gir_parser_context_intern_string (context, g_value_get_string (value));
       break;
 
     case PROP_ALLOW_NONE:
-      g_free (self->allow_none);
-      self->allow_none = g_value_dup_string (value);
+      self->allow_none = rtfm_gir_parser_context_intern_string (context, g_value_get_string (value));
       break;
 
     case PROP_INTROSPECTABLE:
-      g_free (self->introspectable);
-      self->introspectable = g_value_dup_string (value);
+      self->introspectable = rtfm_gir_parser_context_intern_string (context, g_value_get_string (value));
       break;
 
     case PROP_CLOSURE:
-      g_free (self->closure);
-      self->closure = g_value_dup_string (value);
+      self->closure = rtfm_gir_parser_context_intern_string (context, g_value_get_string (value));
       break;
 
     case PROP_DESTROY:
-      g_free (self->destroy);
-      self->destroy = g_value_dup_string (value);
+      self->destroy = rtfm_gir_parser_context_intern_string (context, g_value_get_string (value));
       break;
 
     case PROP_SCOPE:
-      g_free (self->scope);
-      self->scope = g_value_dup_string (value);
+      self->scope = rtfm_gir_parser_context_intern_string (context, g_value_get_string (value));
       break;
 
     case PROP_DIRECTION:
-      g_free (self->direction);
-      self->direction = g_value_dup_string (value);
+      self->direction = rtfm_gir_parser_context_intern_string (context, g_value_get_string (value));
       break;
 
     case PROP_CALLER_ALLOCATES:
-      g_free (self->caller_allocates);
-      self->caller_allocates = g_value_dup_string (value);
+      self->caller_allocates = rtfm_gir_parser_context_intern_string (context, g_value_get_string (value));
       break;
 
     case PROP_OPTIONAL:
-      g_free (self->optional);
-      self->optional = g_value_dup_string (value);
+      self->optional = rtfm_gir_parser_context_intern_string (context, g_value_get_string (value));
       break;
 
     case PROP_SKIP:
-      g_free (self->skip);
-      self->skip = g_value_dup_string (value);
+      self->skip = rtfm_gir_parser_context_intern_string (context, g_value_get_string (value));
       break;
 
     case PROP_TRANSFER_OWNERSHIP:
-      g_free (self->transfer_ownership);
-      self->transfer_ownership = g_value_dup_string (value);
+      self->transfer_ownership = rtfm_gir_parser_context_intern_string (context, g_value_get_string (value));
       break;
 
     default:
@@ -464,18 +472,6 @@ rtfm_gir_parameter_finalize (GObject *object)
 {
   RtfmGirParameter *self = (RtfmGirParameter *)object;
 
-  g_clear_pointer (&self->name, g_free);
-  g_clear_pointer (&self->nullable, g_free);
-  g_clear_pointer (&self->allow_none, g_free);
-  g_clear_pointer (&self->introspectable, g_free);
-  g_clear_pointer (&self->closure, g_free);
-  g_clear_pointer (&self->destroy, g_free);
-  g_clear_pointer (&self->scope, g_free);
-  g_clear_pointer (&self->direction, g_free);
-  g_clear_pointer (&self->caller_allocates, g_free);
-  g_clear_pointer (&self->optional, g_free);
-  g_clear_pointer (&self->skip, g_free);
-  g_clear_pointer (&self->transfer_ownership, g_free);
   g_clear_pointer (&self->children, g_ptr_array_unref);
 
   G_OBJECT_CLASS (rtfm_gir_parameter_parent_class)->finalize (object);
@@ -685,7 +681,9 @@ rtfm_gir_parameter_get_transfer_ownership (RtfmGirParameter *self)
 }
 
 RtfmGirParameter *
-rtfm_gir_parameter_new (void)
+rtfm_gir_parameter_new (RtfmGirParserContext *parser_context)
 {
-  return g_object_new (RTFM_GIR_TYPE_PARAMETER, NULL);
+  return g_object_new (RTFM_GIR_TYPE_PARAMETER,
+                       "parser-context", parser_context,
+                       NULL);
 }

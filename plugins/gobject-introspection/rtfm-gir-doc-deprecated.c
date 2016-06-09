@@ -24,8 +24,8 @@ struct _RtfmGirDocDeprecated
 {
   GObject parent_instance;
   GString *text;
-  gchar *xml_space;
-  gchar *xml_whitespace;
+  const gchar *xml_space;
+  const gchar *xml_whitespace;
 };
 
 G_DEFINE_TYPE (RtfmGirDocDeprecated, rtfm_gir_doc_deprecated, RTFM_GIR_TYPE_PARSER_OBJECT)
@@ -75,18 +75,24 @@ rtfm_gir_doc_deprecated_ingest (RtfmGirParserObject *object,
                                 GError **error)
 {
   RtfmGirDocDeprecated *self = (RtfmGirDocDeprecated *)object;
+  RtfmGirParserContext *parser_context;
+  const gchar *xml_space = NULL;
+  const gchar *xml_whitespace = NULL;
 
   g_assert (RTFM_GIR_IS_DOC_DEPRECATED (self));
   g_assert (g_str_equal (element_name, "doc-deprecated"));
 
-  g_clear_pointer (&self->xml_space, g_free);
-  g_clear_pointer (&self->xml_whitespace, g_free);
+  parser_context = rtfm_gir_parser_object_get_parser_context (RTFM_GIR_PARSER_OBJECT (self));
+
 
   if (!rtfm_gir_g_markup_collect_attributes (element_name, attribute_names, attribute_values, error,
-                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "xml:space", &self->xml_space,
-                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "xml:whitespace", &self->xml_whitespace,
+                                             G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "xml:space", &xml_space,
+                                             G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "xml:whitespace", &xml_whitespace,
                                              G_MARKUP_COLLECT_INVALID, NULL, NULL))
     return FALSE;
+
+  self->xml_space = rtfm_gir_parser_context_intern_string (parser_context, xml_space);
+  self->xml_whitespace = rtfm_gir_parser_context_intern_string (parser_context, xml_whitespace);
 
   g_markup_parse_context_push (context, &markup_parser, self);
 
@@ -151,17 +157,16 @@ rtfm_gir_doc_deprecated_set_property (GObject      *object,
                                       GParamSpec   *pspec)
 {
   RtfmGirDocDeprecated *self = (RtfmGirDocDeprecated *)object;
+  RtfmGirParserContext *context = rtfm_gir_parser_object_get_parser_context (RTFM_GIR_PARSER_OBJECT (self));
 
   switch (prop_id)
     {
     case PROP_XML_SPACE:
-      g_free (self->xml_space);
-      self->xml_space = g_value_dup_string (value);
+      self->xml_space = rtfm_gir_parser_context_intern_string (context, g_value_get_string (value));
       break;
 
     case PROP_XML_WHITESPACE:
-      g_free (self->xml_whitespace);
-      self->xml_whitespace = g_value_dup_string (value);
+      self->xml_whitespace = rtfm_gir_parser_context_intern_string (context, g_value_get_string (value));
       break;
 
     default:
@@ -180,8 +185,6 @@ rtfm_gir_doc_deprecated_finalize (GObject *object)
       self->text = NULL;
     }
 
-  g_clear_pointer (&self->xml_space, g_free);
-  g_clear_pointer (&self->xml_whitespace, g_free);
 
   G_OBJECT_CLASS (rtfm_gir_doc_deprecated_parent_class)->finalize (object);
 }
@@ -238,7 +241,9 @@ rtfm_gir_doc_deprecated_get_xml_whitespace (RtfmGirDocDeprecated *self)
 }
 
 RtfmGirDocDeprecated *
-rtfm_gir_doc_deprecated_new (void)
+rtfm_gir_doc_deprecated_new (RtfmGirParserContext *parser_context)
 {
-  return g_object_new (RTFM_GIR_TYPE_DOC_DEPRECATED, NULL);
+  return g_object_new (RTFM_GIR_TYPE_DOC_DEPRECATED,
+                       "parser-context", parser_context,
+                       NULL);
 }

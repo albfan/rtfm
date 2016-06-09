@@ -23,7 +23,7 @@
 
 G_BEGIN_DECLS
 
-RtfmGirRepository *rtfm_gir_repository_new (void);
+RtfmGirRepository *rtfm_gir_repository_new (RtfmGirParserContext *parser_context);
 
 const gchar *rtfm_gir_repository_get_version (RtfmGirRepository *self);
 

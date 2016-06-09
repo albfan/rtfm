@@ -26,12 +26,12 @@
 struct _RtfmGirArray
 {
   GObject parent_instance;
-  gchar *name;
-  gchar *zero_terminated;
-  gchar *fixed_size;
-  gchar *introspectable;
-  gchar *length;
-  gchar *c_type;
+  const gchar *name;
+  const gchar *zero_terminated;
+  const gchar *fixed_size;
+  const gchar *introspectable;
+  const gchar *length;
+  const gchar *c_type;
   GPtrArray *children;
 };
 
@@ -69,6 +69,7 @@ rtfm_gir_array_start_element (GMarkupParseContext *context,
                               GError **error)
 {
   RtfmGirArray *self = user_data;
+  RtfmGirParserContext *parser_context;
 
   g_assert (RTFM_GIR_IS_ARRAY (self));
   g_assert (context != NULL);
@@ -76,12 +77,14 @@ rtfm_gir_array_start_element (GMarkupParseContext *context,
   g_assert (attribute_names != NULL);
   g_assert (attribute_values != NULL);
 
+  parser_context = rtfm_gir_parser_object_get_parser_context (RTFM_GIR_PARSER_OBJECT (self));
+
   if (FALSE) {}
   else if (g_str_equal (element_name, "type"))
     {
       g_autoptr(RtfmGirType) child = NULL;
 
-      child = rtfm_gir_type_new ();
+      child = rtfm_gir_type_new (parser_context);
 
       if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
         return;
@@ -92,7 +95,7 @@ rtfm_gir_array_start_element (GMarkupParseContext *context,
     {
       g_autoptr(RtfmGirArray) child = NULL;
 
-      child = rtfm_gir_array_new ();
+      child = rtfm_gir_array_new (parser_context);
 
       if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
         return;
@@ -139,26 +142,36 @@ rtfm_gir_array_ingest (RtfmGirParserObject *object,
                        GError **error)
 {
   RtfmGirArray *self = (RtfmGirArray *)object;
+  RtfmGirParserContext *parser_context;
+  const gchar *name = NULL;
+  const gchar *zero_terminated = NULL;
+  const gchar *fixed_size = NULL;
+  const gchar *introspectable = NULL;
+  const gchar *length = NULL;
+  const gchar *c_type = NULL;
 
   g_assert (RTFM_GIR_IS_ARRAY (self));
   g_assert (g_str_equal (element_name, "array"));
 
-  g_clear_pointer (&self->name, g_free);
-  g_clear_pointer (&self->zero_terminated, g_free);
-  g_clear_pointer (&self->fixed_size, g_free);
-  g_clear_pointer (&self->introspectable, g_free);
-  g_clear_pointer (&self->length, g_free);
-  g_clear_pointer (&self->c_type, g_free);
+  parser_context = rtfm_gir_parser_object_get_parser_context (RTFM_GIR_PARSER_OBJECT (self));
+
 
   if (!rtfm_gir_g_markup_collect_attributes (element_name, attribute_names, attribute_values, error,
-                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "name", &self->name,
-                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "zero-terminated", &self->zero_terminated,
-                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "fixed-size", &self->fixed_size,
-                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "introspectable", &self->introspectable,
-                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "length", &self->length,
-                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "c:type", &self->c_type,
+                                             G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "name", &name,
+                                             G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "zero-terminated", &zero_terminated,
+                                             G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "fixed-size", &fixed_size,
+                                             G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "introspectable", &introspectable,
+                                             G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "length", &length,
+                                             G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "c:type", &c_type,
                                              G_MARKUP_COLLECT_INVALID, NULL, NULL))
     return FALSE;
+
+  self->name = rtfm_gir_parser_context_intern_string (parser_context, name);
+  self->zero_terminated = rtfm_gir_parser_context_intern_string (parser_context, zero_terminated);
+  self->fixed_size = rtfm_gir_parser_context_intern_string (parser_context, fixed_size);
+  self->introspectable = rtfm_gir_parser_context_intern_string (parser_context, introspectable);
+  self->length = rtfm_gir_parser_context_intern_string (parser_context, length);
+  self->c_type = rtfm_gir_parser_context_intern_string (parser_context, c_type);
 
   g_markup_parse_context_push (context, &markup_parser, self);
 
@@ -255,37 +268,32 @@ rtfm_gir_array_set_property (GObject      *object,
                              GParamSpec   *pspec)
 {
   RtfmGirArray *self = (RtfmGirArray *)object;
+  RtfmGirParserContext *context = rtfm_gir_parser_object_get_parser_context (RTFM_GIR_PARSER_OBJECT (self));
 
   switch (prop_id)
     {
     case PROP_NAME:
-      g_free (self->name);
-      self->name = g_value_dup_string (value);
+      self->name = rtfm_gir_parser_context_intern_string (context, g_value_get_string (value));
       break;
 
     case PROP_ZERO_TERMINATED:
-      g_free (self->zero_terminated);
-      self->zero_terminated = g_value_dup_string (value);
+      self->zero_terminated = rtfm_gir_parser_context_intern_string (context, g_value_get_string (value));
       break;
 
     case PROP_FIXED_SIZE:
-      g_free (self->fixed_size);
-      self->fixed_size = g_value_dup_string (value);
+      self->fixed_size = rtfm_gir_parser_context_intern_string (context, g_value_get_string (value));
       break;
 
     case PROP_INTROSPECTABLE:
-      g_free (self->introspectable);
-      self->introspectable = g_value_dup_string (value);
+      self->introspectable = rtfm_gir_parser_context_intern_string (context, g_value_get_string (value));
       break;
 
     case PROP_LENGTH:
-      g_free (self->length);
-      self->length = g_value_dup_string (value);
+      self->length = rtfm_gir_parser_context_intern_string (context, g_value_get_string (value));
       break;
 
     case PROP_C_TYPE:
-      g_free (self->c_type);
-      self->c_type = g_value_dup_string (value);
+      self->c_type = rtfm_gir_parser_context_intern_string (context, g_value_get_string (value));
       break;
 
     default:
@@ -298,12 +306,6 @@ rtfm_gir_array_finalize (GObject *object)
 {
   RtfmGirArray *self = (RtfmGirArray *)object;
 
-  g_clear_pointer (&self->name, g_free);
-  g_clear_pointer (&self->zero_terminated, g_free);
-  g_clear_pointer (&self->fixed_size, g_free);
-  g_clear_pointer (&self->introspectable, g_free);
-  g_clear_pointer (&self->length, g_free);
-  g_clear_pointer (&self->c_type, g_free);
   g_clear_pointer (&self->children, g_ptr_array_unref);
 
   G_OBJECT_CLASS (rtfm_gir_array_parent_class)->finalize (object);
@@ -423,7 +425,9 @@ rtfm_gir_array_get_c_type (RtfmGirArray *self)
 }
 
 RtfmGirArray *
-rtfm_gir_array_new (void)
+rtfm_gir_array_new (RtfmGirParserContext *parser_context)
 {
-  return g_object_new (RTFM_GIR_TYPE_ARRAY, NULL);
+  return g_object_new (RTFM_GIR_TYPE_ARRAY,
+                       "parser-context", parser_context,
+                       NULL);
 }

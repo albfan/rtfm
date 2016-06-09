@@ -56,8 +56,10 @@ rtfm_gir_start_element (GMarkupParseContext *context,
   if (g_str_equal (element_name, "repository"))
     {
       g_autoptr(RtfmGirRepository) child = NULL;
+      g_autoptr(RtfmGirParserContext) parser_context = NULL;
 
-      child = rtfm_gir_repository_new ();
+      parser_context = rtfm_gir_parser_context_new ();
+      child = rtfm_gir_repository_new (parser_context);
 
       if (rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child),
                                          context,

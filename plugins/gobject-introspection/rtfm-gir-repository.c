@@ -28,9 +28,9 @@
 struct _RtfmGirRepository
 {
   GObject parent_instance;
-  gchar *version;
-  gchar *c_identifier_prefixes;
-  gchar *c_symbol_prefixes;
+  const gchar *version;
+  const gchar *c_identifier_prefixes;
+  const gchar *c_symbol_prefixes;
   GPtrArray *children;
 };
 
@@ -65,6 +65,7 @@ rtfm_gir_repository_start_element (GMarkupParseContext *context,
                                    GError **error)
 {
   RtfmGirRepository *self = user_data;
+  RtfmGirParserContext *parser_context;
 
   g_assert (RTFM_GIR_IS_REPOSITORY (self));
   g_assert (context != NULL);
@@ -72,12 +73,14 @@ rtfm_gir_repository_start_element (GMarkupParseContext *context,
   g_assert (attribute_names != NULL);
   g_assert (attribute_values != NULL);
 
+  parser_context = rtfm_gir_parser_object_get_parser_context (RTFM_GIR_PARSER_OBJECT (self));
+
   if (FALSE) {}
   else if (g_str_equal (element_name, "include"))
     {
       g_autoptr(RtfmGirInclude) child = NULL;
 
-      child = rtfm_gir_include_new ();
+      child = rtfm_gir_include_new (parser_context);
 
       if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
         return;
@@ -88,7 +91,7 @@ rtfm_gir_repository_start_element (GMarkupParseContext *context,
     {
       g_autoptr(RtfmGirCInclude) child = NULL;
 
-      child = rtfm_gir_c_include_new ();
+      child = rtfm_gir_c_include_new (parser_context);
 
       if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
         return;
@@ -99,7 +102,7 @@ rtfm_gir_repository_start_element (GMarkupParseContext *context,
     {
       g_autoptr(RtfmGirPackage) child = NULL;
 
-      child = rtfm_gir_package_new ();
+      child = rtfm_gir_package_new (parser_context);
 
       if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
         return;
@@ -110,7 +113,7 @@ rtfm_gir_repository_start_element (GMarkupParseContext *context,
     {
       g_autoptr(RtfmGirNamespace) child = NULL;
 
-      child = rtfm_gir_namespace_new ();
+      child = rtfm_gir_namespace_new (parser_context);
 
       if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
         return;
@@ -153,20 +156,27 @@ rtfm_gir_repository_ingest (RtfmGirParserObject *object,
                             GError **error)
 {
   RtfmGirRepository *self = (RtfmGirRepository *)object;
+  RtfmGirParserContext *parser_context;
+  const gchar *version = NULL;
+  const gchar *c_identifier_prefixes = NULL;
+  const gchar *c_symbol_prefixes = NULL;
 
   g_assert (RTFM_GIR_IS_REPOSITORY (self));
   g_assert (g_str_equal (element_name, "repository"));
 
-  g_clear_pointer (&self->version, g_free);
-  g_clear_pointer (&self->c_identifier_prefixes, g_free);
-  g_clear_pointer (&self->c_symbol_prefixes, g_free);
+  parser_context = rtfm_gir_parser_object_get_parser_context (RTFM_GIR_PARSER_OBJECT (self));
+
 
   if (!rtfm_gir_g_markup_collect_attributes (element_name, attribute_names, attribute_values, error,
-                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "version", &self->version,
-                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "c:identifier-prefixes", &self->c_identifier_prefixes,
-                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "c:symbol-prefixes", &self->c_symbol_prefixes,
+                                             G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "version", &version,
+                                             G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "c:identifier-prefixes", &c_identifier_prefixes,
+                                             G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "c:symbol-prefixes", &c_symbol_prefixes,
                                              G_MARKUP_COLLECT_INVALID, NULL, NULL))
     return FALSE;
+
+  self->version = rtfm_gir_parser_context_intern_string (parser_context, version);
+  self->c_identifier_prefixes = rtfm_gir_parser_context_intern_string (parser_context, c_identifier_prefixes);
+  self->c_symbol_prefixes = rtfm_gir_parser_context_intern_string (parser_context, c_symbol_prefixes);
 
   g_markup_parse_context_push (context, &markup_parser, self);
 
@@ -245,22 +255,20 @@ rtfm_gir_repository_set_property (GObject      *object,
                                   GParamSpec   *pspec)
 {
   RtfmGirRepository *self = (RtfmGirRepository *)object;
+  RtfmGirParserContext *context = rtfm_gir_parser_object_get_parser_context (RTFM_GIR_PARSER_OBJECT (self));
 
   switch (prop_id)
     {
     case PROP_VERSION:
-      g_free (self->version);
-      self->version = g_value_dup_string (value);
+      self->version = rtfm_gir_parser_context_intern_string (context, g_value_get_string (value));
       break;
 
     case PROP_C_IDENTIFIER_PREFIXES:
-      g_free (self->c_identifier_prefixes);
-      self->c_identifier_prefixes = g_value_dup_string (value);
+      self->c_identifier_prefixes = rtfm_gir_parser_context_intern_string (context, g_value_get_string (value));
       break;
 
     case PROP_C_SYMBOL_PREFIXES:
-      g_free (self->c_symbol_prefixes);
-      self->c_symbol_prefixes = g_value_dup_string (value);
+      self->c_symbol_prefixes = rtfm_gir_parser_context_intern_string (context, g_value_get_string (value));
       break;
 
     default:
@@ -273,9 +281,6 @@ rtfm_gir_repository_finalize (GObject *object)
 {
   RtfmGirRepository *self = (RtfmGirRepository *)object;
 
-  g_clear_pointer (&self->version, g_free);
-  g_clear_pointer (&self->c_identifier_prefixes, g_free);
-  g_clear_pointer (&self->c_symbol_prefixes, g_free);
   g_clear_pointer (&self->children, g_ptr_array_unref);
 
   G_OBJECT_CLASS (rtfm_gir_repository_parent_class)->finalize (object);
@@ -350,7 +355,9 @@ rtfm_gir_repository_get_c_symbol_prefixes (RtfmGirRepository *self)
 }
 
 RtfmGirRepository *
-rtfm_gir_repository_new (void)
+rtfm_gir_repository_new (RtfmGirParserContext *parser_context)
 {
-  return g_object_new (RTFM_GIR_TYPE_REPOSITORY, NULL);
+  return g_object_new (RTFM_GIR_TYPE_REPOSITORY,
+                       "parser-context", parser_context,
+                       NULL);
 }

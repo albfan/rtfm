@@ -23,8 +23,8 @@
 struct _RtfmGirInclude
 {
   GObject parent_instance;
-  gchar *name;
-  gchar *version;
+  const gchar *name;
+  const gchar *version;
 };
 
 G_DEFINE_TYPE (RtfmGirInclude, rtfm_gir_include, RTFM_GIR_TYPE_PARSER_OBJECT)
@@ -47,18 +47,24 @@ rtfm_gir_include_ingest (RtfmGirParserObject *object,
                          GError **error)
 {
   RtfmGirInclude *self = (RtfmGirInclude *)object;
+  RtfmGirParserContext *parser_context;
+  const gchar *name = NULL;
+  const gchar *version = NULL;
 
   g_assert (RTFM_GIR_IS_INCLUDE (self));
   g_assert (g_str_equal (element_name, "include"));
 
-  g_clear_pointer (&self->name, g_free);
-  g_clear_pointer (&self->version, g_free);
+  parser_context = rtfm_gir_parser_object_get_parser_context (RTFM_GIR_PARSER_OBJECT (self));
+
 
   if (!rtfm_gir_g_markup_collect_attributes (element_name, attribute_names, attribute_values, error,
-                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "name", &self->name,
-                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "version", &self->version,
+                                             G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "name", &name,
+                                             G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "version", &version,
                                              G_MARKUP_COLLECT_INVALID, NULL, NULL))
     return FALSE;
+
+  self->name = rtfm_gir_parser_context_intern_string (parser_context, name);
+  self->version = rtfm_gir_parser_context_intern_string (parser_context, version);
 
   return TRUE;
 }
@@ -115,17 +121,16 @@ rtfm_gir_include_set_property (GObject      *object,
                                GParamSpec   *pspec)
 {
   RtfmGirInclude *self = (RtfmGirInclude *)object;
+  RtfmGirParserContext *context = rtfm_gir_parser_object_get_parser_context (RTFM_GIR_PARSER_OBJECT (self));
 
   switch (prop_id)
     {
     case PROP_NAME:
-      g_free (self->name);
-      self->name = g_value_dup_string (value);
+      self->name = rtfm_gir_parser_context_intern_string (context, g_value_get_string (value));
       break;
 
     case PROP_VERSION:
-      g_free (self->version);
-      self->version = g_value_dup_string (value);
+      self->version = rtfm_gir_parser_context_intern_string (context, g_value_get_string (value));
       break;
 
     default:
@@ -136,10 +141,6 @@ rtfm_gir_include_set_property (GObject      *object,
 static void
 rtfm_gir_include_finalize (GObject *object)
 {
-  RtfmGirInclude *self = (RtfmGirInclude *)object;
-
-  g_clear_pointer (&self->name, g_free);
-  g_clear_pointer (&self->version, g_free);
 
   G_OBJECT_CLASS (rtfm_gir_include_parent_class)->finalize (object);
 }
@@ -196,7 +197,9 @@ rtfm_gir_include_get_version (RtfmGirInclude *self)
 }
 
 RtfmGirInclude *
-rtfm_gir_include_new (void)
+rtfm_gir_include_new (RtfmGirParserContext *parser_context)
 {
-  return g_object_new (RTFM_GIR_TYPE_INCLUDE, NULL);
+  return g_object_new (RTFM_GIR_TYPE_INCLUDE,
+                       "parser-context", parser_context,
+                       NULL);
 }

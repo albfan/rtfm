@@ -23,7 +23,7 @@
 
 G_BEGIN_DECLS
 
-RtfmGirGlibBoxed *rtfm_gir_glib_boxed_new (void);
+RtfmGirGlibBoxed *rtfm_gir_glib_boxed_new (RtfmGirParserContext *parser_context);
 
 const gchar *rtfm_gir_glib_boxed_get_introspectable (RtfmGirGlibBoxed *self);
 

@@ -23,7 +23,7 @@
 
 G_BEGIN_DECLS
 
-RtfmGirRecord *rtfm_gir_record_new (void);
+RtfmGirRecord *rtfm_gir_record_new (RtfmGirParserContext *parser_context);
 
 const gchar *rtfm_gir_record_get_introspectable (RtfmGirRecord *self);
 

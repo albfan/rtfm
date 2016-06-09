@@ -23,7 +23,7 @@
 
 G_BEGIN_DECLS
 
-RtfmGirAnnotation *rtfm_gir_annotation_new (void);
+RtfmGirAnnotation *rtfm_gir_annotation_new (RtfmGirParserContext *parser_context);
 
 const gchar *rtfm_gir_annotation_get_key (RtfmGirAnnotation *self);
 

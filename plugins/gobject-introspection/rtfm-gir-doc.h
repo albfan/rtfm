@@ -23,7 +23,7 @@
 
 G_BEGIN_DECLS
 
-RtfmGirDoc *rtfm_gir_doc_new (void);
+RtfmGirDoc *rtfm_gir_doc_new (RtfmGirParserContext *parser_context);
 
 const gchar *rtfm_gir_doc_get_xml_space (RtfmGirDoc *self);
 

@@ -23,7 +23,7 @@
 
 G_BEGIN_DECLS
 
-RtfmGirGlibSignal *rtfm_gir_glib_signal_new (void);
+RtfmGirGlibSignal *rtfm_gir_glib_signal_new (RtfmGirParserContext *parser_context);
 
 const gchar *rtfm_gir_glib_signal_get_introspectable (RtfmGirGlibSignal *self);
 

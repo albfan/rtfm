@@ -23,7 +23,7 @@
 
 G_BEGIN_DECLS
 
-RtfmGirInstanceParameter *rtfm_gir_instance_parameter_new (void);
+RtfmGirInstanceParameter *rtfm_gir_instance_parameter_new (RtfmGirParserContext *parser_context);
 
 const gchar *rtfm_gir_instance_parameter_get_name (RtfmGirInstanceParameter *self);
 

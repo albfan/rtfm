@@ -23,7 +23,7 @@
 
 G_BEGIN_DECLS
 
-RtfmGirFunction *rtfm_gir_function_new (void);
+RtfmGirFunction *rtfm_gir_function_new (RtfmGirParserContext *parser_context);
 
 const gchar *rtfm_gir_function_get_introspectable (RtfmGirFunction *self);
 

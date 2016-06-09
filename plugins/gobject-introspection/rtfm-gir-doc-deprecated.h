@@ -23,7 +23,7 @@
 
 G_BEGIN_DECLS
 
-RtfmGirDocDeprecated *rtfm_gir_doc_deprecated_new (void);
+RtfmGirDocDeprecated *rtfm_gir_doc_deprecated_new (RtfmGirParserContext *parser_context);
 
 const gchar *rtfm_gir_doc_deprecated_get_xml_space (RtfmGirDocDeprecated *self);
 

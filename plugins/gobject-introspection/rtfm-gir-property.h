@@ -23,7 +23,7 @@
 
 G_BEGIN_DECLS
 
-RtfmGirProperty *rtfm_gir_property_new (void);
+RtfmGirProperty *rtfm_gir_property_new (RtfmGirParserContext *parser_context);
 
 const gchar *rtfm_gir_property_get_introspectable (RtfmGirProperty *self);
 

@@ -23,7 +23,7 @@
 
 G_BEGIN_DECLS
 
-RtfmGirEnumeration *rtfm_gir_enumeration_new (void);
+RtfmGirEnumeration *rtfm_gir_enumeration_new (RtfmGirParserContext *parser_context);
 
 const gchar *rtfm_gir_enumeration_get_introspectable (RtfmGirEnumeration *self);
 

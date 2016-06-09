@@ -20,11 +20,161 @@
 
 #include "rtfm-gir-parser-types.h"
 
-G_DEFINE_TYPE (RtfmGirParserObject, rtfm_gir_parser_object, G_TYPE_OBJECT)
+typedef struct
+{
+  RtfmGirParserContext *parser_context;
+} RtfmGirParserObjectPrivate;
+
+struct _RtfmGirParserContext
+{
+  volatile gint ref_count;
+  GStringChunk *strings;
+};
+
+enum {
+  PROP_0,
+  PROP_PARSER_CONTEXT,
+  N_PROPS
+};
+
+static GParamSpec *properties [N_PROPS];
+
+G_DEFINE_TYPE_WITH_PRIVATE (RtfmGirParserObject, rtfm_gir_parser_object, G_TYPE_OBJECT)
+G_DEFINE_BOXED_TYPE (RtfmGirParserContext, rtfm_gir_parser_context, rtfm_gir_parser_context_ref, rtfm_gir_parser_context_unref)
+
+RtfmGirParserContext *
+rtfm_gir_parser_context_new (void)
+{
+  RtfmGirParserContext *ret;
+
+  ret = g_slice_new0 (RtfmGirParserContext);
+  ret->ref_count = 1;
+  ret->strings = g_string_chunk_new (4096);
+
+  return ret;
+}
+
+RtfmGirParserContext *
+rtfm_gir_parser_context_ref (RtfmGirParserContext *self)
+{
+  g_return_val_if_fail (self != NULL, NULL);
+  g_return_val_if_fail (self->ref_count > 0, NULL);
+
+  g_atomic_int_inc (&self->ref_count);
+
+  return self;
+}
+
+void
+rtfm_gir_parser_context_unref (RtfmGirParserContext *self)
+{
+  g_return_if_fail (self != NULL);
+  g_return_if_fail (self->ref_count > 0);
+
+  if (g_atomic_int_dec_and_test (&self->ref_count))
+    {
+      g_string_chunk_free (self->strings);
+      g_slice_free (RtfmGirParserContext, self);
+    }
+}
+
+const gchar *
+rtfm_gir_parser_context_intern_string (RtfmGirParserContext *self,
+                                       const gchar *string)
+{
+  g_return_val_if_fail (self != NULL, NULL);
+
+  if (string == NULL)
+    return NULL;
+  else
+    return g_string_chunk_insert_const (self->strings, string);
+}
+
+/**
+ * rtfm_gir_parser_object_get_parser_context:
+ * @self: A #RtfmGirParserObject
+ *
+ * Gets the parser context associated with this object.
+ *
+ * Returns: (transfer none): A #RtfmGirParserContext
+ */
+RtfmGirParserContext *
+rtfm_gir_parser_object_get_parser_context (RtfmGirParserObject *self)
+{
+  RtfmGirParserObjectPrivate *priv = rtfm_gir_parser_object_get_instance_private (self);
+
+  g_return_val_if_fail (RTFM_GIR_IS_PARSER_OBJECT (self), NULL);
+
+  return priv->parser_context;
+}
+
+static void
+rtfm_gir_parser_object_finalize (GObject *object)
+{
+  RtfmGirParserObject *self = (RtfmGirParserObject *)object;
+  RtfmGirParserObjectPrivate *priv = rtfm_gir_parser_object_get_instance_private (self);
+
+  g_clear_pointer (&priv->parser_context, rtfm_gir_parser_context_unref);
+
+  G_OBJECT_CLASS (rtfm_gir_parser_object_parent_class)->finalize (object);
+}
+
+static void
+rtfm_gir_parser_object_get_property (GObject    *object,
+                                     guint       prop_id,
+                                     GValue     *value,
+                                     GParamSpec *pspec)
+{
+  RtfmGirParserObject *self = (RtfmGirParserObject *)object;
+
+  switch (prop_id)
+    {
+    case PROP_PARSER_CONTEXT:
+      g_value_set_boxed (value, rtfm_gir_parser_object_get_parser_context (self));
+      break;
+
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+    }
+}
+
+static void
+rtfm_gir_parser_object_set_property (GObject      *object,
+                                     guint         prop_id,
+                                     const GValue *value,
+                                     GParamSpec   *pspec)
+{
+  RtfmGirParserObject *self = (RtfmGirParserObject *)object;
+  RtfmGirParserObjectPrivate *priv = rtfm_gir_parser_object_get_instance_private (self);
+
+  switch (prop_id)
+    {
+    case PROP_PARSER_CONTEXT:
+      priv->parser_context = g_value_dup_boxed (value);
+      break;
+
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+    }
+}
 
 static void
 rtfm_gir_parser_object_class_init (RtfmGirParserObjectClass *klass)
 {
+  GObjectClass *object_class = G_OBJECT_CLASS (klass);
+
+  object_class->finalize = rtfm_gir_parser_object_finalize;
+  object_class->get_property = rtfm_gir_parser_object_get_property;
+  object_class->set_property = rtfm_gir_parser_object_set_property;
+
+  properties [PROP_PARSER_CONTEXT] =
+    g_param_spec_boxed ("parser-context",
+                        "Parser Context",
+                        "The parser context used for shared allocations",
+                        RTFM_GIR_TYPE_PARSER_CONTEXT,
+                        (G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
+
+  g_object_class_install_properties (object_class, N_PROPS, properties);
 }
 
 static void

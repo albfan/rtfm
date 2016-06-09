@@ -23,7 +23,7 @@
 
 G_BEGIN_DECLS
 
-RtfmGirConstructor *rtfm_gir_constructor_new (void);
+RtfmGirConstructor *rtfm_gir_constructor_new (RtfmGirParserContext *parser_context);
 
 const gchar *rtfm_gir_constructor_get_introspectable (RtfmGirConstructor *self);
 

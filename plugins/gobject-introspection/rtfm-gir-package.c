@@ -23,7 +23,7 @@
 struct _RtfmGirPackage
 {
   GObject parent_instance;
-  gchar *name;
+  const gchar *name;
 };
 
 G_DEFINE_TYPE (RtfmGirPackage, rtfm_gir_package, RTFM_GIR_TYPE_PARSER_OBJECT)
@@ -45,16 +45,21 @@ rtfm_gir_package_ingest (RtfmGirParserObject *object,
                          GError **error)
 {
   RtfmGirPackage *self = (RtfmGirPackage *)object;
+  RtfmGirParserContext *parser_context;
+  const gchar *name = NULL;
 
   g_assert (RTFM_GIR_IS_PACKAGE (self));
   g_assert (g_str_equal (element_name, "package"));
 
-  g_clear_pointer (&self->name, g_free);
+  parser_context = rtfm_gir_parser_object_get_parser_context (RTFM_GIR_PARSER_OBJECT (self));
+
 
   if (!rtfm_gir_g_markup_collect_attributes (element_name, attribute_names, attribute_values, error,
-                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "name", &self->name,
+                                             G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "name", &name,
                                              G_MARKUP_COLLECT_INVALID, NULL, NULL))
     return FALSE;
+
+  self->name = rtfm_gir_parser_context_intern_string (parser_context, name);
 
   return TRUE;
 }
@@ -105,12 +110,12 @@ rtfm_gir_package_set_property (GObject      *object,
                                GParamSpec   *pspec)
 {
   RtfmGirPackage *self = (RtfmGirPackage *)object;
+  RtfmGirParserContext *context = rtfm_gir_parser_object_get_parser_context (RTFM_GIR_PARSER_OBJECT (self));
 
   switch (prop_id)
     {
     case PROP_NAME:
-      g_free (self->name);
-      self->name = g_value_dup_string (value);
+      self->name = rtfm_gir_parser_context_intern_string (context, g_value_get_string (value));
       break;
 
     default:
@@ -121,9 +126,6 @@ rtfm_gir_package_set_property (GObject      *object,
 static void
 rtfm_gir_package_finalize (GObject *object)
 {
-  RtfmGirPackage *self = (RtfmGirPackage *)object;
-
-  g_clear_pointer (&self->name, g_free);
 
   G_OBJECT_CLASS (rtfm_gir_package_parent_class)->finalize (object);
 }
@@ -165,7 +167,9 @@ rtfm_gir_package_get_name (RtfmGirPackage *self)
 }
 
 RtfmGirPackage *
-rtfm_gir_package_new (void)
+rtfm_gir_package_new (RtfmGirParserContext *parser_context)
 {
-  return g_object_new (RTFM_GIR_TYPE_PACKAGE, NULL);
+  return g_object_new (RTFM_GIR_TYPE_PACKAGE,
+                       "parser-context", parser_context,
+                       NULL);
 }

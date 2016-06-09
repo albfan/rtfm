@@ -23,7 +23,7 @@
 
 G_BEGIN_DECLS
 
-RtfmGirType *rtfm_gir_type_new (void);
+RtfmGirType *rtfm_gir_type_new (RtfmGirParserContext *parser_context);
 
 const gchar *rtfm_gir_type_get_name (RtfmGirType *self);
 

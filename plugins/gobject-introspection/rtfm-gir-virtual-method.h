@@ -23,7 +23,7 @@
 
 G_BEGIN_DECLS
 
-RtfmGirVirtualMethod *rtfm_gir_virtual_method_new (void);
+RtfmGirVirtualMethod *rtfm_gir_virtual_method_new (RtfmGirParserContext *parser_context);
 
 const gchar *rtfm_gir_virtual_method_get_introspectable (RtfmGirVirtualMethod *self);
 

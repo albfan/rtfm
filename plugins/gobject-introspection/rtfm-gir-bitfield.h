@@ -23,7 +23,7 @@
 
 G_BEGIN_DECLS
 
-RtfmGirBitfield *rtfm_gir_bitfield_new (void);
+RtfmGirBitfield *rtfm_gir_bitfield_new (RtfmGirParserContext *parser_context);
 
 const gchar *rtfm_gir_bitfield_get_introspectable (RtfmGirBitfield *self);
 

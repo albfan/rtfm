@@ -23,7 +23,7 @@
 
 G_BEGIN_DECLS
 
-RtfmGirPrerequisite *rtfm_gir_prerequisite_new (void);
+RtfmGirPrerequisite *rtfm_gir_prerequisite_new (RtfmGirParserContext *parser_context);
 
 const gchar *rtfm_gir_prerequisite_get_name (RtfmGirPrerequisite *self);
 

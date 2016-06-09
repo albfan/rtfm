@@ -87,7 +87,9 @@ rtfm_gir_varargs_init (RtfmGirVarargs *self)
 }
 
 RtfmGirVarargs *
-rtfm_gir_varargs_new (void)
+rtfm_gir_varargs_new (RtfmGirParserContext *parser_context)
 {
-  return g_object_new (RTFM_GIR_TYPE_VARARGS, NULL);
+  return g_object_new (RTFM_GIR_TYPE_VARARGS,
+                       "parser-context", parser_context,
+                       NULL);
 }

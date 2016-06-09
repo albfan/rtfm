@@ -50,6 +50,7 @@ rtfm_gir_parameters_start_element (GMarkupParseContext *context,
                                    GError **error)
 {
   RtfmGirParameters *self = user_data;
+  RtfmGirParserContext *parser_context;
 
   g_assert (RTFM_GIR_IS_PARAMETERS (self));
   g_assert (context != NULL);
@@ -57,12 +58,14 @@ rtfm_gir_parameters_start_element (GMarkupParseContext *context,
   g_assert (attribute_names != NULL);
   g_assert (attribute_values != NULL);
 
+  parser_context = rtfm_gir_parser_object_get_parser_context (RTFM_GIR_PARSER_OBJECT (self));
+
   if (FALSE) {}
   else if (g_str_equal (element_name, "parameter"))
     {
       g_autoptr(RtfmGirParameter) child = NULL;
 
-      child = rtfm_gir_parameter_new ();
+      child = rtfm_gir_parameter_new (parser_context);
 
       if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
         return;
@@ -73,7 +76,7 @@ rtfm_gir_parameters_start_element (GMarkupParseContext *context,
     {
       g_autoptr(RtfmGirInstanceParameter) child = NULL;
 
-      child = rtfm_gir_instance_parameter_new ();
+      child = rtfm_gir_instance_parameter_new (parser_context);
 
       if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
         return;
@@ -192,7 +195,9 @@ rtfm_gir_parameters_init (RtfmGirParameters *self)
 }
 
 RtfmGirParameters *
-rtfm_gir_parameters_new (void)
+rtfm_gir_parameters_new (RtfmGirParserContext *parser_context)
 {
-  return g_object_new (RTFM_GIR_TYPE_PARAMETERS, NULL);
+  return g_object_new (RTFM_GIR_TYPE_PARAMETERS,
+                       "parser-context", parser_context,
+                       NULL);
 }

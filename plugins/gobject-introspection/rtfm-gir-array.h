@@ -23,7 +23,7 @@
 
 G_BEGIN_DECLS
 
-RtfmGirArray *rtfm_gir_array_new (void);
+RtfmGirArray *rtfm_gir_array_new (RtfmGirParserContext *parser_context);
 
 const gchar *rtfm_gir_array_get_name (RtfmGirArray *self);
 

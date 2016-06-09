@@ -23,7 +23,7 @@
 
 G_BEGIN_DECLS
 
-RtfmGirDocStability *rtfm_gir_doc_stability_new (void);
+RtfmGirDocStability *rtfm_gir_doc_stability_new (RtfmGirParserContext *parser_context);
 
 const gchar *rtfm_gir_doc_stability_get_xml_space (RtfmGirDocStability *self);
 

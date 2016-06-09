@@ -36,12 +36,12 @@
 struct _RtfmGirNamespace
 {
   GObject parent_instance;
-  gchar *name;
-  gchar *version;
-  gchar *c_identifier_prefixes;
-  gchar *c_symbol_prefixes;
-  gchar *c_prefix;
-  gchar *shared_library;
+  const gchar *name;
+  const gchar *version;
+  const gchar *c_identifier_prefixes;
+  const gchar *c_symbol_prefixes;
+  const gchar *c_prefix;
+  const gchar *shared_library;
   GPtrArray *children;
 };
 
@@ -79,6 +79,7 @@ rtfm_gir_namespace_start_element (GMarkupParseContext *context,
                                   GError **error)
 {
   RtfmGirNamespace *self = user_data;
+  RtfmGirParserContext *parser_context;
 
   g_assert (RTFM_GIR_IS_NAMESPACE (self));
   g_assert (context != NULL);
@@ -86,12 +87,14 @@ rtfm_gir_namespace_start_element (GMarkupParseContext *context,
   g_assert (attribute_names != NULL);
   g_assert (attribute_values != NULL);
 
+  parser_context = rtfm_gir_parser_object_get_parser_context (RTFM_GIR_PARSER_OBJECT (self));
+
   if (FALSE) {}
   else if (g_str_equal (element_name, "alias"))
     {
       g_autoptr(RtfmGirAlias) child = NULL;
 
-      child = rtfm_gir_alias_new ();
+      child = rtfm_gir_alias_new (parser_context);
 
       if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
         return;
@@ -102,7 +105,7 @@ rtfm_gir_namespace_start_element (GMarkupParseContext *context,
     {
       g_autoptr(RtfmGirClass) child = NULL;
 
-      child = rtfm_gir_class_new ();
+      child = rtfm_gir_class_new (parser_context);
 
       if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
         return;
@@ -113,7 +116,7 @@ rtfm_gir_namespace_start_element (GMarkupParseContext *context,
     {
       g_autoptr(RtfmGirInterface) child = NULL;
 
-      child = rtfm_gir_interface_new ();
+      child = rtfm_gir_interface_new (parser_context);
 
       if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
         return;
@@ -124,7 +127,7 @@ rtfm_gir_namespace_start_element (GMarkupParseContext *context,
     {
       g_autoptr(RtfmGirRecord) child = NULL;
 
-      child = rtfm_gir_record_new ();
+      child = rtfm_gir_record_new (parser_context);
 
       if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
         return;
@@ -135,7 +138,7 @@ rtfm_gir_namespace_start_element (GMarkupParseContext *context,
     {
       g_autoptr(RtfmGirEnumeration) child = NULL;
 
-      child = rtfm_gir_enumeration_new ();
+      child = rtfm_gir_enumeration_new (parser_context);
 
       if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
         return;
@@ -146,7 +149,7 @@ rtfm_gir_namespace_start_element (GMarkupParseContext *context,
     {
       g_autoptr(RtfmGirFunction) child = NULL;
 
-      child = rtfm_gir_function_new ();
+      child = rtfm_gir_function_new (parser_context);
 
       if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
         return;
@@ -157,7 +160,7 @@ rtfm_gir_namespace_start_element (GMarkupParseContext *context,
     {
       g_autoptr(RtfmGirUnion) child = NULL;
 
-      child = rtfm_gir_union_new ();
+      child = rtfm_gir_union_new (parser_context);
 
       if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
         return;
@@ -168,7 +171,7 @@ rtfm_gir_namespace_start_element (GMarkupParseContext *context,
     {
       g_autoptr(RtfmGirBitfield) child = NULL;
 
-      child = rtfm_gir_bitfield_new ();
+      child = rtfm_gir_bitfield_new (parser_context);
 
       if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
         return;
@@ -179,7 +182,7 @@ rtfm_gir_namespace_start_element (GMarkupParseContext *context,
     {
       g_autoptr(RtfmGirCallback) child = NULL;
 
-      child = rtfm_gir_callback_new ();
+      child = rtfm_gir_callback_new (parser_context);
 
       if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
         return;
@@ -190,7 +193,7 @@ rtfm_gir_namespace_start_element (GMarkupParseContext *context,
     {
       g_autoptr(RtfmGirConstant) child = NULL;
 
-      child = rtfm_gir_constant_new ();
+      child = rtfm_gir_constant_new (parser_context);
 
       if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
         return;
@@ -201,7 +204,7 @@ rtfm_gir_namespace_start_element (GMarkupParseContext *context,
     {
       g_autoptr(RtfmGirAnnotation) child = NULL;
 
-      child = rtfm_gir_annotation_new ();
+      child = rtfm_gir_annotation_new (parser_context);
 
       if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
         return;
@@ -212,7 +215,7 @@ rtfm_gir_namespace_start_element (GMarkupParseContext *context,
     {
       g_autoptr(RtfmGirGlibBoxed) child = NULL;
 
-      child = rtfm_gir_glib_boxed_new ();
+      child = rtfm_gir_glib_boxed_new (parser_context);
 
       if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
         return;
@@ -295,26 +298,36 @@ rtfm_gir_namespace_ingest (RtfmGirParserObject *object,
                            GError **error)
 {
   RtfmGirNamespace *self = (RtfmGirNamespace *)object;
+  RtfmGirParserContext *parser_context;
+  const gchar *name = NULL;
+  const gchar *version = NULL;
+  const gchar *c_identifier_prefixes = NULL;
+  const gchar *c_symbol_prefixes = NULL;
+  const gchar *c_prefix = NULL;
+  const gchar *shared_library = NULL;
 
   g_assert (RTFM_GIR_IS_NAMESPACE (self));
   g_assert (g_str_equal (element_name, "namespace"));
 
-  g_clear_pointer (&self->name, g_free);
-  g_clear_pointer (&self->version, g_free);
-  g_clear_pointer (&self->c_identifier_prefixes, g_free);
-  g_clear_pointer (&self->c_symbol_prefixes, g_free);
-  g_clear_pointer (&self->c_prefix, g_free);
-  g_clear_pointer (&self->shared_library, g_free);
+  parser_context = rtfm_gir_parser_object_get_parser_context (RTFM_GIR_PARSER_OBJECT (self));
+
 
   if (!rtfm_gir_g_markup_collect_attributes (element_name, attribute_names, attribute_values, error,
-                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "name", &self->name,
-                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "version", &self->version,
-                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "c:identifier-prefixes", &self->c_identifier_prefixes,
-                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "c:symbol-prefixes", &self->c_symbol_prefixes,
-                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "c:prefix", &self->c_prefix,
-                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "shared-library", &self->shared_library,
+                                             G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "name", &name,
+                                             G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "version", &version,
+                                             G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "c:identifier-prefixes", &c_identifier_prefixes,
+                                             G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "c:symbol-prefixes", &c_symbol_prefixes,
+                                             G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "c:prefix", &c_prefix,
+                                             G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "shared-library", &shared_library,
                                              G_MARKUP_COLLECT_INVALID, NULL, NULL))
     return FALSE;
+
+  self->name = rtfm_gir_parser_context_intern_string (parser_context, name);
+  self->version = rtfm_gir_parser_context_intern_string (parser_context, version);
+  self->c_identifier_prefixes = rtfm_gir_parser_context_intern_string (parser_context, c_identifier_prefixes);
+  self->c_symbol_prefixes = rtfm_gir_parser_context_intern_string (parser_context, c_symbol_prefixes);
+  self->c_prefix = rtfm_gir_parser_context_intern_string (parser_context, c_prefix);
+  self->shared_library = rtfm_gir_parser_context_intern_string (parser_context, shared_library);
 
   g_markup_parse_context_push (context, &markup_parser, self);
 
@@ -411,37 +424,32 @@ rtfm_gir_namespace_set_property (GObject      *object,
                                  GParamSpec   *pspec)
 {
   RtfmGirNamespace *self = (RtfmGirNamespace *)object;
+  RtfmGirParserContext *context = rtfm_gir_parser_object_get_parser_context (RTFM_GIR_PARSER_OBJECT (self));
 
   switch (prop_id)
     {
     case PROP_NAME:
-      g_free (self->name);
-      self->name = g_value_dup_string (value);
+      self->name = rtfm_gir_parser_context_intern_string (context, g_value_get_string (value));
       break;
 
     case PROP_VERSION:
-      g_free (self->version);
-      self->version = g_value_dup_string (value);
+      self->version = rtfm_gir_parser_context_intern_string (context, g_value_get_string (value));
       break;
 
     case PROP_C_IDENTIFIER_PREFIXES:
-      g_free (self->c_identifier_prefixes);
-      self->c_identifier_prefixes = g_value_dup_string (value);
+      self->c_identifier_prefixes = rtfm_gir_parser_context_intern_string (context, g_value_get_string (value));
       break;
 
     case PROP_C_SYMBOL_PREFIXES:
-      g_free (self->c_symbol_prefixes);
-      self->c_symbol_prefixes = g_value_dup_string (value);
+      self->c_symbol_prefixes = rtfm_gir_parser_context_intern_string (context, g_value_get_string (value));
       break;
 
     case PROP_C_PREFIX:
-      g_free (self->c_prefix);
-      self->c_prefix = g_value_dup_string (value);
+      self->c_prefix = rtfm_gir_parser_context_intern_string (context, g_value_get_string (value));
       break;
 
     case PROP_SHARED_LIBRARY:
-      g_free (self->shared_library);
-      self->shared_library = g_value_dup_string (value);
+      self->shared_library = rtfm_gir_parser_context_intern_string (context, g_value_get_string (value));
       break;
 
     default:
@@ -454,12 +462,6 @@ rtfm_gir_namespace_finalize (GObject *object)
 {
   RtfmGirNamespace *self = (RtfmGirNamespace *)object;
 
-  g_clear_pointer (&self->name, g_free);
-  g_clear_pointer (&self->version, g_free);
-  g_clear_pointer (&self->c_identifier_prefixes, g_free);
-  g_clear_pointer (&self->c_symbol_prefixes, g_free);
-  g_clear_pointer (&self->c_prefix, g_free);
-  g_clear_pointer (&self->shared_library, g_free);
   g_clear_pointer (&self->children, g_ptr_array_unref);
 
   G_OBJECT_CLASS (rtfm_gir_namespace_parent_class)->finalize (object);
@@ -579,7 +581,9 @@ rtfm_gir_namespace_get_shared_library (RtfmGirNamespace *self)
 }
 
 RtfmGirNamespace *
-rtfm_gir_namespace_new (void)
+rtfm_gir_namespace_new (RtfmGirParserContext *parser_context)
 {
-  return g_object_new (RTFM_GIR_TYPE_NAMESPACE, NULL);
+  return g_object_new (RTFM_GIR_TYPE_NAMESPACE,
+                       "parser-context", parser_context,
+                       NULL);
 }

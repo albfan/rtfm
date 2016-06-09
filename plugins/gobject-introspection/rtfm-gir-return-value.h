@@ -23,7 +23,7 @@
 
 G_BEGIN_DECLS
 
-RtfmGirReturnValue *rtfm_gir_return_value_new (void);
+RtfmGirReturnValue *rtfm_gir_return_value_new (RtfmGirParserContext *parser_context);
 
 const gchar *rtfm_gir_return_value_get_introspectable (RtfmGirReturnValue *self);
 

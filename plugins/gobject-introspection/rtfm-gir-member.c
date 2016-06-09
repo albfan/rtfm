@@ -29,15 +29,15 @@
 struct _RtfmGirMember
 {
   GObject parent_instance;
-  gchar *introspectable;
-  gchar *deprecated;
-  gchar *deprecated_version;
-  gchar *version;
-  gchar *stability;
-  gchar *name;
-  gchar *value;
-  gchar *c_identifier;
-  gchar *glib_nick;
+  const gchar *introspectable;
+  const gchar *deprecated;
+  const gchar *deprecated_version;
+  const gchar *version;
+  const gchar *stability;
+  const gchar *name;
+  const gchar *value;
+  const gchar *c_identifier;
+  const gchar *glib_nick;
   GPtrArray *children;
 };
 
@@ -78,6 +78,7 @@ rtfm_gir_member_start_element (GMarkupParseContext *context,
                                GError **error)
 {
   RtfmGirMember *self = user_data;
+  RtfmGirParserContext *parser_context;
 
   g_assert (RTFM_GIR_IS_MEMBER (self));
   g_assert (context != NULL);
@@ -85,12 +86,14 @@ rtfm_gir_member_start_element (GMarkupParseContext *context,
   g_assert (attribute_names != NULL);
   g_assert (attribute_values != NULL);
 
+  parser_context = rtfm_gir_parser_object_get_parser_context (RTFM_GIR_PARSER_OBJECT (self));
+
   if (FALSE) {}
   else if (g_str_equal (element_name, "doc-version"))
     {
       g_autoptr(RtfmGirDocVersion) child = NULL;
 
-      child = rtfm_gir_doc_version_new ();
+      child = rtfm_gir_doc_version_new (parser_context);
 
       if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
         return;
@@ -101,7 +104,7 @@ rtfm_gir_member_start_element (GMarkupParseContext *context,
     {
       g_autoptr(RtfmGirDocStability) child = NULL;
 
-      child = rtfm_gir_doc_stability_new ();
+      child = rtfm_gir_doc_stability_new (parser_context);
 
       if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
         return;
@@ -112,7 +115,7 @@ rtfm_gir_member_start_element (GMarkupParseContext *context,
     {
       g_autoptr(RtfmGirDoc) child = NULL;
 
-      child = rtfm_gir_doc_new ();
+      child = rtfm_gir_doc_new (parser_context);
 
       if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
         return;
@@ -123,7 +126,7 @@ rtfm_gir_member_start_element (GMarkupParseContext *context,
     {
       g_autoptr(RtfmGirDocDeprecated) child = NULL;
 
-      child = rtfm_gir_doc_deprecated_new ();
+      child = rtfm_gir_doc_deprecated_new (parser_context);
 
       if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
         return;
@@ -134,7 +137,7 @@ rtfm_gir_member_start_element (GMarkupParseContext *context,
     {
       g_autoptr(RtfmGirAnnotation) child = NULL;
 
-      child = rtfm_gir_annotation_new ();
+      child = rtfm_gir_annotation_new (parser_context);
 
       if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
         return;
@@ -189,32 +192,45 @@ rtfm_gir_member_ingest (RtfmGirParserObject *object,
                         GError **error)
 {
   RtfmGirMember *self = (RtfmGirMember *)object;
+  RtfmGirParserContext *parser_context;
+  const gchar *introspectable = NULL;
+  const gchar *deprecated = NULL;
+  const gchar *deprecated_version = NULL;
+  const gchar *version = NULL;
+  const gchar *stability = NULL;
+  const gchar *name = NULL;
+  const gchar *value = NULL;
+  const gchar *c_identifier = NULL;
+  const gchar *glib_nick = NULL;
 
   g_assert (RTFM_GIR_IS_MEMBER (self));
   g_assert (g_str_equal (element_name, "member"));
 
-  g_clear_pointer (&self->introspectable, g_free);
-  g_clear_pointer (&self->deprecated, g_free);
-  g_clear_pointer (&self->deprecated_version, g_free);
-  g_clear_pointer (&self->version, g_free);
-  g_clear_pointer (&self->stability, g_free);
-  g_clear_pointer (&self->name, g_free);
-  g_clear_pointer (&self->value, g_free);
-  g_clear_pointer (&self->c_identifier, g_free);
-  g_clear_pointer (&self->glib_nick, g_free);
+  parser_context = rtfm_gir_parser_object_get_parser_context (RTFM_GIR_PARSER_OBJECT (self));
+
 
   if (!rtfm_gir_g_markup_collect_attributes (element_name, attribute_names, attribute_values, error,
-                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "introspectable", &self->introspectable,
-                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "deprecated", &self->deprecated,
-                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "deprecated-version", &self->deprecated_version,
-                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "version", &self->version,
-                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "stability", &self->stability,
-                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "name", &self->name,
-                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "value", &self->value,
-                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "c:identifier", &self->c_identifier,
-                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "glib:nick", &self->glib_nick,
+                                             G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "introspectable", &introspectable,
+                                             G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "deprecated", &deprecated,
+                                             G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "deprecated-version", &deprecated_version,
+                                             G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "version", &version,
+                                             G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "stability", &stability,
+                                             G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "name", &name,
+                                             G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "value", &value,
+                                             G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "c:identifier", &c_identifier,
+                                             G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "glib:nick", &glib_nick,
                                              G_MARKUP_COLLECT_INVALID, NULL, NULL))
     return FALSE;
+
+  self->introspectable = rtfm_gir_parser_context_intern_string (parser_context, introspectable);
+  self->deprecated = rtfm_gir_parser_context_intern_string (parser_context, deprecated);
+  self->deprecated_version = rtfm_gir_parser_context_intern_string (parser_context, deprecated_version);
+  self->version = rtfm_gir_parser_context_intern_string (parser_context, version);
+  self->stability = rtfm_gir_parser_context_intern_string (parser_context, stability);
+  self->name = rtfm_gir_parser_context_intern_string (parser_context, name);
+  self->value = rtfm_gir_parser_context_intern_string (parser_context, value);
+  self->c_identifier = rtfm_gir_parser_context_intern_string (parser_context, c_identifier);
+  self->glib_nick = rtfm_gir_parser_context_intern_string (parser_context, glib_nick);
 
   g_markup_parse_context_push (context, &markup_parser, self);
 
@@ -329,52 +345,44 @@ rtfm_gir_member_set_property (GObject      *object,
                               GParamSpec   *pspec)
 {
   RtfmGirMember *self = (RtfmGirMember *)object;
+  RtfmGirParserContext *context = rtfm_gir_parser_object_get_parser_context (RTFM_GIR_PARSER_OBJECT (self));
 
   switch (prop_id)
     {
     case PROP_INTROSPECTABLE:
-      g_free (self->introspectable);
-      self->introspectable = g_value_dup_string (value);
+      self->introspectable = rtfm_gir_parser_context_intern_string (context, g_value_get_string (value));
       break;
 
     case PROP_DEPRECATED:
-      g_free (self->deprecated);
-      self->deprecated = g_value_dup_string (value);
+      self->deprecated = rtfm_gir_parser_context_intern_string (context, g_value_get_string (value));
       break;
 
     case PROP_DEPRECATED_VERSION:
-      g_free (self->deprecated_version);
-      self->deprecated_version = g_value_dup_string (value);
+      self->deprecated_version = rtfm_gir_parser_context_intern_string (context, g_value_get_string (value));
       break;
 
     case PROP_VERSION:
-      g_free (self->version);
-      self->version = g_value_dup_string (value);
+      self->version = rtfm_gir_parser_context_intern_string (context, g_value_get_string (value));
       break;
 
     case PROP_STABILITY:
-      g_free (self->stability);
-      self->stability = g_value_dup_string (value);
+      self->stability = rtfm_gir_parser_context_intern_string (context, g_value_get_string (value));
       break;
 
     case PROP_NAME:
-      g_free (self->name);
-      self->name = g_value_dup_string (value);
+      self->name = rtfm_gir_parser_context_intern_string (context, g_value_get_string (value));
       break;
 
     case PROP_VALUE:
-      g_free (self->value);
-      self->value = g_value_dup_string (value);
+      self->value = rtfm_gir_parser_context_intern_string (context, g_value_get_string (value));
       break;
 
     case PROP_C_IDENTIFIER:
-      g_free (self->c_identifier);
-      self->c_identifier = g_value_dup_string (value);
+      self->c_identifier = rtfm_gir_parser_context_intern_string (context, g_value_get_string (value));
       break;
 
     case PROP_GLIB_NICK:
-      g_free (self->glib_nick);
-      self->glib_nick = g_value_dup_string (value);
+      self->glib_nick = rtfm_gir_parser_context_intern_string (context, g_value_get_string (value));
       break;
 
     default:
@@ -387,15 +395,6 @@ rtfm_gir_member_finalize (GObject *object)
 {
   RtfmGirMember *self = (RtfmGirMember *)object;
 
-  g_clear_pointer (&self->introspectable, g_free);
-  g_clear_pointer (&self->deprecated, g_free);
-  g_clear_pointer (&self->deprecated_version, g_free);
-  g_clear_pointer (&self->version, g_free);
-  g_clear_pointer (&self->stability, g_free);
-  g_clear_pointer (&self->name, g_free);
-  g_clear_pointer (&self->value, g_free);
-  g_clear_pointer (&self->c_identifier, g_free);
-  g_clear_pointer (&self->glib_nick, g_free);
   g_clear_pointer (&self->children, g_ptr_array_unref);
 
   G_OBJECT_CLASS (rtfm_gir_member_parent_class)->finalize (object);
@@ -560,7 +559,9 @@ rtfm_gir_member_get_glib_nick (RtfmGirMember *self)
 }
 
 RtfmGirMember *
-rtfm_gir_member_new (void)
+rtfm_gir_member_new (RtfmGirParserContext *parser_context)
 {
-  return g_object_new (RTFM_GIR_TYPE_MEMBER, NULL);
+  return g_object_new (RTFM_GIR_TYPE_MEMBER,
+                       "parser-context", parser_context,
+                       NULL);
 }

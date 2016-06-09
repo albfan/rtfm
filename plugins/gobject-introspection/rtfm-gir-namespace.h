@@ -23,7 +23,7 @@
 
 G_BEGIN_DECLS
 
-RtfmGirNamespace *rtfm_gir_namespace_new (void);
+RtfmGirNamespace *rtfm_gir_namespace_new (RtfmGirParserContext *parser_context);
 
 const gchar *rtfm_gir_namespace_get_name (RtfmGirNamespace *self);
 
