@@ -147,6 +147,8 @@ rtfm_gir_prerequisite_class_init (RtfmGirPrerequisiteClass *klass)
                          "name",
                          NULL,
                          (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  g_object_class_install_properties (object_class, N_PROPS, properties);
 }
 
 static void

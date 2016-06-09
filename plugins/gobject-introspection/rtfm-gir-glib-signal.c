@@ -555,6 +555,8 @@ rtfm_gir_glib_signal_class_init (RtfmGirGlibSignalClass *klass)
                          "no-recurse",
                          NULL,
                          (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  g_object_class_install_properties (object_class, N_PROPS, properties);
 }
 
 static void

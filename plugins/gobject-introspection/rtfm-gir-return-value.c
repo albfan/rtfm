@@ -474,6 +474,8 @@ rtfm_gir_return_value_class_init (RtfmGirReturnValueClass *klass)
                          "transfer-ownership",
                          NULL,
                          (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  g_object_class_install_properties (object_class, N_PROPS, properties);
 }
 
 static void

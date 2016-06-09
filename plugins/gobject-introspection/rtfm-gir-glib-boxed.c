@@ -493,6 +493,8 @@ rtfm_gir_glib_boxed_class_init (RtfmGirGlibBoxedClass *klass)
                          "glib-get-type",
                          NULL,
                          (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  g_object_class_install_properties (object_class, N_PROPS, properties);
 }
 
 static void

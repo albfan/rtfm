@@ -543,6 +543,8 @@ rtfm_gir_function_class_init (RtfmGirFunctionClass *klass)
                          "moved-to",
                          NULL,
                          (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  g_object_class_install_properties (object_class, N_PROPS, properties);
 }
 
 static void

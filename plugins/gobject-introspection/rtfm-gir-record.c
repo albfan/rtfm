@@ -665,6 +665,8 @@ rtfm_gir_record_class_init (RtfmGirRecordClass *klass)
                          "glib-is-gtype-struct-for",
                          NULL,
                          (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  g_object_class_install_properties (object_class, N_PROPS, properties);
 }
 
 static void

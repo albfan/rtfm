@@ -364,6 +364,8 @@ rtfm_gir_array_class_init (RtfmGirArrayClass *klass)
                          "c-type",
                          NULL,
                          (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  g_object_class_install_properties (object_class, N_PROPS, properties);
 }
 
 static void
