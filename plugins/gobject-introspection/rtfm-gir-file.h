@@ -28,7 +28,7 @@ G_BEGIN_DECLS
 
 #define RTFM_GIR_TYPE_FILE (rtfm_gir_file_get_type())
 
-G_DECLARE_FINAL_TYPE (RtfmGirFile, rtfm_gir_file, RTFM_GIR, FILE, RtfmGirItem)
+G_DECLARE_FINAL_TYPE (RtfmGirFile, rtfm_gir_file, RTFM_GIR, FILE, GObject)
 
 RtfmGirFile       *rtfm_gir_file_new            (GFile       *file);
 GFile             *rtfm_gir_file_get_file       (RtfmGirFile *self);

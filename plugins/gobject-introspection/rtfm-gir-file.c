@@ -18,6 +18,8 @@
 
 #define G_LOG_DOMAIN "rtfm-gir-file"
 
+#include <string.h>
+
 #include "rtfm-gir-file.h"
 #include "rtfm-gir-parser.h"
 
@@ -39,7 +41,7 @@ static GParamSpec *properties [N_PROPS];
 
 static void async_initable_iface_init (GAsyncInitableIface *iface);
 
-G_DEFINE_TYPE_EXTENDED (RtfmGirFile, rtfm_gir_file, RTFM_TYPE_ITEM, 0,
+G_DEFINE_TYPE_EXTENDED (RtfmGirFile, rtfm_gir_file, G_TYPE_OBJECT, 0,
                         G_IMPLEMENT_INTERFACE (G_TYPE_ASYNC_INITABLE,
                                                async_initable_iface_init))
 
@@ -49,6 +51,7 @@ rtfm_gir_file_finalize (GObject *object)
   RtfmGirFile *self = (RtfmGirFile *)object;
 
   g_clear_object (&self->file);
+  g_clear_object (&self->repository);
 
   G_OBJECT_CLASS (rtfm_gir_file_parent_class)->finalize (object);
 }
