@@ -64,34 +64,26 @@ rtfm_gir_item_new (GObject *object)
   g_autofree gchar *subtitle = NULL;
 
   if (FALSE) { }
-  else if (RTFM_GIR_IS_REPOSITORY (object))
+  else if (RTFM_GIR_IS_FILE (object))
     {
-      g_autoptr(GFile) file = NULL;
-
-      g_object_get (object,
-                    "file", &file,
-                    NULL);
+      GFile *file = rtfm_gir_file_get_file (RTFM_GIR_FILE (object));
+      g_autofree gchar *name = NULL;
 
       icon_name = "lang-namespace-symbolic";
 
-      if (G_IS_FILE (file))
+      if (NULL != (name = g_file_get_basename (file)))
         {
-          g_autofree gchar *name = NULL;
+          gchar *tmp = strrchr (name, '.');
+          g_auto(GStrv) parts = NULL;
 
-          if (NULL != (name = g_file_get_basename (file)))
-            {
-              gchar *tmp = strrchr (name, '.');
-              g_auto(GStrv) parts = NULL;
+          if (tmp != NULL)
+            *tmp = '\0';
 
-              if (tmp != NULL)
-                *tmp = '\0';
-
-              id = g_strdup_printf ("gir:%s", name);
-              parts = g_strsplit (name, "-", 0);
-              title = g_strdup (parts[0]);
-              if (g_strv_length (parts) > 1)
-                subtitle = g_strdup_printf ("%s %s", parts[0], parts[1]);
-            }
+          id = g_strdup_printf ("gir:%s", name);
+          parts = g_strsplit (name, "-", 0);
+          title = g_strdup (parts[0]);
+          if (g_strv_length (parts) > 1)
+            subtitle = g_strdup_printf ("%s %s", parts[0], parts[1]);
         }
     }
   else if (RTFM_GIR_IS_ALIAS (object))
