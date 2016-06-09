@@ -19,15 +19,14 @@
 #ifndef RTFM_GIR_PACKAGE_H
 #define RTFM_GIR_PACKAGE_H
 
-#include "rtfm-gir-base.h"
+#include "rtfm-gir-parser-types.h"
 
 G_BEGIN_DECLS
 
-#define RTFM_TYPE_GIR_PACKAGE (rtfm_gir_package_get_type())
+RtfmGirPackage *rtfm_gir_package_new (void);
 
-G_DECLARE_FINAL_TYPE (RtfmGirPackage, rtfm_gir_package, RTFM, GIR_PACKAGE, RtfmGirBase)
-
+const gchar *rtfm_gir_package_get_name (RtfmGirPackage *self);
 
 G_END_DECLS
 
-#endif /* RTFM_GIR_PACKAGE_H */
+#endif /* RTFM_GIR_PACKAGE */

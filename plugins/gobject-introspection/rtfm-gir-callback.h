@@ -19,19 +19,28 @@
 #ifndef RTFM_GIR_CALLBACK_H
 #define RTFM_GIR_CALLBACK_H
 
-#include "rtfm-gir-base.h"
-#include "rtfm-gir-parameters.h"
-#include "rtfm-gir-return-value.h"
+#include "rtfm-gir-parser-types.h"
 
 G_BEGIN_DECLS
 
-#define RTFM_TYPE_GIR_CALLBACK (rtfm_gir_callback_get_type())
+RtfmGirCallback *rtfm_gir_callback_new (void);
 
-G_DECLARE_FINAL_TYPE (RtfmGirCallback, rtfm_gir_callback, RTFM, GIR_CALLBACK, RtfmGirBase)
+const gchar *rtfm_gir_callback_get_introspectable (RtfmGirCallback *self);
 
-RtfmGirParameters *rtfm_gir_callback_get_parameters (RtfmGirCallback *self);
-RtfmGirReturnValue *rtfm_gir_callback_get_return_value (RtfmGirCallback *self);
+const gchar *rtfm_gir_callback_get_deprecated (RtfmGirCallback *self);
+
+const gchar *rtfm_gir_callback_get_deprecated_version (RtfmGirCallback *self);
+
+const gchar *rtfm_gir_callback_get_version (RtfmGirCallback *self);
+
+const gchar *rtfm_gir_callback_get_stability (RtfmGirCallback *self);
+
+const gchar *rtfm_gir_callback_get_name (RtfmGirCallback *self);
+
+const gchar *rtfm_gir_callback_get_c_type (RtfmGirCallback *self);
+
+const gchar *rtfm_gir_callback_get_throws (RtfmGirCallback *self);
 
 G_END_DECLS
 
-#endif /* RTFM_GIR_CALLBACK_H */
+#endif /* RTFM_GIR_CALLBACK */

@@ -90,7 +90,7 @@ rtfm_gir_view_addin_set_item (RtfmViewAddin *addin,
   g_assert (RTFM_IS_VIEW_ADDIN (self));
   g_assert (!item || RTFM_IS_ITEM (item));
 
-  if (RTFM_IS_GIR_ITEM (item))
+  if (RTFM_GIR_IS_ITEM (item))
     {
       GObject *object = rtfm_gir_item_get_object (RTFM_GIR_ITEM (item));
 

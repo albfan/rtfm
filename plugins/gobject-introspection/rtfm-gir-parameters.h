@@ -19,18 +19,12 @@
 #ifndef RTFM_GIR_PARAMETERS_H
 #define RTFM_GIR_PARAMETERS_H
 
-#include "rtfm-gir-base.h"
-#include "rtfm-gir-parameter.h"
+#include "rtfm-gir-parser-types.h"
 
 G_BEGIN_DECLS
 
-#define RTFM_TYPE_GIR_PARAMETERS (rtfm_gir_parameters_get_type())
-
-G_DECLARE_FINAL_TYPE (RtfmGirParameters, rtfm_gir_parameters, RTFM, GIR_PARAMETERS, RtfmGirBase)
-
-gboolean   rtfm_gir_parameters_has_parameters (RtfmGirParameters *self);
-GPtrArray *rtfm_gir_parameters_get_parameters (RtfmGirParameters *self);
+RtfmGirParameters *rtfm_gir_parameters_new (void);
 
 G_END_DECLS
 
-#endif /* RTFM_GIR_PARAMETERS_H */
+#endif /* RTFM_GIR_PARAMETERS */

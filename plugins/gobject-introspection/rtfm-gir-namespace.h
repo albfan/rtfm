@@ -19,43 +19,24 @@
 #ifndef RTFM_GIR_NAMESPACE_H
 #define RTFM_GIR_NAMESPACE_H
 
-#include <fuzzy-glib.h>
-
-#include "rtfm-gir-base.h"
-#include "rtfm-gir-alias.h"
-#include "rtfm-gir-bitfield.h"
-#include "rtfm-gir-callback.h"
-#include "rtfm-gir-class.h"
-#include "rtfm-gir-constant.h"
-#include "rtfm-gir-enumeration.h"
-#include "rtfm-gir-function.h"
-#include "rtfm-gir-record.h"
+#include "rtfm-gir-parser-types.h"
 
 G_BEGIN_DECLS
 
-#define RTFM_TYPE_GIR_NAMESPACE (rtfm_gir_namespace_get_type())
+RtfmGirNamespace *rtfm_gir_namespace_new (void);
 
-G_DECLARE_FINAL_TYPE (RtfmGirNamespace, rtfm_gir_namespace, RTFM, GIR_NAMESPACE, RtfmGirBase)
+const gchar *rtfm_gir_namespace_get_name (RtfmGirNamespace *self);
 
-gboolean   rtfm_gir_namespace_has_aliases (RtfmGirNamespace *self);
-GPtrArray *rtfm_gir_namespace_get_aliases (RtfmGirNamespace *self);
-gboolean   rtfm_gir_namespace_has_bitfields (RtfmGirNamespace *self);
-GPtrArray *rtfm_gir_namespace_get_bitfields (RtfmGirNamespace *self);
-gboolean   rtfm_gir_namespace_has_callbacks (RtfmGirNamespace *self);
-GPtrArray *rtfm_gir_namespace_get_callbacks (RtfmGirNamespace *self);
-gboolean   rtfm_gir_namespace_has_classes (RtfmGirNamespace *self);
-GPtrArray *rtfm_gir_namespace_get_classes (RtfmGirNamespace *self);
-gboolean   rtfm_gir_namespace_has_constants (RtfmGirNamespace *self);
-GPtrArray *rtfm_gir_namespace_get_constants (RtfmGirNamespace *self);
-gboolean   rtfm_gir_namespace_has_enumerations (RtfmGirNamespace *self);
-GPtrArray *rtfm_gir_namespace_get_enumerations (RtfmGirNamespace *self);
-gboolean   rtfm_gir_namespace_has_functions (RtfmGirNamespace *self);
-GPtrArray *rtfm_gir_namespace_get_functions (RtfmGirNamespace *self);
-gboolean   rtfm_gir_namespace_has_records (RtfmGirNamespace *self);
-GPtrArray *rtfm_gir_namespace_get_records (RtfmGirNamespace *self);
-void rtfm_gir_namespace_build_index (RtfmGirNamespace  *self,
-                                     FuzzyIndexBuilder *builder);
+const gchar *rtfm_gir_namespace_get_version (RtfmGirNamespace *self);
+
+const gchar *rtfm_gir_namespace_get_c_identifier_prefixes (RtfmGirNamespace *self);
+
+const gchar *rtfm_gir_namespace_get_c_symbol_prefixes (RtfmGirNamespace *self);
+
+const gchar *rtfm_gir_namespace_get_c_prefix (RtfmGirNamespace *self);
+
+const gchar *rtfm_gir_namespace_get_shared_library (RtfmGirNamespace *self);
 
 G_END_DECLS
 
-#endif /* RTFM_GIR_NAMESPACE_H */
+#endif /* RTFM_GIR_NAMESPACE */

@@ -19,39 +19,48 @@
 #ifndef RTFM_GIR_CLASS_H
 #define RTFM_GIR_CLASS_H
 
-#include "rtfm-gir-base.h"
-#include "rtfm-gir-field.h"
-#include "rtfm-gir-implements.h"
-#include "rtfm-gir-method.h"
-#include "rtfm-gir-function.h"
-#include "rtfm-gir-virtual-method.h"
-#include "rtfm-gir-property.h"
-#include "rtfm-gir-constructor.h"
-#include "rtfm-gir-union.h"
+#include "rtfm-gir-parser-types.h"
 
 G_BEGIN_DECLS
 
-#define RTFM_TYPE_GIR_CLASS (rtfm_gir_class_get_type())
+RtfmGirClass *rtfm_gir_class_new (void);
 
-G_DECLARE_FINAL_TYPE (RtfmGirClass, rtfm_gir_class, RTFM, GIR_CLASS, RtfmGirBase)
+const gchar *rtfm_gir_class_get_introspectable (RtfmGirClass *self);
 
-gboolean   rtfm_gir_class_has_fields (RtfmGirClass *self);
-GPtrArray *rtfm_gir_class_get_fields (RtfmGirClass *self);
-gboolean   rtfm_gir_class_has_implements (RtfmGirClass *self);
-GPtrArray *rtfm_gir_class_get_implements (RtfmGirClass *self);
-gboolean   rtfm_gir_class_has_methods (RtfmGirClass *self);
-GPtrArray *rtfm_gir_class_get_methods (RtfmGirClass *self);
-gboolean   rtfm_gir_class_has_functions (RtfmGirClass *self);
-GPtrArray *rtfm_gir_class_get_functions (RtfmGirClass *self);
-gboolean   rtfm_gir_class_has_virtual_methods (RtfmGirClass *self);
-GPtrArray *rtfm_gir_class_get_virtual_methods (RtfmGirClass *self);
-gboolean   rtfm_gir_class_has_properties (RtfmGirClass *self);
-GPtrArray *rtfm_gir_class_get_properties (RtfmGirClass *self);
-gboolean   rtfm_gir_class_has_constructors (RtfmGirClass *self);
-GPtrArray *rtfm_gir_class_get_constructors (RtfmGirClass *self);
-gboolean   rtfm_gir_class_has_unions (RtfmGirClass *self);
-GPtrArray *rtfm_gir_class_get_unions (RtfmGirClass *self);
+const gchar *rtfm_gir_class_get_deprecated (RtfmGirClass *self);
+
+const gchar *rtfm_gir_class_get_deprecated_version (RtfmGirClass *self);
+
+const gchar *rtfm_gir_class_get_version (RtfmGirClass *self);
+
+const gchar *rtfm_gir_class_get_stability (RtfmGirClass *self);
+
+const gchar *rtfm_gir_class_get_name (RtfmGirClass *self);
+
+const gchar *rtfm_gir_class_get_glib_type_name (RtfmGirClass *self);
+
+const gchar *rtfm_gir_class_get_glib_get_type (RtfmGirClass *self);
+
+const gchar *rtfm_gir_class_get_parent (RtfmGirClass *self);
+
+const gchar *rtfm_gir_class_get_glib_type_struct (RtfmGirClass *self);
+
+const gchar *rtfm_gir_class_get_glib_ref_func (RtfmGirClass *self);
+
+const gchar *rtfm_gir_class_get_glib_unref_func (RtfmGirClass *self);
+
+const gchar *rtfm_gir_class_get_glib_set_value_func (RtfmGirClass *self);
+
+const gchar *rtfm_gir_class_get_glib_get_value_func (RtfmGirClass *self);
+
+const gchar *rtfm_gir_class_get_c_type (RtfmGirClass *self);
+
+const gchar *rtfm_gir_class_get_c_symbol_prefix (RtfmGirClass *self);
+
+const gchar *rtfm_gir_class_get_abstract (RtfmGirClass *self);
+
+const gchar *rtfm_gir_class_get_glib_fundamental (RtfmGirClass *self);
 
 G_END_DECLS
 
-#endif /* RTFM_GIR_CLASS_H */
+#endif /* RTFM_GIR_CLASS */

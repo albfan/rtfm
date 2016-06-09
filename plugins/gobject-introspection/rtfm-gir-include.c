@@ -19,27 +19,15 @@
 #define G_LOG_DOMAIN "rtfm-gir-include"
 
 #include "rtfm-gir-include.h"
-#include "rtfm-gir-markup.h"
-
-#if 0
-# define ENTRY     do { g_printerr ("ENTRY: %s(): %d: (%s)\n", G_STRFUNC, __LINE__, element_name); } while (0)
-# define EXIT      do { g_printerr (" EXIT: %s(): %d: (%s)\n", G_STRFUNC, __LINE__, element_name); return; } while (0)
-# define RETURN(r) do { g_printerr (" EXIT: %s(): %d: (%s)\n", G_STRFUNC, __LINE__, element_name); return r; } while (0)
-#else
-# define ENTRY
-# define EXIT return
-# define RETURN(r) do { return r; } while (0)
-#endif
 
 struct _RtfmGirInclude
 {
-  RtfmGirBase base;
-
-  gchar *ingest_element_name;
-
-  const gchar *name;
-  const gchar *version;
+  GObject parent_instance;
+  gchar *name;
+  gchar *version;
 };
+
+G_DEFINE_TYPE (RtfmGirInclude, rtfm_gir_include, RTFM_GIR_TYPE_PARSER_OBJECT)
 
 enum {
   PROP_0,
@@ -50,25 +38,51 @@ enum {
 
 static GParamSpec *properties [N_PROPS];
 
-G_DEFINE_TYPE (RtfmGirInclude, rtfm_gir_include, RTFM_TYPE_GIR_BASE)
-
 static gboolean
-rtfm_gir_include_ingest (RtfmGirBase          *base,
-                         GMarkupParseContext  *context,
-                         const gchar          *element_name,
-                         const gchar         **attribute_names,
-                         const gchar         **attribute_values,
-                         GError              **error);
-
-static void
-rtfm_gir_include_finalize (GObject *object)
+rtfm_gir_include_ingest (RtfmGirParserObject *object,
+                         GMarkupParseContext *context,
+                         const gchar *element_name,
+                         const gchar **attribute_names,
+                         const gchar **attribute_values,
+                         GError **error)
 {
   RtfmGirInclude *self = (RtfmGirInclude *)object;
 
-  self->name = NULL;
-  self->version = NULL;
+  g_assert (RTFM_GIR_IS_INCLUDE (self));
+  g_assert (g_str_equal (element_name, "include"));
 
-  G_OBJECT_CLASS (rtfm_gir_include_parent_class)->finalize (object);
+  g_clear_pointer (&self->name, g_free);
+  g_clear_pointer (&self->version, g_free);
+
+  if (!rtfm_gir_g_markup_collect_attributes (element_name, attribute_names, attribute_values, error,
+                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "name", &self->name,
+                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "version", &self->version,
+                                             G_MARKUP_COLLECT_INVALID, NULL, NULL))
+    return FALSE;
+
+  return TRUE;
+}
+
+static void
+rtfm_gir_include_printf (RtfmGirParserObject *object,
+                         GString *str,
+                         guint depth)
+{
+  RtfmGirInclude *self = (RtfmGirInclude *)object;
+  guint i;
+
+  g_assert (RTFM_GIR_IS_INCLUDE (self));
+
+  for (i = 0; i < depth; i++)
+    g_string_append (str, "  ");
+  g_string_append (str, "<include");
+
+  if (self->name != NULL)
+    g_string_append_printf (str, " name=\"%s\"", self->name);
+  if (self->version != NULL)
+    g_string_append_printf (str, " version=\"%s\"", self->version);
+
+  g_string_append (str, "/>\n");
 }
 
 static void
@@ -95,31 +109,67 @@ rtfm_gir_include_get_property (GObject    *object,
 }
 
 static void
+rtfm_gir_include_set_property (GObject      *object,
+                               guint         prop_id,
+                               const GValue *value,
+                               GParamSpec   *pspec)
+{
+  RtfmGirInclude *self = (RtfmGirInclude *)object;
+
+  switch (prop_id)
+    {
+    case PROP_NAME:
+      g_free (self->name);
+      self->name = g_value_dup_string (value);
+      break;
+
+    case PROP_VERSION:
+      g_free (self->version);
+      self->version = g_value_dup_string (value);
+      break;
+
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+    }
+}
+
+static void
+rtfm_gir_include_finalize (GObject *object)
+{
+  RtfmGirInclude *self = (RtfmGirInclude *)object;
+
+  g_clear_pointer (&self->name, g_free);
+  g_clear_pointer (&self->version, g_free);
+
+  G_OBJECT_CLASS (rtfm_gir_include_parent_class)->finalize (object);
+}
+
+static void
 rtfm_gir_include_class_init (RtfmGirIncludeClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
-  RtfmGirBaseClass *base_class = RTFM_GIR_BASE_CLASS (klass);
+  RtfmGirParserObjectClass *parent_class = RTFM_GIR_PARSER_OBJECT_CLASS (klass);
 
-  object_class->finalize = rtfm_gir_include_finalize;
   object_class->get_property = rtfm_gir_include_get_property;
+  object_class->set_property = rtfm_gir_include_set_property;
+  object_class->finalize = rtfm_gir_include_finalize;
 
-  base_class->ingest = rtfm_gir_include_ingest;
+  parent_class->ingest = rtfm_gir_include_ingest;
+  parent_class->printf = rtfm_gir_include_printf;
 
   properties [PROP_NAME] =
     g_param_spec_string ("name",
                          "name",
                          "name",
                          NULL,
-                         (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   properties [PROP_VERSION] =
     g_param_spec_string ("version",
                          "version",
                          "version",
                          NULL,
-                         (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
-
-  g_object_class_install_properties (object_class, N_PROPS, properties);
+                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 }
 
 static void
@@ -127,42 +177,24 @@ rtfm_gir_include_init (RtfmGirInclude *self)
 {
 }
 
-static gboolean
-rtfm_gir_include_ingest (RtfmGirBase          *base,
-                         GMarkupParseContext  *context,
-                         const gchar          *element_name,
-                         const gchar         **attribute_names,
-                         const gchar         **attribute_values,
-                         GError              **error)
+const gchar *
+rtfm_gir_include_get_name (RtfmGirInclude *self)
 {
-  RtfmGirInclude *self = (RtfmGirInclude *)base;
-  const gchar *name = NULL;
-  const gchar *version = NULL;
+  g_return_val_if_fail (RTFM_GIR_IS_INCLUDE (self), NULL);
 
-  ENTRY;
+  return self->name;
+}
 
-  g_assert (RTFM_IS_GIR_INCLUDE (self));
-  g_assert (context != NULL);
-  g_assert (element_name != NULL);
-  g_assert (attribute_names != NULL);
-  g_assert (attribute_values != NULL);
+const gchar *
+rtfm_gir_include_get_version (RtfmGirInclude *self)
+{
+  g_return_val_if_fail (RTFM_GIR_IS_INCLUDE (self), NULL);
 
-  self->ingest_element_name = g_strdup (element_name);
+  return self->version;
+}
 
-  self->name = NULL;
-  self->version = NULL;
-
-  if (!rtfm_g_markup_collect_some_attributes (element_name,
-                                              attribute_names,
-                                              attribute_values,
-                                              error,
-                                              G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "name", &name,
-                                              G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "version", &version,
-                                              G_MARKUP_COLLECT_INVALID))
-    RETURN (FALSE);
-
-  self->name = rtfm_gir_base_intern_string (RTFM_GIR_BASE (self), name);
-  self->version = rtfm_gir_base_intern_string (RTFM_GIR_BASE (self), version);
-
-  RETURN (TRUE);
+RtfmGirInclude *
+rtfm_gir_include_new (void)
+{
+  return g_object_new (RTFM_GIR_TYPE_INCLUDE, NULL);
 }

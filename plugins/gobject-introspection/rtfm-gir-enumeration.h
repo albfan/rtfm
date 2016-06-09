@@ -19,18 +19,32 @@
 #ifndef RTFM_GIR_ENUMERATION_H
 #define RTFM_GIR_ENUMERATION_H
 
-#include "rtfm-gir-base.h"
-#include "rtfm-gir-member.h"
+#include "rtfm-gir-parser-types.h"
 
 G_BEGIN_DECLS
 
-#define RTFM_TYPE_GIR_ENUMERATION (rtfm_gir_enumeration_get_type())
+RtfmGirEnumeration *rtfm_gir_enumeration_new (void);
 
-G_DECLARE_FINAL_TYPE (RtfmGirEnumeration, rtfm_gir_enumeration, RTFM, GIR_ENUMERATION, RtfmGirBase)
+const gchar *rtfm_gir_enumeration_get_introspectable (RtfmGirEnumeration *self);
 
-gboolean   rtfm_gir_enumeration_has_members (RtfmGirEnumeration *self);
-GPtrArray *rtfm_gir_enumeration_get_members (RtfmGirEnumeration *self);
+const gchar *rtfm_gir_enumeration_get_deprecated (RtfmGirEnumeration *self);
+
+const gchar *rtfm_gir_enumeration_get_deprecated_version (RtfmGirEnumeration *self);
+
+const gchar *rtfm_gir_enumeration_get_version (RtfmGirEnumeration *self);
+
+const gchar *rtfm_gir_enumeration_get_stability (RtfmGirEnumeration *self);
+
+const gchar *rtfm_gir_enumeration_get_name (RtfmGirEnumeration *self);
+
+const gchar *rtfm_gir_enumeration_get_c_type (RtfmGirEnumeration *self);
+
+const gchar *rtfm_gir_enumeration_get_glib_type_name (RtfmGirEnumeration *self);
+
+const gchar *rtfm_gir_enumeration_get_glib_get_type (RtfmGirEnumeration *self);
+
+const gchar *rtfm_gir_enumeration_get_glib_error_domain (RtfmGirEnumeration *self);
 
 G_END_DECLS
 
-#endif /* RTFM_GIR_ENUMERATION_H */
+#endif /* RTFM_GIR_ENUMERATION */

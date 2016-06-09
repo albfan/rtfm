@@ -19,17 +19,32 @@
 #ifndef RTFM_GIR_FIELD_H
 #define RTFM_GIR_FIELD_H
 
-#include "rtfm-gir-base.h"
-#include "rtfm-gir-type.h"
+#include "rtfm-gir-parser-types.h"
 
 G_BEGIN_DECLS
 
-#define RTFM_TYPE_GIR_FIELD (rtfm_gir_field_get_type())
+RtfmGirField *rtfm_gir_field_new (void);
 
-G_DECLARE_FINAL_TYPE (RtfmGirField, rtfm_gir_field, RTFM, GIR_FIELD, RtfmGirBase)
+const gchar *rtfm_gir_field_get_introspectable (RtfmGirField *self);
 
-RtfmGirType *rtfm_gir_field_get_referenced (RtfmGirField *self);
+const gchar *rtfm_gir_field_get_deprecated (RtfmGirField *self);
+
+const gchar *rtfm_gir_field_get_deprecated_version (RtfmGirField *self);
+
+const gchar *rtfm_gir_field_get_version (RtfmGirField *self);
+
+const gchar *rtfm_gir_field_get_stability (RtfmGirField *self);
+
+const gchar *rtfm_gir_field_get_name (RtfmGirField *self);
+
+const gchar *rtfm_gir_field_get_writable (RtfmGirField *self);
+
+const gchar *rtfm_gir_field_get_readable (RtfmGirField *self);
+
+const gchar *rtfm_gir_field_get_private (RtfmGirField *self);
+
+const gchar *rtfm_gir_field_get_bits (RtfmGirField *self);
 
 G_END_DECLS
 
-#endif /* RTFM_GIR_FIELD_H */
+#endif /* RTFM_GIR_FIELD */

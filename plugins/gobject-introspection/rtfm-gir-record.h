@@ -19,24 +19,38 @@
 #ifndef RTFM_GIR_RECORD_H
 #define RTFM_GIR_RECORD_H
 
-#include "rtfm-gir-base.h"
-#include "rtfm-gir-field.h"
-#include "rtfm-gir-function.h"
-#include "rtfm-gir-union.h"
+#include "rtfm-gir-parser-types.h"
 
 G_BEGIN_DECLS
 
-#define RTFM_TYPE_GIR_RECORD (rtfm_gir_record_get_type())
+RtfmGirRecord *rtfm_gir_record_new (void);
 
-G_DECLARE_FINAL_TYPE (RtfmGirRecord, rtfm_gir_record, RTFM, GIR_RECORD, RtfmGirBase)
+const gchar *rtfm_gir_record_get_introspectable (RtfmGirRecord *self);
 
-gboolean   rtfm_gir_record_has_fields (RtfmGirRecord *self);
-GPtrArray *rtfm_gir_record_get_fields (RtfmGirRecord *self);
-gboolean   rtfm_gir_record_has_functions (RtfmGirRecord *self);
-GPtrArray *rtfm_gir_record_get_functions (RtfmGirRecord *self);
-gboolean   rtfm_gir_record_has_unions (RtfmGirRecord *self);
-GPtrArray *rtfm_gir_record_get_unions (RtfmGirRecord *self);
+const gchar *rtfm_gir_record_get_deprecated (RtfmGirRecord *self);
+
+const gchar *rtfm_gir_record_get_deprecated_version (RtfmGirRecord *self);
+
+const gchar *rtfm_gir_record_get_version (RtfmGirRecord *self);
+
+const gchar *rtfm_gir_record_get_stability (RtfmGirRecord *self);
+
+const gchar *rtfm_gir_record_get_name (RtfmGirRecord *self);
+
+const gchar *rtfm_gir_record_get_c_type (RtfmGirRecord *self);
+
+const gchar *rtfm_gir_record_get_disguised (RtfmGirRecord *self);
+
+const gchar *rtfm_gir_record_get_glib_type_name (RtfmGirRecord *self);
+
+const gchar *rtfm_gir_record_get_glib_get_type (RtfmGirRecord *self);
+
+const gchar *rtfm_gir_record_get_c_symbol_prefix (RtfmGirRecord *self);
+
+const gchar *rtfm_gir_record_get_foreign (RtfmGirRecord *self);
+
+const gchar *rtfm_gir_record_get_glib_is_gtype_struct_for (RtfmGirRecord *self);
 
 G_END_DECLS
 
-#endif /* RTFM_GIR_RECORD_H */
+#endif /* RTFM_GIR_RECORD */

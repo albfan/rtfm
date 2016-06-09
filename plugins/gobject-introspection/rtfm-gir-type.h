@@ -19,15 +19,18 @@
 #ifndef RTFM_GIR_TYPE_H
 #define RTFM_GIR_TYPE_H
 
-#include "rtfm-gir-base.h"
+#include "rtfm-gir-parser-types.h"
 
 G_BEGIN_DECLS
 
-#define RTFM_TYPE_GIR_TYPE (rtfm_gir_type_get_type())
+RtfmGirType *rtfm_gir_type_new (void);
 
-G_DECLARE_FINAL_TYPE (RtfmGirType, rtfm_gir_type, RTFM, GIR_TYPE, RtfmGirBase)
+const gchar *rtfm_gir_type_get_name (RtfmGirType *self);
 
+const gchar *rtfm_gir_type_get_c_type (RtfmGirType *self);
+
+const gchar *rtfm_gir_type_get_introspectable (RtfmGirType *self);
 
 G_END_DECLS
 
-#endif /* RTFM_GIR_TYPE_H */
+#endif /* RTFM_GIR_TYPE */

@@ -19,15 +19,30 @@
 #ifndef RTFM_GIR_MEMBER_H
 #define RTFM_GIR_MEMBER_H
 
-#include "rtfm-gir-base.h"
+#include "rtfm-gir-parser-types.h"
 
 G_BEGIN_DECLS
 
-#define RTFM_TYPE_GIR_MEMBER (rtfm_gir_member_get_type())
+RtfmGirMember *rtfm_gir_member_new (void);
 
-G_DECLARE_FINAL_TYPE (RtfmGirMember, rtfm_gir_member, RTFM, GIR_MEMBER, RtfmGirBase)
+const gchar *rtfm_gir_member_get_introspectable (RtfmGirMember *self);
 
+const gchar *rtfm_gir_member_get_deprecated (RtfmGirMember *self);
+
+const gchar *rtfm_gir_member_get_deprecated_version (RtfmGirMember *self);
+
+const gchar *rtfm_gir_member_get_version (RtfmGirMember *self);
+
+const gchar *rtfm_gir_member_get_stability (RtfmGirMember *self);
+
+const gchar *rtfm_gir_member_get_name (RtfmGirMember *self);
+
+const gchar *rtfm_gir_member_get_value (RtfmGirMember *self);
+
+const gchar *rtfm_gir_member_get_c_identifier (RtfmGirMember *self);
+
+const gchar *rtfm_gir_member_get_glib_nick (RtfmGirMember *self);
 
 G_END_DECLS
 
-#endif /* RTFM_GIR_MEMBER_H */
+#endif /* RTFM_GIR_MEMBER */

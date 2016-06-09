@@ -19,17 +19,30 @@
 #ifndef RTFM_GIR_CONSTANT_H
 #define RTFM_GIR_CONSTANT_H
 
-#include "rtfm-gir-base.h"
-#include "rtfm-gir-type.h"
+#include "rtfm-gir-parser-types.h"
 
 G_BEGIN_DECLS
 
-#define RTFM_TYPE_GIR_CONSTANT (rtfm_gir_constant_get_type())
+RtfmGirConstant *rtfm_gir_constant_new (void);
 
-G_DECLARE_FINAL_TYPE (RtfmGirConstant, rtfm_gir_constant, RTFM, GIR_CONSTANT, RtfmGirBase)
+const gchar *rtfm_gir_constant_get_introspectable (RtfmGirConstant *self);
 
-RtfmGirType *rtfm_gir_constant_get_referenced (RtfmGirConstant *self);
+const gchar *rtfm_gir_constant_get_deprecated (RtfmGirConstant *self);
+
+const gchar *rtfm_gir_constant_get_deprecated_version (RtfmGirConstant *self);
+
+const gchar *rtfm_gir_constant_get_version (RtfmGirConstant *self);
+
+const gchar *rtfm_gir_constant_get_stability (RtfmGirConstant *self);
+
+const gchar *rtfm_gir_constant_get_name (RtfmGirConstant *self);
+
+const gchar *rtfm_gir_constant_get_value (RtfmGirConstant *self);
+
+const gchar *rtfm_gir_constant_get_c_type (RtfmGirConstant *self);
+
+const gchar *rtfm_gir_constant_get_c_identifier (RtfmGirConstant *self);
 
 G_END_DECLS
 
-#endif /* RTFM_GIR_CONSTANT_H */
+#endif /* RTFM_GIR_CONSTANT */

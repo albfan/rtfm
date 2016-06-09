@@ -19,33 +19,18 @@
 #ifndef RTFM_GIR_REPOSITORY_H
 #define RTFM_GIR_REPOSITORY_H
 
-#include "rtfm-gir-base.h"
-#include "rtfm-gir-include.h"
-#include "rtfm-gir-package.h"
-#include "rtfm-gir-c-include.h"
-#include "rtfm-gir-namespace.h"
+#include "rtfm-gir-parser-types.h"
 
 G_BEGIN_DECLS
 
-#define RTFM_TYPE_GIR_REPOSITORY (rtfm_gir_repository_get_type())
+RtfmGirRepository *rtfm_gir_repository_new (void);
 
-G_DECLARE_FINAL_TYPE (RtfmGirRepository, rtfm_gir_repository, RTFM, GIR_REPOSITORY, RtfmGirBase)
+const gchar *rtfm_gir_repository_get_version (RtfmGirRepository *self);
 
-RtfmGirRepository *rtfm_gir_repository_new            (GFile              *file);
-GPtrArray         *rtfm_gir_repository_get_includes   (RtfmGirRepository  *self);
-GPtrArray         *rtfm_gir_repository_get_packages   (RtfmGirRepository  *self);
-GPtrArray         *rtfm_gir_repository_get_c_includes (RtfmGirRepository  *self);
-RtfmGirNamespace  *rtfm_gir_repository_get_namespace  (RtfmGirRepository  *self);
-GFile *rtfm_gir_repository_get_file (RtfmGirRepository *self);
-void rtfm_gir_repository_build_index_async (RtfmGirRepository   *self,
-                                            GFile               *file,
-                                            GCancellable        *cancellable,
-                                            GAsyncReadyCallback  callback,
-                                            gpointer             user_data);
-gboolean rtfm_gir_repository_build_index_finish (RtfmGirRepository  *self,
-                                                 GAsyncResult       *result,
-                                                 GError            **error);
+const gchar *rtfm_gir_repository_get_c_identifier_prefixes (RtfmGirRepository *self);
+
+const gchar *rtfm_gir_repository_get_c_symbol_prefixes (RtfmGirRepository *self);
 
 G_END_DECLS
 
-#endif /* RTFM_GIR_REPOSITORY_H */
+#endif /* RTFM_GIR_REPOSITORY */

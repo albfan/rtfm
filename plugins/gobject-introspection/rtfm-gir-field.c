@@ -19,62 +19,310 @@
 #define G_LOG_DOMAIN "rtfm-gir-field"
 
 #include "rtfm-gir-field.h"
-#include "rtfm-gir-markup.h"
-#include "rtfm-gir-type.h"
 
-#if 0
-# define ENTRY     do { g_printerr ("ENTRY: %s(): %d: (%s)\n", G_STRFUNC, __LINE__, element_name); } while (0)
-# define EXIT      do { g_printerr (" EXIT: %s(): %d: (%s)\n", G_STRFUNC, __LINE__, element_name); return; } while (0)
-# define RETURN(r) do { g_printerr (" EXIT: %s(): %d: (%s)\n", G_STRFUNC, __LINE__, element_name); return r; } while (0)
-#else
-# define ENTRY
-# define EXIT return
-# define RETURN(r) do { return r; } while (0)
-#endif
+#include "rtfm-gir-doc-version.h"
+#include "rtfm-gir-doc-stability.h"
+#include "rtfm-gir-doc.h"
+#include "rtfm-gir-doc-deprecated.h"
+#include "rtfm-gir-annotation.h"
+#include "rtfm-gir-callback.h"
+#include "rtfm-gir-type.h"
+#include "rtfm-gir-array.h"
 
 struct _RtfmGirField
 {
-  RtfmGirBase base;
-
-  gchar *ingest_element_name;
-
-  const gchar *name;
-  const gchar *writable;
-  GString *doc;
-  RtfmGirType *type;
+  GObject parent_instance;
+  gchar *introspectable;
+  gchar *deprecated;
+  gchar *deprecated_version;
+  gchar *version;
+  gchar *stability;
+  gchar *name;
+  gchar *writable;
+  gchar *readable;
+  gchar *private;
+  gchar *bits;
+  GPtrArray *children;
 };
+
+G_DEFINE_TYPE (RtfmGirField, rtfm_gir_field, RTFM_GIR_TYPE_PARSER_OBJECT)
 
 enum {
   PROP_0,
+  PROP_INTROSPECTABLE,
+  PROP_DEPRECATED,
+  PROP_DEPRECATED_VERSION,
+  PROP_VERSION,
+  PROP_STABILITY,
   PROP_NAME,
   PROP_WRITABLE,
-  PROP_DOC,
+  PROP_READABLE,
+  PROP_PRIVATE,
+  PROP_BITS,
   N_PROPS
 };
 
 static GParamSpec *properties [N_PROPS];
 
-G_DEFINE_TYPE (RtfmGirField, rtfm_gir_field, RTFM_TYPE_GIR_BASE)
-
-static gboolean
-rtfm_gir_field_ingest (RtfmGirBase          *base,
-                       GMarkupParseContext  *context,
-                       const gchar          *element_name,
-                       const gchar         **attribute_names,
-                       const gchar         **attribute_values,
-                       GError              **error);
-
-static void
-rtfm_gir_field_finalize (GObject *object)
+static GPtrArray *
+rtfm_gir_field_get_children (RtfmGirParserObject *object)
 {
   RtfmGirField *self = (RtfmGirField *)object;
 
-  self->name = NULL;
-  self->writable = NULL;
-  g_string_free (self->doc, TRUE);
-  self->doc = NULL;
+  g_assert (RTFM_GIR_IS_FIELD (self));
 
-  G_OBJECT_CLASS (rtfm_gir_field_parent_class)->finalize (object);
+  return self->children;
+}
+
+static void
+rtfm_gir_field_start_element (GMarkupParseContext *context,
+                              const gchar *element_name,
+                              const gchar **attribute_names,
+                              const gchar **attribute_values,
+                              gpointer user_data,
+                              GError **error)
+{
+  RtfmGirField *self = user_data;
+
+  g_assert (RTFM_GIR_IS_FIELD (self));
+  g_assert (context != NULL);
+  g_assert (element_name != NULL);
+  g_assert (attribute_names != NULL);
+  g_assert (attribute_values != NULL);
+
+  if (FALSE) {}
+  else if (g_str_equal (element_name, "doc-version"))
+    {
+      g_autoptr(RtfmGirDocVersion) child = NULL;
+
+      child = rtfm_gir_doc_version_new ();
+
+      if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
+        return;
+
+      g_ptr_array_add (self->children, g_steal_pointer (&child));
+    }
+  else if (g_str_equal (element_name, "doc-stability"))
+    {
+      g_autoptr(RtfmGirDocStability) child = NULL;
+
+      child = rtfm_gir_doc_stability_new ();
+
+      if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
+        return;
+
+      g_ptr_array_add (self->children, g_steal_pointer (&child));
+    }
+  else if (g_str_equal (element_name, "doc"))
+    {
+      g_autoptr(RtfmGirDoc) child = NULL;
+
+      child = rtfm_gir_doc_new ();
+
+      if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
+        return;
+
+      g_ptr_array_add (self->children, g_steal_pointer (&child));
+    }
+  else if (g_str_equal (element_name, "doc-deprecated"))
+    {
+      g_autoptr(RtfmGirDocDeprecated) child = NULL;
+
+      child = rtfm_gir_doc_deprecated_new ();
+
+      if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
+        return;
+
+      g_ptr_array_add (self->children, g_steal_pointer (&child));
+    }
+  else if (g_str_equal (element_name, "annotation"))
+    {
+      g_autoptr(RtfmGirAnnotation) child = NULL;
+
+      child = rtfm_gir_annotation_new ();
+
+      if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
+        return;
+
+      g_ptr_array_add (self->children, g_steal_pointer (&child));
+    }
+  else if (g_str_equal (element_name, "callback"))
+    {
+      g_autoptr(RtfmGirCallback) child = NULL;
+
+      child = rtfm_gir_callback_new ();
+
+      if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
+        return;
+
+      g_ptr_array_add (self->children, g_steal_pointer (&child));
+    }
+  else if (g_str_equal (element_name, "type"))
+    {
+      g_autoptr(RtfmGirType) child = NULL;
+
+      child = rtfm_gir_type_new ();
+
+      if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
+        return;
+
+      g_ptr_array_add (self->children, g_steal_pointer (&child));
+    }
+  else if (g_str_equal (element_name, "array"))
+    {
+      g_autoptr(RtfmGirArray) child = NULL;
+
+      child = rtfm_gir_array_new ();
+
+      if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
+        return;
+
+      g_ptr_array_add (self->children, g_steal_pointer (&child));
+    }
+}
+
+static void
+rtfm_gir_field_end_element (GMarkupParseContext *context,
+                            const gchar *element_name,
+                            gpointer user_data,
+                            GError **error)
+{
+  g_assert (RTFM_GIR_IS_FIELD (user_data));
+  g_assert (context != NULL);
+  g_assert (element_name != NULL);
+
+  if (FALSE) {}
+  else if (g_str_equal (element_name, "doc-version"))
+    {
+      g_markup_parse_context_pop (context);
+    }
+  else if (g_str_equal (element_name, "doc-stability"))
+    {
+      g_markup_parse_context_pop (context);
+    }
+  else if (g_str_equal (element_name, "doc"))
+    {
+      g_markup_parse_context_pop (context);
+    }
+  else if (g_str_equal (element_name, "doc-deprecated"))
+    {
+      g_markup_parse_context_pop (context);
+    }
+  else if (g_str_equal (element_name, "callback"))
+    {
+      g_markup_parse_context_pop (context);
+    }
+  else if (g_str_equal (element_name, "type"))
+    {
+      g_markup_parse_context_pop (context);
+    }
+  else if (g_str_equal (element_name, "array"))
+    {
+      g_markup_parse_context_pop (context);
+    }
+}
+
+static const GMarkupParser markup_parser = {
+  rtfm_gir_field_start_element,
+  rtfm_gir_field_end_element,
+  NULL,
+  NULL,
+  NULL,
+};
+
+static gboolean
+rtfm_gir_field_ingest (RtfmGirParserObject *object,
+                       GMarkupParseContext *context,
+                       const gchar *element_name,
+                       const gchar **attribute_names,
+                       const gchar **attribute_values,
+                       GError **error)
+{
+  RtfmGirField *self = (RtfmGirField *)object;
+
+  g_assert (RTFM_GIR_IS_FIELD (self));
+  g_assert (g_str_equal (element_name, "field"));
+
+  g_clear_pointer (&self->introspectable, g_free);
+  g_clear_pointer (&self->deprecated, g_free);
+  g_clear_pointer (&self->deprecated_version, g_free);
+  g_clear_pointer (&self->version, g_free);
+  g_clear_pointer (&self->stability, g_free);
+  g_clear_pointer (&self->name, g_free);
+  g_clear_pointer (&self->writable, g_free);
+  g_clear_pointer (&self->readable, g_free);
+  g_clear_pointer (&self->private, g_free);
+  g_clear_pointer (&self->bits, g_free);
+
+  if (!rtfm_gir_g_markup_collect_attributes (element_name, attribute_names, attribute_values, error,
+                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "introspectable", &self->introspectable,
+                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "deprecated", &self->deprecated,
+                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "deprecated-version", &self->deprecated_version,
+                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "version", &self->version,
+                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "stability", &self->stability,
+                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "name", &self->name,
+                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "writable", &self->writable,
+                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "readable", &self->readable,
+                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "private", &self->private,
+                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "bits", &self->bits,
+                                             G_MARKUP_COLLECT_INVALID, NULL, NULL))
+    return FALSE;
+
+  g_markup_parse_context_push (context, &markup_parser, self);
+
+  return TRUE;
+}
+
+static void
+rtfm_gir_field_printf (RtfmGirParserObject *object,
+                       GString *str,
+                       guint depth)
+{
+  RtfmGirField *self = (RtfmGirField *)object;
+  guint i;
+
+  g_assert (RTFM_GIR_IS_FIELD (self));
+
+  for (i = 0; i < depth; i++)
+    g_string_append (str, "  ");
+  g_string_append (str, "<field");
+
+  if (self->introspectable != NULL)
+    g_string_append_printf (str, " introspectable=\"%s\"", self->introspectable);
+  if (self->deprecated != NULL)
+    g_string_append_printf (str, " deprecated=\"%s\"", self->deprecated);
+  if (self->deprecated_version != NULL)
+    g_string_append_printf (str, " deprecated-version=\"%s\"", self->deprecated_version);
+  if (self->version != NULL)
+    g_string_append_printf (str, " version=\"%s\"", self->version);
+  if (self->stability != NULL)
+    g_string_append_printf (str, " stability=\"%s\"", self->stability);
+  if (self->name != NULL)
+    g_string_append_printf (str, " name=\"%s\"", self->name);
+  if (self->writable != NULL)
+    g_string_append_printf (str, " writable=\"%s\"", self->writable);
+  if (self->readable != NULL)
+    g_string_append_printf (str, " readable=\"%s\"", self->readable);
+  if (self->private != NULL)
+    g_string_append_printf (str, " private=\"%s\"", self->private);
+  if (self->bits != NULL)
+    g_string_append_printf (str, " bits=\"%s\"", self->bits);
+
+  if (self->children != NULL && self->children->len > 0)
+    {
+      g_string_append (str, ">\n");
+
+      for (i = 0; i < self->children->len; i++)
+        rtfm_gir_parser_object_printf (g_ptr_array_index (self->children, i), str, depth + 1);
+
+      for (i = 0; i < depth; i++)
+        g_string_append (str, "  ");
+      g_string_append (str, "</field>\n");
+    }
+  else
+    {
+      g_string_append (str, "/>\n");
+    }
 }
 
 static void
@@ -87,6 +335,26 @@ rtfm_gir_field_get_property (GObject    *object,
 
   switch (prop_id)
     {
+    case PROP_INTROSPECTABLE:
+      g_value_set_string (value, self->introspectable);
+      break;
+
+    case PROP_DEPRECATED:
+      g_value_set_string (value, self->deprecated);
+      break;
+
+    case PROP_DEPRECATED_VERSION:
+      g_value_set_string (value, self->deprecated_version);
+      break;
+
+    case PROP_VERSION:
+      g_value_set_string (value, self->version);
+      break;
+
+    case PROP_STABILITY:
+      g_value_set_string (value, self->stability);
+      break;
+
     case PROP_NAME:
       g_value_set_string (value, self->name);
       break;
@@ -95,9 +363,16 @@ rtfm_gir_field_get_property (GObject    *object,
       g_value_set_string (value, self->writable);
       break;
 
-    case PROP_DOC:
-      if (self->doc != NULL)
-        g_value_set_string (value, self->doc->str);
+    case PROP_READABLE:
+      g_value_set_string (value, self->readable);
+      break;
+
+    case PROP_PRIVATE:
+      g_value_set_string (value, self->private);
+      break;
+
+    case PROP_BITS:
+      g_value_set_string (value, self->bits);
       break;
 
     default:
@@ -106,211 +381,263 @@ rtfm_gir_field_get_property (GObject    *object,
 }
 
 static void
+rtfm_gir_field_set_property (GObject      *object,
+                             guint         prop_id,
+                             const GValue *value,
+                             GParamSpec   *pspec)
+{
+  RtfmGirField *self = (RtfmGirField *)object;
+
+  switch (prop_id)
+    {
+    case PROP_INTROSPECTABLE:
+      g_free (self->introspectable);
+      self->introspectable = g_value_dup_string (value);
+      break;
+
+    case PROP_DEPRECATED:
+      g_free (self->deprecated);
+      self->deprecated = g_value_dup_string (value);
+      break;
+
+    case PROP_DEPRECATED_VERSION:
+      g_free (self->deprecated_version);
+      self->deprecated_version = g_value_dup_string (value);
+      break;
+
+    case PROP_VERSION:
+      g_free (self->version);
+      self->version = g_value_dup_string (value);
+      break;
+
+    case PROP_STABILITY:
+      g_free (self->stability);
+      self->stability = g_value_dup_string (value);
+      break;
+
+    case PROP_NAME:
+      g_free (self->name);
+      self->name = g_value_dup_string (value);
+      break;
+
+    case PROP_WRITABLE:
+      g_free (self->writable);
+      self->writable = g_value_dup_string (value);
+      break;
+
+    case PROP_READABLE:
+      g_free (self->readable);
+      self->readable = g_value_dup_string (value);
+      break;
+
+    case PROP_PRIVATE:
+      g_free (self->private);
+      self->private = g_value_dup_string (value);
+      break;
+
+    case PROP_BITS:
+      g_free (self->bits);
+      self->bits = g_value_dup_string (value);
+      break;
+
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+    }
+}
+
+static void
+rtfm_gir_field_finalize (GObject *object)
+{
+  RtfmGirField *self = (RtfmGirField *)object;
+
+  g_clear_pointer (&self->introspectable, g_free);
+  g_clear_pointer (&self->deprecated, g_free);
+  g_clear_pointer (&self->deprecated_version, g_free);
+  g_clear_pointer (&self->version, g_free);
+  g_clear_pointer (&self->stability, g_free);
+  g_clear_pointer (&self->name, g_free);
+  g_clear_pointer (&self->writable, g_free);
+  g_clear_pointer (&self->readable, g_free);
+  g_clear_pointer (&self->private, g_free);
+  g_clear_pointer (&self->bits, g_free);
+  g_clear_pointer (&self->children, g_ptr_array_unref);
+
+  G_OBJECT_CLASS (rtfm_gir_field_parent_class)->finalize (object);
+}
+
+static void
 rtfm_gir_field_class_init (RtfmGirFieldClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
-  RtfmGirBaseClass *base_class = RTFM_GIR_BASE_CLASS (klass);
+  RtfmGirParserObjectClass *parent_class = RTFM_GIR_PARSER_OBJECT_CLASS (klass);
 
-  object_class->finalize = rtfm_gir_field_finalize;
   object_class->get_property = rtfm_gir_field_get_property;
+  object_class->set_property = rtfm_gir_field_set_property;
+  object_class->finalize = rtfm_gir_field_finalize;
 
-  base_class->ingest = rtfm_gir_field_ingest;
+  parent_class->ingest = rtfm_gir_field_ingest;
+  parent_class->printf = rtfm_gir_field_printf;
+  parent_class->get_children = rtfm_gir_field_get_children;
+
+  properties [PROP_INTROSPECTABLE] =
+    g_param_spec_string ("introspectable",
+                         "introspectable",
+                         "introspectable",
+                         NULL,
+                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  properties [PROP_DEPRECATED] =
+    g_param_spec_string ("deprecated",
+                         "deprecated",
+                         "deprecated",
+                         NULL,
+                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  properties [PROP_DEPRECATED_VERSION] =
+    g_param_spec_string ("deprecated-version",
+                         "deprecated-version",
+                         "deprecated-version",
+                         NULL,
+                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  properties [PROP_VERSION] =
+    g_param_spec_string ("version",
+                         "version",
+                         "version",
+                         NULL,
+                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  properties [PROP_STABILITY] =
+    g_param_spec_string ("stability",
+                         "stability",
+                         "stability",
+                         NULL,
+                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   properties [PROP_NAME] =
     g_param_spec_string ("name",
                          "name",
                          "name",
                          NULL,
-                         (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   properties [PROP_WRITABLE] =
     g_param_spec_string ("writable",
                          "writable",
                          "writable",
                          NULL,
-                         (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
-  properties [PROP_DOC] =
-    g_param_spec_string ("doc",
-                         "doc",
-                         "doc",
+  properties [PROP_READABLE] =
+    g_param_spec_string ("readable",
+                         "readable",
+                         "readable",
                          NULL,
-                         (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
-  g_object_class_install_properties (object_class, N_PROPS, properties);
+  properties [PROP_PRIVATE] =
+    g_param_spec_string ("private",
+                         "private",
+                         "private",
+                         NULL,
+                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  properties [PROP_BITS] =
+    g_param_spec_string ("bits",
+                         "bits",
+                         "bits",
+                         NULL,
+                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 }
 
 static void
 rtfm_gir_field_init (RtfmGirField *self)
 {
+  self->children = g_ptr_array_new_with_free_func (g_object_unref);
 }
 
-static void
-rtfm_gir_field_start_element (GMarkupParseContext  *context,
-                              const gchar          *element_name,
-                              const gchar         **attribute_names,
-                              const gchar         **attribute_values,
-                              gpointer              user_data,
-                              GError              **error)
+const gchar *
+rtfm_gir_field_get_introspectable (RtfmGirField *self)
 {
-  RtfmGirField *self = user_data;
+  g_return_val_if_fail (RTFM_GIR_IS_FIELD (self), NULL);
 
-  ENTRY;
-
-  g_assert (context != NULL);
-  g_assert (element_name != NULL);
-  g_assert (attribute_names != NULL);
-  g_assert (attribute_values != NULL);
-  g_assert (RTFM_IS_GIR_FIELD (self));
-  g_assert (error != NULL);
-
-  if (FALSE) {}
-  else if (g_strcmp0 (element_name, "doc") == 0)
-    {
-      /* Do nothing */
-    }
-  else if (g_strcmp0 (element_name, "type") == 0)
-    {
-      g_autoptr(RtfmGirType) type = NULL;
-
-      type = g_object_new (RTFM_TYPE_GIR_TYPE, NULL);
-      rtfm_gir_base_set_parent (RTFM_GIR_BASE (type), RTFM_GIR_BASE (self));
-
-      if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (type),
-                                 context,
-                                 element_name,
-                                 attribute_names,
-                                 attribute_values,
-                                 error))
-        return;
-
-      g_set_object (&self->type, type);
-    }
-
-
-  EXIT;
+  return self->introspectable;
 }
 
-static void
-rtfm_gir_field_end_element (GMarkupParseContext  *context,
-                            const gchar          *element_name,
-                            gpointer              user_data,
-                            GError              **error)
+const gchar *
+rtfm_gir_field_get_deprecated (RtfmGirField *self)
 {
-  RtfmGirField *self = user_data;
+  g_return_val_if_fail (RTFM_GIR_IS_FIELD (self), NULL);
 
-  g_assert (context != NULL);
-  g_assert (element_name != NULL);
-  g_assert (RTFM_IS_GIR_FIELD (self));
-  g_assert (error != NULL);
-
-  if (g_strcmp0 (element_name, self->ingest_element_name) == 0)
-    {
-      g_markup_parse_context_pop (context);
-      g_clear_pointer (&self->ingest_element_name, g_free);
-    }
+  return self->deprecated;
 }
 
-static void
-rtfm_gir_field_text (GMarkupParseContext  *context,
-                     const gchar          *text,
-                     gsize                 text_len,
-                     gpointer              user_data,
-                     GError              **error)
+const gchar *
+rtfm_gir_field_get_deprecated_version (RtfmGirField *self)
 {
-  RtfmGirField *self = user_data;
-  const gchar *element_name;
+  g_return_val_if_fail (RTFM_GIR_IS_FIELD (self), NULL);
 
-  g_assert (context != NULL);
-  g_assert (text != NULL);
-  g_assert (RTFM_IS_GIR_FIELD (self));
-  g_assert (error != NULL);
-
-  element_name = g_markup_parse_context_get_element (context);
-
-  if (FALSE) {}
-  else if (g_strcmp0 (element_name, "doc") == 0)
-    {
-      if (self->doc == NULL)
-        self->doc = g_string_new_len (text, text_len);
-      else
-        g_string_append_len (self->doc, text, text_len);
-    }
+  return self->deprecated_version;
 }
 
-static void
-rtfm_gir_field_error (GMarkupParseContext *context,
-                      GError              *error,
-                      gpointer             user_data)
+const gchar *
+rtfm_gir_field_get_version (RtfmGirField *self)
 {
-  RtfmGirField *self = user_data;
+  g_return_val_if_fail (RTFM_GIR_IS_FIELD (self), NULL);
 
-  g_assert (context != NULL);
-  g_assert (RTFM_IS_GIR_FIELD (self));
-  g_assert (error != NULL);
-
-  g_clear_pointer (&self->ingest_element_name, g_free);
+  return self->version;
 }
 
-static const GMarkupParser markup_parser = {
-  rtfm_gir_field_start_element,
-  rtfm_gir_field_end_element,
-  rtfm_gir_field_text,
-  NULL,
-  rtfm_gir_field_error,
-};
-
-static gboolean
-rtfm_gir_field_ingest (RtfmGirBase          *base,
-                       GMarkupParseContext  *context,
-                       const gchar          *element_name,
-                       const gchar         **attribute_names,
-                       const gchar         **attribute_values,
-                       GError              **error)
+const gchar *
+rtfm_gir_field_get_stability (RtfmGirField *self)
 {
-  RtfmGirField *self = (RtfmGirField *)base;
-  const gchar *name = NULL;
-  const gchar *writable = NULL;
+  g_return_val_if_fail (RTFM_GIR_IS_FIELD (self), NULL);
 
-  ENTRY;
-
-  g_assert (RTFM_IS_GIR_FIELD (self));
-  g_assert (context != NULL);
-  g_assert (element_name != NULL);
-  g_assert (attribute_names != NULL);
-  g_assert (attribute_values != NULL);
-
-  self->ingest_element_name = g_strdup (element_name);
-
-  self->name = NULL;
-  self->writable = NULL;
-
-  if (!rtfm_g_markup_collect_some_attributes (element_name,
-                                              attribute_names,
-                                              attribute_values,
-                                              error,
-                                              G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "name", &name,
-                                              G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "writable", &writable,
-                                              G_MARKUP_COLLECT_INVALID))
-    RETURN (FALSE);
-
-  self->name = rtfm_gir_base_intern_string (RTFM_GIR_BASE (self), name);
-  self->writable = rtfm_gir_base_intern_string (RTFM_GIR_BASE (self), writable);
-
-  g_markup_parse_context_push (context, &markup_parser, self);
-
-  RETURN (TRUE);
+  return self->stability;
 }
 
-/**
- * rtfm_gir_field_get_referenced:
- *
- * Returns: (nullable) (transfer none): An #RtfmGirType or %NULL.
- */
-RtfmGirType *
-rtfm_gir_field_get_referenced (RtfmGirField *self)
+const gchar *
+rtfm_gir_field_get_name (RtfmGirField *self)
 {
-  g_return_val_if_fail (RTFM_IS_GIR_FIELD (self), NULL);
+  g_return_val_if_fail (RTFM_GIR_IS_FIELD (self), NULL);
 
-  return self->type;
+  return self->name;
+}
+
+const gchar *
+rtfm_gir_field_get_writable (RtfmGirField *self)
+{
+  g_return_val_if_fail (RTFM_GIR_IS_FIELD (self), NULL);
+
+  return self->writable;
+}
+
+const gchar *
+rtfm_gir_field_get_readable (RtfmGirField *self)
+{
+  g_return_val_if_fail (RTFM_GIR_IS_FIELD (self), NULL);
+
+  return self->readable;
+}
+
+const gchar *
+rtfm_gir_field_get_private (RtfmGirField *self)
+{
+  g_return_val_if_fail (RTFM_GIR_IS_FIELD (self), NULL);
+
+  return self->private;
+}
+
+const gchar *
+rtfm_gir_field_get_bits (RtfmGirField *self)
+{
+  g_return_val_if_fail (RTFM_GIR_IS_FIELD (self), NULL);
+
+  return self->bits;
+}
+
+RtfmGirField *
+rtfm_gir_field_new (void)
+{
+  return g_object_new (RTFM_GIR_TYPE_FIELD, NULL);
 }

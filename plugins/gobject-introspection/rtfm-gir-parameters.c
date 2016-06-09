@@ -19,212 +19,180 @@
 #define G_LOG_DOMAIN "rtfm-gir-parameters"
 
 #include "rtfm-gir-parameters.h"
-#include "rtfm-gir-markup.h"
-#include "rtfm-gir-parameter.h"
 
-#if 0
-# define ENTRY     do { g_printerr ("ENTRY: %s(): %d: (%s)\n", G_STRFUNC, __LINE__, element_name); } while (0)
-# define EXIT      do { g_printerr (" EXIT: %s(): %d: (%s)\n", G_STRFUNC, __LINE__, element_name); return; } while (0)
-# define RETURN(r) do { g_printerr (" EXIT: %s(): %d: (%s)\n", G_STRFUNC, __LINE__, element_name); return r; } while (0)
-#else
-# define ENTRY
-# define EXIT return
-# define RETURN(r) do { return r; } while (0)
-#endif
+#include "rtfm-gir-parameter.h"
+#include "rtfm-gir-instance-parameter.h"
 
 struct _RtfmGirParameters
 {
-  RtfmGirBase base;
-
-  gchar *ingest_element_name;
-
-  GPtrArray *parameter;
+  GObject parent_instance;
+  GPtrArray *children;
 };
 
-G_DEFINE_TYPE (RtfmGirParameters, rtfm_gir_parameters, RTFM_TYPE_GIR_BASE)
+G_DEFINE_TYPE (RtfmGirParameters, rtfm_gir_parameters, RTFM_GIR_TYPE_PARSER_OBJECT)
+
+static GPtrArray *
+rtfm_gir_parameters_get_children (RtfmGirParserObject *object)
+{
+  RtfmGirParameters *self = (RtfmGirParameters *)object;
+
+  g_assert (RTFM_GIR_IS_PARAMETERS (self));
+
+  return self->children;
+}
+
+static void
+rtfm_gir_parameters_start_element (GMarkupParseContext *context,
+                                   const gchar *element_name,
+                                   const gchar **attribute_names,
+                                   const gchar **attribute_values,
+                                   gpointer user_data,
+                                   GError **error)
+{
+  RtfmGirParameters *self = user_data;
+
+  g_assert (RTFM_GIR_IS_PARAMETERS (self));
+  g_assert (context != NULL);
+  g_assert (element_name != NULL);
+  g_assert (attribute_names != NULL);
+  g_assert (attribute_values != NULL);
+
+  if (FALSE) {}
+  else if (g_str_equal (element_name, "parameter"))
+    {
+      g_autoptr(RtfmGirParameter) child = NULL;
+
+      child = rtfm_gir_parameter_new ();
+
+      if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
+        return;
+
+      g_ptr_array_add (self->children, g_steal_pointer (&child));
+    }
+  else if (g_str_equal (element_name, "instance-parameter"))
+    {
+      g_autoptr(RtfmGirInstanceParameter) child = NULL;
+
+      child = rtfm_gir_instance_parameter_new ();
+
+      if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
+        return;
+
+      g_ptr_array_add (self->children, g_steal_pointer (&child));
+    }
+}
+
+static void
+rtfm_gir_parameters_end_element (GMarkupParseContext *context,
+                                 const gchar *element_name,
+                                 gpointer user_data,
+                                 GError **error)
+{
+  g_assert (RTFM_GIR_IS_PARAMETERS (user_data));
+  g_assert (context != NULL);
+  g_assert (element_name != NULL);
+
+  if (FALSE) {}
+  else if (g_str_equal (element_name, "parameter"))
+    {
+      g_markup_parse_context_pop (context);
+    }
+  else if (g_str_equal (element_name, "instance-parameter"))
+    {
+      g_markup_parse_context_pop (context);
+    }
+}
+
+static const GMarkupParser markup_parser = {
+  rtfm_gir_parameters_start_element,
+  rtfm_gir_parameters_end_element,
+  NULL,
+  NULL,
+  NULL,
+};
 
 static gboolean
-rtfm_gir_parameters_ingest (RtfmGirBase          *base,
-                            GMarkupParseContext  *context,
-                            const gchar          *element_name,
-                            const gchar         **attribute_names,
-                            const gchar         **attribute_values,
-                            GError              **error);
+rtfm_gir_parameters_ingest (RtfmGirParserObject *object,
+                            GMarkupParseContext *context,
+                            const gchar *element_name,
+                            const gchar **attribute_names,
+                            const gchar **attribute_values,
+                            GError **error)
+{
+  RtfmGirParameters *self = (RtfmGirParameters *)object;
+
+  g_assert (RTFM_GIR_IS_PARAMETERS (self));
+  g_assert (g_str_equal (element_name, "parameters"));
+
+
+  g_markup_parse_context_push (context, &markup_parser, self);
+
+  return TRUE;
+}
+
+static void
+rtfm_gir_parameters_printf (RtfmGirParserObject *object,
+                            GString *str,
+                            guint depth)
+{
+  RtfmGirParameters *self = (RtfmGirParameters *)object;
+  guint i;
+
+  g_assert (RTFM_GIR_IS_PARAMETERS (self));
+
+  for (i = 0; i < depth; i++)
+    g_string_append (str, "  ");
+  g_string_append (str, "<parameters");
+
+
+  if (self->children != NULL && self->children->len > 0)
+    {
+      g_string_append (str, ">\n");
+
+      for (i = 0; i < self->children->len; i++)
+        rtfm_gir_parser_object_printf (g_ptr_array_index (self->children, i), str, depth + 1);
+
+      for (i = 0; i < depth; i++)
+        g_string_append (str, "  ");
+      g_string_append (str, "</parameters>\n");
+    }
+  else
+    {
+      g_string_append (str, "/>\n");
+    }
+}
 
 static void
 rtfm_gir_parameters_finalize (GObject *object)
 {
   RtfmGirParameters *self = (RtfmGirParameters *)object;
 
-  g_clear_pointer (&self->parameter, g_ptr_array_unref);
+  g_clear_pointer (&self->children, g_ptr_array_unref);
 
   G_OBJECT_CLASS (rtfm_gir_parameters_parent_class)->finalize (object);
 }
-
 
 static void
 rtfm_gir_parameters_class_init (RtfmGirParametersClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
-  RtfmGirBaseClass *base_class = RTFM_GIR_BASE_CLASS (klass);
+  RtfmGirParserObjectClass *parent_class = RTFM_GIR_PARSER_OBJECT_CLASS (klass);
 
   object_class->finalize = rtfm_gir_parameters_finalize;
 
-  base_class->ingest = rtfm_gir_parameters_ingest;
+  parent_class->ingest = rtfm_gir_parameters_ingest;
+  parent_class->printf = rtfm_gir_parameters_printf;
+  parent_class->get_children = rtfm_gir_parameters_get_children;
 }
 
 static void
 rtfm_gir_parameters_init (RtfmGirParameters *self)
 {
+  self->children = g_ptr_array_new_with_free_func (g_object_unref);
 }
 
-static void
-rtfm_gir_parameters_start_element (GMarkupParseContext  *context,
-                                   const gchar          *element_name,
-                                   const gchar         **attribute_names,
-                                   const gchar         **attribute_values,
-                                   gpointer              user_data,
-                                   GError              **error)
+RtfmGirParameters *
+rtfm_gir_parameters_new (void)
 {
-  RtfmGirParameters *self = user_data;
-
-  ENTRY;
-
-  g_assert (context != NULL);
-  g_assert (element_name != NULL);
-  g_assert (attribute_names != NULL);
-  g_assert (attribute_values != NULL);
-  g_assert (RTFM_IS_GIR_PARAMETERS (self));
-  g_assert (error != NULL);
-
-  if (FALSE) {}
-  else if ((g_strcmp0 (element_name, "parameter") == 0) || (g_strcmp0 (element_name, "instance-parameter") == 0))
-    {
-      g_autoptr(RtfmGirParameter) parameter = NULL;
-
-      parameter = g_object_new (RTFM_TYPE_GIR_PARAMETER, NULL);
-      rtfm_gir_base_set_parent (RTFM_GIR_BASE (parameter), RTFM_GIR_BASE (self));
-
-      if (!rtfm_gir_base_ingest (RTFM_GIR_BASE (parameter),
-                                 context,
-                                 element_name,
-                                 attribute_names,
-                                 attribute_values,
-                                 error))
-        return;
-
-      if (self->parameter == NULL)
-        self->parameter = g_ptr_array_new_with_free_func (g_object_unref);
-
-      g_ptr_array_add (self->parameter, g_steal_pointer (&parameter));
-    }
-
-
-  EXIT;
-}
-
-static void
-rtfm_gir_parameters_end_element (GMarkupParseContext  *context,
-                                 const gchar          *element_name,
-                                 gpointer              user_data,
-                                 GError              **error)
-{
-  RtfmGirParameters *self = user_data;
-
-  g_assert (context != NULL);
-  g_assert (element_name != NULL);
-  g_assert (RTFM_IS_GIR_PARAMETERS (self));
-  g_assert (error != NULL);
-
-  if (g_strcmp0 (element_name, self->ingest_element_name) == 0)
-    {
-      g_markup_parse_context_pop (context);
-      g_clear_pointer (&self->ingest_element_name, g_free);
-    }
-}
-
-static void
-rtfm_gir_parameters_text (GMarkupParseContext  *context,
-                          const gchar          *text,
-                          gsize                 text_len,
-                          gpointer              user_data,
-                          GError              **error)
-{
-  RtfmGirParameters *self = user_data;
-  const gchar *element_name;
-
-  g_assert (context != NULL);
-  g_assert (text != NULL);
-  g_assert (RTFM_IS_GIR_PARAMETERS (self));
-  g_assert (error != NULL);
-
-}
-
-static void
-rtfm_gir_parameters_error (GMarkupParseContext *context,
-                           GError              *error,
-                           gpointer             user_data)
-{
-  RtfmGirParameters *self = user_data;
-
-  g_assert (context != NULL);
-  g_assert (RTFM_IS_GIR_PARAMETERS (self));
-  g_assert (error != NULL);
-
-  g_clear_pointer (&self->ingest_element_name, g_free);
-}
-
-static const GMarkupParser markup_parser = {
-  rtfm_gir_parameters_start_element,
-  rtfm_gir_parameters_end_element,
-  rtfm_gir_parameters_text,
-  NULL,
-  rtfm_gir_parameters_error,
-};
-
-static gboolean
-rtfm_gir_parameters_ingest (RtfmGirBase          *base,
-                            GMarkupParseContext  *context,
-                            const gchar          *element_name,
-                            const gchar         **attribute_names,
-                            const gchar         **attribute_values,
-                            GError              **error)
-{
-  RtfmGirParameters *self = (RtfmGirParameters *)base;
-
-  ENTRY;
-
-  g_assert (RTFM_IS_GIR_PARAMETERS (self));
-  g_assert (context != NULL);
-  g_assert (element_name != NULL);
-  g_assert (attribute_names != NULL);
-  g_assert (attribute_values != NULL);
-
-  self->ingest_element_name = g_strdup (element_name);
-
-  g_markup_parse_context_push (context, &markup_parser, self);
-
-  RETURN (TRUE);
-}
-
-gboolean
-rtfm_gir_parameters_has_parameters (RtfmGirParameters *self)
-{
-  g_return_val_if_fail (RTFM_IS_GIR_PARAMETERS (self), FALSE);
-
-  return self->parameter != NULL && self->parameter->len > 0;
-}
-
-/**
- * rtfm_gir_parameters_get_parameters:
- *
- * Returns: (nullable) (transfer none) (element-type Rtfm.GirParameter):
- *  An array of #RtfmGirParameter or %NULL.
- */
-GPtrArray *
-rtfm_gir_parameters_get_parameters (RtfmGirParameters *self)
-{
-  g_return_val_if_fail (RTFM_IS_GIR_PARAMETERS (self), NULL);
-
-  return self->parameter;
+  return g_object_new (RTFM_GIR_TYPE_PARAMETERS, NULL);
 }

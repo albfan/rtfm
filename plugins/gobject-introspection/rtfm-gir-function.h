@@ -19,19 +19,34 @@
 #ifndef RTFM_GIR_FUNCTION_H
 #define RTFM_GIR_FUNCTION_H
 
-#include "rtfm-gir-base.h"
-#include "rtfm-gir-return-value.h"
-#include "rtfm-gir-parameters.h"
+#include "rtfm-gir-parser-types.h"
 
 G_BEGIN_DECLS
 
-#define RTFM_TYPE_GIR_FUNCTION (rtfm_gir_function_get_type())
+RtfmGirFunction *rtfm_gir_function_new (void);
 
-G_DECLARE_FINAL_TYPE (RtfmGirFunction, rtfm_gir_function, RTFM, GIR_FUNCTION, RtfmGirBase)
+const gchar *rtfm_gir_function_get_introspectable (RtfmGirFunction *self);
 
-RtfmGirReturnValue *rtfm_gir_function_get_return_value (RtfmGirFunction *self);
-RtfmGirParameters *rtfm_gir_function_get_parameters (RtfmGirFunction *self);
+const gchar *rtfm_gir_function_get_deprecated (RtfmGirFunction *self);
+
+const gchar *rtfm_gir_function_get_deprecated_version (RtfmGirFunction *self);
+
+const gchar *rtfm_gir_function_get_version (RtfmGirFunction *self);
+
+const gchar *rtfm_gir_function_get_stability (RtfmGirFunction *self);
+
+const gchar *rtfm_gir_function_get_name (RtfmGirFunction *self);
+
+const gchar *rtfm_gir_function_get_c_identifier (RtfmGirFunction *self);
+
+const gchar *rtfm_gir_function_get_shadowed_by (RtfmGirFunction *self);
+
+const gchar *rtfm_gir_function_get_shadows (RtfmGirFunction *self);
+
+const gchar *rtfm_gir_function_get_throws (RtfmGirFunction *self);
+
+const gchar *rtfm_gir_function_get_moved_to (RtfmGirFunction *self);
 
 G_END_DECLS
 
-#endif /* RTFM_GIR_FUNCTION_H */
+#endif /* RTFM_GIR_FUNCTION */

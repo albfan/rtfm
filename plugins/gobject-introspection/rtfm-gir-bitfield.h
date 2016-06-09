@@ -19,18 +19,30 @@
 #ifndef RTFM_GIR_BITFIELD_H
 #define RTFM_GIR_BITFIELD_H
 
-#include "rtfm-gir-base.h"
-#include "rtfm-gir-member.h"
+#include "rtfm-gir-parser-types.h"
 
 G_BEGIN_DECLS
 
-#define RTFM_TYPE_GIR_BITFIELD (rtfm_gir_bitfield_get_type())
+RtfmGirBitfield *rtfm_gir_bitfield_new (void);
 
-G_DECLARE_FINAL_TYPE (RtfmGirBitfield, rtfm_gir_bitfield, RTFM, GIR_BITFIELD, RtfmGirBase)
+const gchar *rtfm_gir_bitfield_get_introspectable (RtfmGirBitfield *self);
 
-gboolean   rtfm_gir_bitfield_has_members (RtfmGirBitfield *self);
-GPtrArray *rtfm_gir_bitfield_get_members (RtfmGirBitfield *self);
+const gchar *rtfm_gir_bitfield_get_deprecated (RtfmGirBitfield *self);
+
+const gchar *rtfm_gir_bitfield_get_deprecated_version (RtfmGirBitfield *self);
+
+const gchar *rtfm_gir_bitfield_get_version (RtfmGirBitfield *self);
+
+const gchar *rtfm_gir_bitfield_get_stability (RtfmGirBitfield *self);
+
+const gchar *rtfm_gir_bitfield_get_name (RtfmGirBitfield *self);
+
+const gchar *rtfm_gir_bitfield_get_c_type (RtfmGirBitfield *self);
+
+const gchar *rtfm_gir_bitfield_get_glib_type_name (RtfmGirBitfield *self);
+
+const gchar *rtfm_gir_bitfield_get_glib_get_type (RtfmGirBitfield *self);
 
 G_END_DECLS
 
-#endif /* RTFM_GIR_BITFIELD_H */
+#endif /* RTFM_GIR_BITFIELD */

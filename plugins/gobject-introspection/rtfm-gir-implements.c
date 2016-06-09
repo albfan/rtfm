@@ -19,26 +19,14 @@
 #define G_LOG_DOMAIN "rtfm-gir-implements"
 
 #include "rtfm-gir-implements.h"
-#include "rtfm-gir-markup.h"
-
-#if 0
-# define ENTRY     do { g_printerr ("ENTRY: %s(): %d: (%s)\n", G_STRFUNC, __LINE__, element_name); } while (0)
-# define EXIT      do { g_printerr (" EXIT: %s(): %d: (%s)\n", G_STRFUNC, __LINE__, element_name); return; } while (0)
-# define RETURN(r) do { g_printerr (" EXIT: %s(): %d: (%s)\n", G_STRFUNC, __LINE__, element_name); return r; } while (0)
-#else
-# define ENTRY
-# define EXIT return
-# define RETURN(r) do { return r; } while (0)
-#endif
 
 struct _RtfmGirImplements
 {
-  RtfmGirBase base;
-
-  gchar *ingest_element_name;
-
-  const gchar *name;
+  GObject parent_instance;
+  gchar *name;
 };
+
+G_DEFINE_TYPE (RtfmGirImplements, rtfm_gir_implements, RTFM_GIR_TYPE_PARSER_OBJECT)
 
 enum {
   PROP_0,
@@ -48,24 +36,47 @@ enum {
 
 static GParamSpec *properties [N_PROPS];
 
-G_DEFINE_TYPE (RtfmGirImplements, rtfm_gir_implements, RTFM_TYPE_GIR_BASE)
-
 static gboolean
-rtfm_gir_implements_ingest (RtfmGirBase          *base,
-                            GMarkupParseContext  *context,
-                            const gchar          *element_name,
-                            const gchar         **attribute_names,
-                            const gchar         **attribute_values,
-                            GError              **error);
-
-static void
-rtfm_gir_implements_finalize (GObject *object)
+rtfm_gir_implements_ingest (RtfmGirParserObject *object,
+                            GMarkupParseContext *context,
+                            const gchar *element_name,
+                            const gchar **attribute_names,
+                            const gchar **attribute_values,
+                            GError **error)
 {
   RtfmGirImplements *self = (RtfmGirImplements *)object;
 
-  self->name = NULL;
+  g_assert (RTFM_GIR_IS_IMPLEMENTS (self));
+  g_assert (g_str_equal (element_name, "implements"));
 
-  G_OBJECT_CLASS (rtfm_gir_implements_parent_class)->finalize (object);
+  g_clear_pointer (&self->name, g_free);
+
+  if (!rtfm_gir_g_markup_collect_attributes (element_name, attribute_names, attribute_values, error,
+                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "name", &self->name,
+                                             G_MARKUP_COLLECT_INVALID, NULL, NULL))
+    return FALSE;
+
+  return TRUE;
+}
+
+static void
+rtfm_gir_implements_printf (RtfmGirParserObject *object,
+                            GString *str,
+                            guint depth)
+{
+  RtfmGirImplements *self = (RtfmGirImplements *)object;
+  guint i;
+
+  g_assert (RTFM_GIR_IS_IMPLEMENTS (self));
+
+  for (i = 0; i < depth; i++)
+    g_string_append (str, "  ");
+  g_string_append (str, "<implements");
+
+  if (self->name != NULL)
+    g_string_append_printf (str, " name=\"%s\"", self->name);
+
+  g_string_append (str, "/>\n");
 }
 
 static void
@@ -88,24 +99,54 @@ rtfm_gir_implements_get_property (GObject    *object,
 }
 
 static void
+rtfm_gir_implements_set_property (GObject      *object,
+                                  guint         prop_id,
+                                  const GValue *value,
+                                  GParamSpec   *pspec)
+{
+  RtfmGirImplements *self = (RtfmGirImplements *)object;
+
+  switch (prop_id)
+    {
+    case PROP_NAME:
+      g_free (self->name);
+      self->name = g_value_dup_string (value);
+      break;
+
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+    }
+}
+
+static void
+rtfm_gir_implements_finalize (GObject *object)
+{
+  RtfmGirImplements *self = (RtfmGirImplements *)object;
+
+  g_clear_pointer (&self->name, g_free);
+
+  G_OBJECT_CLASS (rtfm_gir_implements_parent_class)->finalize (object);
+}
+
+static void
 rtfm_gir_implements_class_init (RtfmGirImplementsClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
-  RtfmGirBaseClass *base_class = RTFM_GIR_BASE_CLASS (klass);
+  RtfmGirParserObjectClass *parent_class = RTFM_GIR_PARSER_OBJECT_CLASS (klass);
 
-  object_class->finalize = rtfm_gir_implements_finalize;
   object_class->get_property = rtfm_gir_implements_get_property;
+  object_class->set_property = rtfm_gir_implements_set_property;
+  object_class->finalize = rtfm_gir_implements_finalize;
 
-  base_class->ingest = rtfm_gir_implements_ingest;
+  parent_class->ingest = rtfm_gir_implements_ingest;
+  parent_class->printf = rtfm_gir_implements_printf;
 
   properties [PROP_NAME] =
     g_param_spec_string ("name",
                          "name",
                          "name",
                          NULL,
-                         (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
-
-  g_object_class_install_properties (object_class, N_PROPS, properties);
+                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 }
 
 static void
@@ -113,38 +154,16 @@ rtfm_gir_implements_init (RtfmGirImplements *self)
 {
 }
 
-static gboolean
-rtfm_gir_implements_ingest (RtfmGirBase          *base,
-                            GMarkupParseContext  *context,
-                            const gchar          *element_name,
-                            const gchar         **attribute_names,
-                            const gchar         **attribute_values,
-                            GError              **error)
+const gchar *
+rtfm_gir_implements_get_name (RtfmGirImplements *self)
 {
-  RtfmGirImplements *self = (RtfmGirImplements *)base;
-  const gchar *name = NULL;
+  g_return_val_if_fail (RTFM_GIR_IS_IMPLEMENTS (self), NULL);
 
-  ENTRY;
+  return self->name;
+}
 
-  g_assert (RTFM_IS_GIR_IMPLEMENTS (self));
-  g_assert (context != NULL);
-  g_assert (element_name != NULL);
-  g_assert (attribute_names != NULL);
-  g_assert (attribute_values != NULL);
-
-  self->ingest_element_name = g_strdup (element_name);
-
-  self->name = NULL;
-
-  if (!rtfm_g_markup_collect_some_attributes (element_name,
-                                              attribute_names,
-                                              attribute_values,
-                                              error,
-                                              G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "name", &name,
-                                              G_MARKUP_COLLECT_INVALID))
-    RETURN (FALSE);
-
-  self->name = rtfm_gir_base_intern_string (RTFM_GIR_BASE (self), name);
-
-  RETURN (TRUE);
+RtfmGirImplements *
+rtfm_gir_implements_new (void)
+{
+  return g_object_new (RTFM_GIR_TYPE_IMPLEMENTS, NULL);
 }

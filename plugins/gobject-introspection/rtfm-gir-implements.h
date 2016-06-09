@@ -19,15 +19,14 @@
 #ifndef RTFM_GIR_IMPLEMENTS_H
 #define RTFM_GIR_IMPLEMENTS_H
 
-#include "rtfm-gir-base.h"
+#include "rtfm-gir-parser-types.h"
 
 G_BEGIN_DECLS
 
-#define RTFM_TYPE_GIR_IMPLEMENTS (rtfm_gir_implements_get_type())
+RtfmGirImplements *rtfm_gir_implements_new (void);
 
-G_DECLARE_FINAL_TYPE (RtfmGirImplements, rtfm_gir_implements, RTFM, GIR_IMPLEMENTS, RtfmGirBase)
-
+const gchar *rtfm_gir_implements_get_name (RtfmGirImplements *self);
 
 G_END_DECLS
 
-#endif /* RTFM_GIR_IMPLEMENTS_H */
+#endif /* RTFM_GIR_IMPLEMENTS */

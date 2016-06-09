@@ -19,17 +19,26 @@
 #ifndef RTFM_GIR_ALIAS_H
 #define RTFM_GIR_ALIAS_H
 
-#include "rtfm-gir-base.h"
-#include "rtfm-gir-type.h"
+#include "rtfm-gir-parser-types.h"
 
 G_BEGIN_DECLS
 
-#define RTFM_TYPE_GIR_ALIAS (rtfm_gir_alias_get_type())
+RtfmGirAlias *rtfm_gir_alias_new (void);
 
-G_DECLARE_FINAL_TYPE (RtfmGirAlias, rtfm_gir_alias, RTFM, GIR_ALIAS, RtfmGirBase)
+const gchar *rtfm_gir_alias_get_introspectable (RtfmGirAlias *self);
 
-RtfmGirType *rtfm_gir_alias_get_referenced (RtfmGirAlias *self);
+const gchar *rtfm_gir_alias_get_deprecated (RtfmGirAlias *self);
+
+const gchar *rtfm_gir_alias_get_deprecated_version (RtfmGirAlias *self);
+
+const gchar *rtfm_gir_alias_get_version (RtfmGirAlias *self);
+
+const gchar *rtfm_gir_alias_get_stability (RtfmGirAlias *self);
+
+const gchar *rtfm_gir_alias_get_name (RtfmGirAlias *self);
+
+const gchar *rtfm_gir_alias_get_c_type (RtfmGirAlias *self);
 
 G_END_DECLS
 
-#endif /* RTFM_GIR_ALIAS_H */
+#endif /* RTFM_GIR_ALIAS */

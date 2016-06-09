@@ -23,9 +23,9 @@
 
 G_BEGIN_DECLS
 
-#define RTFM_TYPE_GIR_ITEM (rtfm_gir_item_get_type())
+#define RTFM_GIR_TYPE_ITEM (rtfm_gir_item_get_type())
 
-G_DECLARE_DERIVABLE_TYPE (RtfmGirItem, rtfm_gir_item, RTFM, GIR_ITEM, RtfmItem)
+G_DECLARE_DERIVABLE_TYPE (RtfmGirItem, rtfm_gir_item, RTFM_GIR, ITEM, RtfmItem)
 
 struct _RtfmGirItemClass
 {

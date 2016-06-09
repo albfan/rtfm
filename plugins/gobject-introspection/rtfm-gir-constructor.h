@@ -19,17 +19,34 @@
 #ifndef RTFM_GIR_CONSTRUCTOR_H
 #define RTFM_GIR_CONSTRUCTOR_H
 
-#include "rtfm-gir-base.h"
-#include "rtfm-gir-return-value.h"
+#include "rtfm-gir-parser-types.h"
 
 G_BEGIN_DECLS
 
-#define RTFM_TYPE_GIR_CONSTRUCTOR (rtfm_gir_constructor_get_type())
+RtfmGirConstructor *rtfm_gir_constructor_new (void);
 
-G_DECLARE_FINAL_TYPE (RtfmGirConstructor, rtfm_gir_constructor, RTFM, GIR_CONSTRUCTOR, RtfmGirBase)
+const gchar *rtfm_gir_constructor_get_introspectable (RtfmGirConstructor *self);
 
-RtfmGirReturnValue *rtfm_gir_constructor_get_return_value (RtfmGirConstructor *self);
+const gchar *rtfm_gir_constructor_get_deprecated (RtfmGirConstructor *self);
+
+const gchar *rtfm_gir_constructor_get_deprecated_version (RtfmGirConstructor *self);
+
+const gchar *rtfm_gir_constructor_get_version (RtfmGirConstructor *self);
+
+const gchar *rtfm_gir_constructor_get_stability (RtfmGirConstructor *self);
+
+const gchar *rtfm_gir_constructor_get_name (RtfmGirConstructor *self);
+
+const gchar *rtfm_gir_constructor_get_c_identifier (RtfmGirConstructor *self);
+
+const gchar *rtfm_gir_constructor_get_shadowed_by (RtfmGirConstructor *self);
+
+const gchar *rtfm_gir_constructor_get_shadows (RtfmGirConstructor *self);
+
+const gchar *rtfm_gir_constructor_get_throws (RtfmGirConstructor *self);
+
+const gchar *rtfm_gir_constructor_get_moved_to (RtfmGirConstructor *self);
 
 G_END_DECLS
 
-#endif /* RTFM_GIR_CONSTRUCTOR_H */
+#endif /* RTFM_GIR_CONSTRUCTOR */

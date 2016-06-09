@@ -2,11 +2,9 @@ plugindir = $(libdir)/rtfm/plugins
 plugin_LTLIBRARIES = librtfm-plugin-gir.la
 plugin_DATA = gobject-introspection.plugin
 
-data_objects_sources = \
+librtfm_plugin_gir_la_SOURCES = \
 	rtfm-gir-alias.c \
 	rtfm-gir-alias.h \
-	rtfm-gir-base.c \
-	rtfm-gir-base.h \
 	rtfm-gir-bitfield.c \
 	rtfm-gir-bitfield.h \
 	rtfm-gir-callback.c \
@@ -21,6 +19,8 @@ data_objects_sources = \
 	rtfm-gir-constructor.h \
 	rtfm-gir-enumeration.c \
 	rtfm-gir-enumeration.h \
+	rtfm-gir-file.c \
+	rtfm-gir-file.h \
 	rtfm-gir-field.c \
 	rtfm-gir-field.h \
 	rtfm-gir-function.c \
@@ -55,12 +55,34 @@ data_objects_sources = \
 	rtfm-gir-union.h \
 	rtfm-gir-virtual-method.c \
 	rtfm-gir-virtual-method.h \
-	$(NULL)
-
-librtfm_plugin_gir_la_SOURCES = \
-	$(data_objects_sources) \
-	rtfm-gir-markup.c \
-	rtfm-gir-markup.h \
+	rtfm-gir-annotation.c \
+	rtfm-gir-annotation.h \
+	rtfm-gir-array.c \
+	rtfm-gir-array.h \
+	rtfm-gir-doc-deprecated.c \
+	rtfm-gir-doc-deprecated.h \
+	rtfm-gir-doc-stability.c \
+	rtfm-gir-doc-stability.h \
+	rtfm-gir-doc-version.c \
+	rtfm-gir-doc-version.h \
+	rtfm-gir-doc.c \
+	rtfm-gir-doc.h \
+	rtfm-gir-glib-boxed.c \
+	rtfm-gir-glib-boxed.h \
+	rtfm-gir-glib-signal.c \
+	rtfm-gir-glib-signal.h \
+	rtfm-gir-instance-parameter.c \
+	rtfm-gir-instance-parameter.h \
+	rtfm-gir-interface.c \
+	rtfm-gir-interface.h \
+	rtfm-gir-parser-object.c \
+	rtfm-gir-parser-types.h \
+	rtfm-gir-parser.c \
+	rtfm-gir-parser.h \
+	rtfm-gir-prerequisite.c \
+	rtfm-gir-prerequisite.h \
+	rtfm-gir-varargs.c \
+	rtfm-gir-varargs.h \
 	rtfm-gir-item.c \
 	rtfm-gir-item.h \
 	rtfm-gir-provider.c \

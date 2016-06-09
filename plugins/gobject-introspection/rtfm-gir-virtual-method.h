@@ -19,19 +19,36 @@
 #ifndef RTFM_GIR_VIRTUAL_METHOD_H
 #define RTFM_GIR_VIRTUAL_METHOD_H
 
-#include "rtfm-gir-base.h"
-#include "rtfm-gir-return-value.h"
-#include "rtfm-gir-parameters.h"
+#include "rtfm-gir-parser-types.h"
 
 G_BEGIN_DECLS
 
-#define RTFM_TYPE_GIR_VIRTUAL_METHOD (rtfm_gir_virtual_method_get_type())
+RtfmGirVirtualMethod *rtfm_gir_virtual_method_new (void);
 
-G_DECLARE_FINAL_TYPE (RtfmGirVirtualMethod, rtfm_gir_virtual_method, RTFM, GIR_VIRTUAL_METHOD, RtfmGirBase)
+const gchar *rtfm_gir_virtual_method_get_introspectable (RtfmGirVirtualMethod *self);
 
-RtfmGirReturnValue *rtfm_gir_virtual_method_get_return_value (RtfmGirVirtualMethod *self);
-RtfmGirParameters *rtfm_gir_virtual_method_get_parameters (RtfmGirVirtualMethod *self);
+const gchar *rtfm_gir_virtual_method_get_deprecated (RtfmGirVirtualMethod *self);
+
+const gchar *rtfm_gir_virtual_method_get_deprecated_version (RtfmGirVirtualMethod *self);
+
+const gchar *rtfm_gir_virtual_method_get_version (RtfmGirVirtualMethod *self);
+
+const gchar *rtfm_gir_virtual_method_get_stability (RtfmGirVirtualMethod *self);
+
+const gchar *rtfm_gir_virtual_method_get_name (RtfmGirVirtualMethod *self);
+
+const gchar *rtfm_gir_virtual_method_get_c_identifier (RtfmGirVirtualMethod *self);
+
+const gchar *rtfm_gir_virtual_method_get_shadowed_by (RtfmGirVirtualMethod *self);
+
+const gchar *rtfm_gir_virtual_method_get_shadows (RtfmGirVirtualMethod *self);
+
+const gchar *rtfm_gir_virtual_method_get_throws (RtfmGirVirtualMethod *self);
+
+const gchar *rtfm_gir_virtual_method_get_moved_to (RtfmGirVirtualMethod *self);
+
+const gchar *rtfm_gir_virtual_method_get_invoker (RtfmGirVirtualMethod *self);
 
 G_END_DECLS
 
-#endif /* RTFM_GIR_VIRTUAL_METHOD_H */
+#endif /* RTFM_GIR_VIRTUAL_METHOD */

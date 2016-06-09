@@ -23,6 +23,7 @@
 
 #include "rtfm-gir-alias.h"
 #include "rtfm-gir-class.h"
+#include "rtfm-gir-file.h"
 #include "rtfm-gir-item.h"
 #include "rtfm-gir-namespace.h"
 #include "rtfm-gir-provider.h"
@@ -32,7 +33,7 @@ struct _RtfmGirProvider
 {
   GObject     object;
 
-  GPtrArray  *repositories;
+  GPtrArray  *files;
 };
 
 static void provider_iface_init (RtfmProviderInterface *iface);
@@ -48,7 +49,7 @@ rtfm_gir_provider_class_init (RtfmGirProviderClass *klass)
 static void
 rtfm_gir_provider_init (RtfmGirProvider *self)
 {
-  self->repositories = g_ptr_array_new_with_free_func (g_object_unref);
+  self->files = g_ptr_array_new_with_free_func (g_object_unref);
 }
 
 static void
@@ -83,16 +84,14 @@ rtfm_gir_provider_load_directory (RtfmGirProvider *self,
 
   while (NULL != (ptr = g_file_enumerator_next_file (enumerator, cancellable, &error)))
     {
-      g_autoptr(RtfmGirRepository) repository = NULL;
       g_autoptr(GFileInfo) file_info = ptr;
       g_autoptr(GFile) file = NULL;
       const gchar *name;
 
       name = g_file_info_get_name (file_info);
       file = g_file_get_child (parent, name);
-      repository = rtfm_gir_repository_new (file);
 
-      g_ptr_array_add (self->repositories, g_steal_pointer (&repository));
+      g_ptr_array_add (self->files, rtfm_gir_file_new (file));
     }
 
   if (error != NULL)
@@ -109,9 +108,9 @@ rtfm_gir_provider_load_directory (RtfmGirProvider *self,
   if (!g_file_test (index_dir, G_FILE_TEST_IS_DIR))
     g_mkdir_with_parents (index_dir, 0750);
 
-  for (i = 0; i < self->repositories->len; i++)
+  for (i = 0; i < self->files->len; i++)
     {
-      RtfmGirRepository *repository = g_ptr_array_index (self->repositories, i);
+      RtfmGirFile *item = g_ptr_array_index (self->files, i);
       g_autoptr(GFile) file = NULL;
       g_autofree gchar *gir_path = NULL;
       g_autofree gchar *index_path = NULL;
@@ -121,7 +120,7 @@ rtfm_gir_provider_load_directory (RtfmGirProvider *self,
       GFile *gir_file = NULL;
 
 
-      gir_file = rtfm_gir_repository_get_file (repository);
+      gir_file = rtfm_gir_file_get_file (item);
       gir_path = g_file_get_path (gir_file);
 
       checksum = g_checksum_new (G_CHECKSUM_SHA1);
@@ -135,11 +134,13 @@ rtfm_gir_provider_load_directory (RtfmGirProvider *self,
                                      NULL);
       file = g_file_new_for_path (index_path);
 
+#if 0
       rtfm_gir_repository_build_index_async (repository,
                                              file,
                                              cancellable,
                                              NULL,
                                              NULL);
+#endif
     }
 }
 
@@ -183,7 +184,7 @@ rtfm_gir_provider_populate_cb (GObject      *object,
   RtfmGirItem *item = (RtfmGirItem *)object;
   GError *error = NULL;
 
-  g_assert (RTFM_IS_GIR_ITEM (item));
+  g_assert (RTFM_GIR_IS_ITEM (item));
   g_assert (G_IS_ASYNC_RESULT (result));
   g_assert (G_IS_TASK (task));
 
@@ -219,12 +220,12 @@ rtfm_gir_provider_populate_async (RtfmProvider        *provider,
 
   if (rtfm_path_is_empty (path))
     {
-      for (i = 0; i < self->repositories->len; i++)
+      for (i = 0; i < self->files->len; i++)
         {
-          RtfmGirRepository *repository = g_ptr_array_index (self->repositories, i);
+          RtfmGirFile *file = g_ptr_array_index (self->files, i);
           g_autoptr(RtfmGirItem) item = NULL;
 
-          item = rtfm_gir_item_new (G_OBJECT (repository));
+          item = rtfm_gir_item_new (G_OBJECT (file));
           rtfm_collection_append (collection, g_steal_pointer (&item));
         }
 
@@ -232,7 +233,7 @@ rtfm_gir_provider_populate_async (RtfmProvider        *provider,
 
       return;
     }
-  else if (RTFM_IS_GIR_ITEM (parent))
+  else if (RTFM_GIR_IS_ITEM (parent))
     {
       rtfm_gir_item_populate_async (RTFM_GIR_ITEM (parent),
                                     collection,

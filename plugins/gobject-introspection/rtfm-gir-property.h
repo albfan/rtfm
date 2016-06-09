@@ -19,17 +19,34 @@
 #ifndef RTFM_GIR_PROPERTY_H
 #define RTFM_GIR_PROPERTY_H
 
-#include "rtfm-gir-base.h"
-#include "rtfm-gir-type.h"
+#include "rtfm-gir-parser-types.h"
 
 G_BEGIN_DECLS
 
-#define RTFM_TYPE_GIR_PROPERTY (rtfm_gir_property_get_type())
+RtfmGirProperty *rtfm_gir_property_new (void);
 
-G_DECLARE_FINAL_TYPE (RtfmGirProperty, rtfm_gir_property, RTFM, GIR_PROPERTY, RtfmGirBase)
+const gchar *rtfm_gir_property_get_introspectable (RtfmGirProperty *self);
 
-RtfmGirType *rtfm_gir_property_get_referenced (RtfmGirProperty *self);
+const gchar *rtfm_gir_property_get_deprecated (RtfmGirProperty *self);
+
+const gchar *rtfm_gir_property_get_deprecated_version (RtfmGirProperty *self);
+
+const gchar *rtfm_gir_property_get_version (RtfmGirProperty *self);
+
+const gchar *rtfm_gir_property_get_stability (RtfmGirProperty *self);
+
+const gchar *rtfm_gir_property_get_name (RtfmGirProperty *self);
+
+const gchar *rtfm_gir_property_get_writable (RtfmGirProperty *self);
+
+const gchar *rtfm_gir_property_get_readable (RtfmGirProperty *self);
+
+const gchar *rtfm_gir_property_get_construct (RtfmGirProperty *self);
+
+const gchar *rtfm_gir_property_get_construct_only (RtfmGirProperty *self);
+
+const gchar *rtfm_gir_property_get_transfer_ownership (RtfmGirProperty *self);
 
 G_END_DECLS
 
-#endif /* RTFM_GIR_PROPERTY_H */
+#endif /* RTFM_GIR_PROPERTY */

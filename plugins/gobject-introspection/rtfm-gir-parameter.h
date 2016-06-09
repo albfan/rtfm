@@ -19,18 +19,36 @@
 #ifndef RTFM_GIR_PARAMETER_H
 #define RTFM_GIR_PARAMETER_H
 
-#include "rtfm-gir-base.h"
-#include "rtfm-gir-type.h"
+#include "rtfm-gir-parser-types.h"
 
 G_BEGIN_DECLS
 
-#define RTFM_TYPE_GIR_PARAMETER (rtfm_gir_parameter_get_type())
+RtfmGirParameter *rtfm_gir_parameter_new (void);
 
-G_DECLARE_FINAL_TYPE (RtfmGirParameter, rtfm_gir_parameter, RTFM, GIR_PARAMETER, RtfmGirBase)
+const gchar *rtfm_gir_parameter_get_name (RtfmGirParameter *self);
 
-RtfmGirType *rtfm_gir_parameter_get_referenced (RtfmGirParameter *self);
-gboolean     rtfm_gir_parameter_is_instance    (RtfmGirParameter *self);
+const gchar *rtfm_gir_parameter_get_nullable (RtfmGirParameter *self);
+
+const gchar *rtfm_gir_parameter_get_allow_none (RtfmGirParameter *self);
+
+const gchar *rtfm_gir_parameter_get_introspectable (RtfmGirParameter *self);
+
+const gchar *rtfm_gir_parameter_get_closure (RtfmGirParameter *self);
+
+const gchar *rtfm_gir_parameter_get_destroy (RtfmGirParameter *self);
+
+const gchar *rtfm_gir_parameter_get_scope (RtfmGirParameter *self);
+
+const gchar *rtfm_gir_parameter_get_direction (RtfmGirParameter *self);
+
+const gchar *rtfm_gir_parameter_get_caller_allocates (RtfmGirParameter *self);
+
+const gchar *rtfm_gir_parameter_get_optional (RtfmGirParameter *self);
+
+const gchar *rtfm_gir_parameter_get_skip (RtfmGirParameter *self);
+
+const gchar *rtfm_gir_parameter_get_transfer_ownership (RtfmGirParameter *self);
 
 G_END_DECLS
 
-#endif /* RTFM_GIR_PARAMETER_H */
+#endif /* RTFM_GIR_PARAMETER */

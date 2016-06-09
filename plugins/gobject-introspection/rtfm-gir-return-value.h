@@ -19,17 +19,28 @@
 #ifndef RTFM_GIR_RETURN_VALUE_H
 #define RTFM_GIR_RETURN_VALUE_H
 
-#include "rtfm-gir-base.h"
-#include "rtfm-gir-type.h"
+#include "rtfm-gir-parser-types.h"
 
 G_BEGIN_DECLS
 
-#define RTFM_TYPE_GIR_RETURN_VALUE (rtfm_gir_return_value_get_type())
+RtfmGirReturnValue *rtfm_gir_return_value_new (void);
 
-G_DECLARE_FINAL_TYPE (RtfmGirReturnValue, rtfm_gir_return_value, RTFM, GIR_RETURN_VALUE, RtfmGirBase)
+const gchar *rtfm_gir_return_value_get_introspectable (RtfmGirReturnValue *self);
 
-RtfmGirType *rtfm_gir_return_value_get_referenced (RtfmGirReturnValue *self);
+const gchar *rtfm_gir_return_value_get_nullable (RtfmGirReturnValue *self);
+
+const gchar *rtfm_gir_return_value_get_closure (RtfmGirReturnValue *self);
+
+const gchar *rtfm_gir_return_value_get_scope (RtfmGirReturnValue *self);
+
+const gchar *rtfm_gir_return_value_get_destroy (RtfmGirReturnValue *self);
+
+const gchar *rtfm_gir_return_value_get_skip (RtfmGirReturnValue *self);
+
+const gchar *rtfm_gir_return_value_get_allow_none (RtfmGirReturnValue *self);
+
+const gchar *rtfm_gir_return_value_get_transfer_ownership (RtfmGirReturnValue *self);
 
 G_END_DECLS
 
-#endif /* RTFM_GIR_RETURN_VALUE_H */
+#endif /* RTFM_GIR_RETURN_VALUE */

@@ -19,66 +19,256 @@
 #define G_LOG_DOMAIN "rtfm-gir-member"
 
 #include "rtfm-gir-member.h"
-#include "rtfm-gir-markup.h"
 
-#if 0
-# define ENTRY     do { g_printerr ("ENTRY: %s(): %d: (%s)\n", G_STRFUNC, __LINE__, element_name); } while (0)
-# define EXIT      do { g_printerr (" EXIT: %s(): %d: (%s)\n", G_STRFUNC, __LINE__, element_name); return; } while (0)
-# define RETURN(r) do { g_printerr (" EXIT: %s(): %d: (%s)\n", G_STRFUNC, __LINE__, element_name); return r; } while (0)
-#else
-# define ENTRY
-# define EXIT return
-# define RETURN(r) do { return r; } while (0)
-#endif
+#include "rtfm-gir-doc-version.h"
+#include "rtfm-gir-doc-stability.h"
+#include "rtfm-gir-doc.h"
+#include "rtfm-gir-doc-deprecated.h"
+#include "rtfm-gir-annotation.h"
 
 struct _RtfmGirMember
 {
-  RtfmGirBase base;
-
-  gchar *ingest_element_name;
-
-  const gchar *name;
-  const gchar *value;
-  const gchar *c_identifier;
-  const gchar *glib_nick;
-  GString *doc;
+  GObject parent_instance;
+  gchar *introspectable;
+  gchar *deprecated;
+  gchar *deprecated_version;
+  gchar *version;
+  gchar *stability;
+  gchar *name;
+  gchar *value;
+  gchar *c_identifier;
+  gchar *glib_nick;
+  GPtrArray *children;
 };
+
+G_DEFINE_TYPE (RtfmGirMember, rtfm_gir_member, RTFM_GIR_TYPE_PARSER_OBJECT)
 
 enum {
   PROP_0,
+  PROP_INTROSPECTABLE,
+  PROP_DEPRECATED,
+  PROP_DEPRECATED_VERSION,
+  PROP_VERSION,
+  PROP_STABILITY,
   PROP_NAME,
   PROP_VALUE,
   PROP_C_IDENTIFIER,
   PROP_GLIB_NICK,
-  PROP_DOC,
   N_PROPS
 };
 
 static GParamSpec *properties [N_PROPS];
 
-G_DEFINE_TYPE (RtfmGirMember, rtfm_gir_member, RTFM_TYPE_GIR_BASE)
-
-static gboolean
-rtfm_gir_member_ingest (RtfmGirBase          *base,
-                        GMarkupParseContext  *context,
-                        const gchar          *element_name,
-                        const gchar         **attribute_names,
-                        const gchar         **attribute_values,
-                        GError              **error);
-
-static void
-rtfm_gir_member_finalize (GObject *object)
+static GPtrArray *
+rtfm_gir_member_get_children (RtfmGirParserObject *object)
 {
   RtfmGirMember *self = (RtfmGirMember *)object;
 
-  self->name = NULL;
-  self->value = NULL;
-  self->c_identifier = NULL;
-  self->glib_nick = NULL;
-  g_string_free (self->doc, TRUE);
-  self->doc = NULL;
+  g_assert (RTFM_GIR_IS_MEMBER (self));
 
-  G_OBJECT_CLASS (rtfm_gir_member_parent_class)->finalize (object);
+  return self->children;
+}
+
+static void
+rtfm_gir_member_start_element (GMarkupParseContext *context,
+                               const gchar *element_name,
+                               const gchar **attribute_names,
+                               const gchar **attribute_values,
+                               gpointer user_data,
+                               GError **error)
+{
+  RtfmGirMember *self = user_data;
+
+  g_assert (RTFM_GIR_IS_MEMBER (self));
+  g_assert (context != NULL);
+  g_assert (element_name != NULL);
+  g_assert (attribute_names != NULL);
+  g_assert (attribute_values != NULL);
+
+  if (FALSE) {}
+  else if (g_str_equal (element_name, "doc-version"))
+    {
+      g_autoptr(RtfmGirDocVersion) child = NULL;
+
+      child = rtfm_gir_doc_version_new ();
+
+      if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
+        return;
+
+      g_ptr_array_add (self->children, g_steal_pointer (&child));
+    }
+  else if (g_str_equal (element_name, "doc-stability"))
+    {
+      g_autoptr(RtfmGirDocStability) child = NULL;
+
+      child = rtfm_gir_doc_stability_new ();
+
+      if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
+        return;
+
+      g_ptr_array_add (self->children, g_steal_pointer (&child));
+    }
+  else if (g_str_equal (element_name, "doc"))
+    {
+      g_autoptr(RtfmGirDoc) child = NULL;
+
+      child = rtfm_gir_doc_new ();
+
+      if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
+        return;
+
+      g_ptr_array_add (self->children, g_steal_pointer (&child));
+    }
+  else if (g_str_equal (element_name, "doc-deprecated"))
+    {
+      g_autoptr(RtfmGirDocDeprecated) child = NULL;
+
+      child = rtfm_gir_doc_deprecated_new ();
+
+      if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
+        return;
+
+      g_ptr_array_add (self->children, g_steal_pointer (&child));
+    }
+  else if (g_str_equal (element_name, "annotation"))
+    {
+      g_autoptr(RtfmGirAnnotation) child = NULL;
+
+      child = rtfm_gir_annotation_new ();
+
+      if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
+        return;
+
+      g_ptr_array_add (self->children, g_steal_pointer (&child));
+    }
+}
+
+static void
+rtfm_gir_member_end_element (GMarkupParseContext *context,
+                             const gchar *element_name,
+                             gpointer user_data,
+                             GError **error)
+{
+  g_assert (RTFM_GIR_IS_MEMBER (user_data));
+  g_assert (context != NULL);
+  g_assert (element_name != NULL);
+
+  if (FALSE) {}
+  else if (g_str_equal (element_name, "doc-version"))
+    {
+      g_markup_parse_context_pop (context);
+    }
+  else if (g_str_equal (element_name, "doc-stability"))
+    {
+      g_markup_parse_context_pop (context);
+    }
+  else if (g_str_equal (element_name, "doc"))
+    {
+      g_markup_parse_context_pop (context);
+    }
+  else if (g_str_equal (element_name, "doc-deprecated"))
+    {
+      g_markup_parse_context_pop (context);
+    }
+}
+
+static const GMarkupParser markup_parser = {
+  rtfm_gir_member_start_element,
+  rtfm_gir_member_end_element,
+  NULL,
+  NULL,
+  NULL,
+};
+
+static gboolean
+rtfm_gir_member_ingest (RtfmGirParserObject *object,
+                        GMarkupParseContext *context,
+                        const gchar *element_name,
+                        const gchar **attribute_names,
+                        const gchar **attribute_values,
+                        GError **error)
+{
+  RtfmGirMember *self = (RtfmGirMember *)object;
+
+  g_assert (RTFM_GIR_IS_MEMBER (self));
+  g_assert (g_str_equal (element_name, "member"));
+
+  g_clear_pointer (&self->introspectable, g_free);
+  g_clear_pointer (&self->deprecated, g_free);
+  g_clear_pointer (&self->deprecated_version, g_free);
+  g_clear_pointer (&self->version, g_free);
+  g_clear_pointer (&self->stability, g_free);
+  g_clear_pointer (&self->name, g_free);
+  g_clear_pointer (&self->value, g_free);
+  g_clear_pointer (&self->c_identifier, g_free);
+  g_clear_pointer (&self->glib_nick, g_free);
+
+  if (!rtfm_gir_g_markup_collect_attributes (element_name, attribute_names, attribute_values, error,
+                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "introspectable", &self->introspectable,
+                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "deprecated", &self->deprecated,
+                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "deprecated-version", &self->deprecated_version,
+                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "version", &self->version,
+                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "stability", &self->stability,
+                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "name", &self->name,
+                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "value", &self->value,
+                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "c:identifier", &self->c_identifier,
+                                             G_MARKUP_COLLECT_STRDUP | G_MARKUP_COLLECT_OPTIONAL, "glib:nick", &self->glib_nick,
+                                             G_MARKUP_COLLECT_INVALID, NULL, NULL))
+    return FALSE;
+
+  g_markup_parse_context_push (context, &markup_parser, self);
+
+  return TRUE;
+}
+
+static void
+rtfm_gir_member_printf (RtfmGirParserObject *object,
+                        GString *str,
+                        guint depth)
+{
+  RtfmGirMember *self = (RtfmGirMember *)object;
+  guint i;
+
+  g_assert (RTFM_GIR_IS_MEMBER (self));
+
+  for (i = 0; i < depth; i++)
+    g_string_append (str, "  ");
+  g_string_append (str, "<member");
+
+  if (self->introspectable != NULL)
+    g_string_append_printf (str, " introspectable=\"%s\"", self->introspectable);
+  if (self->deprecated != NULL)
+    g_string_append_printf (str, " deprecated=\"%s\"", self->deprecated);
+  if (self->deprecated_version != NULL)
+    g_string_append_printf (str, " deprecated-version=\"%s\"", self->deprecated_version);
+  if (self->version != NULL)
+    g_string_append_printf (str, " version=\"%s\"", self->version);
+  if (self->stability != NULL)
+    g_string_append_printf (str, " stability=\"%s\"", self->stability);
+  if (self->name != NULL)
+    g_string_append_printf (str, " name=\"%s\"", self->name);
+  if (self->value != NULL)
+    g_string_append_printf (str, " value=\"%s\"", self->value);
+  if (self->c_identifier != NULL)
+    g_string_append_printf (str, " c:identifier=\"%s\"", self->c_identifier);
+  if (self->glib_nick != NULL)
+    g_string_append_printf (str, " glib:nick=\"%s\"", self->glib_nick);
+
+  if (self->children != NULL && self->children->len > 0)
+    {
+      g_string_append (str, ">\n");
+
+      for (i = 0; i < self->children->len; i++)
+        rtfm_gir_parser_object_printf (g_ptr_array_index (self->children, i), str, depth + 1);
+
+      for (i = 0; i < depth; i++)
+        g_string_append (str, "  ");
+      g_string_append (str, "</member>\n");
+    }
+  else
+    {
+      g_string_append (str, "/>\n");
+    }
 }
 
 static void
@@ -91,6 +281,26 @@ rtfm_gir_member_get_property (GObject    *object,
 
   switch (prop_id)
     {
+    case PROP_INTROSPECTABLE:
+      g_value_set_string (value, self->introspectable);
+      break;
+
+    case PROP_DEPRECATED:
+      g_value_set_string (value, self->deprecated);
+      break;
+
+    case PROP_DEPRECATED_VERSION:
+      g_value_set_string (value, self->deprecated_version);
+      break;
+
+    case PROP_VERSION:
+      g_value_set_string (value, self->version);
+      break;
+
+    case PROP_STABILITY:
+      g_value_set_string (value, self->stability);
+      break;
+
     case PROP_NAME:
       g_value_set_string (value, self->name);
       break;
@@ -107,9 +317,64 @@ rtfm_gir_member_get_property (GObject    *object,
       g_value_set_string (value, self->glib_nick);
       break;
 
-    case PROP_DOC:
-      if (self->doc != NULL)
-        g_value_set_string (value, self->doc->str);
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+    }
+}
+
+static void
+rtfm_gir_member_set_property (GObject      *object,
+                              guint         prop_id,
+                              const GValue *value,
+                              GParamSpec   *pspec)
+{
+  RtfmGirMember *self = (RtfmGirMember *)object;
+
+  switch (prop_id)
+    {
+    case PROP_INTROSPECTABLE:
+      g_free (self->introspectable);
+      self->introspectable = g_value_dup_string (value);
+      break;
+
+    case PROP_DEPRECATED:
+      g_free (self->deprecated);
+      self->deprecated = g_value_dup_string (value);
+      break;
+
+    case PROP_DEPRECATED_VERSION:
+      g_free (self->deprecated_version);
+      self->deprecated_version = g_value_dup_string (value);
+      break;
+
+    case PROP_VERSION:
+      g_free (self->version);
+      self->version = g_value_dup_string (value);
+      break;
+
+    case PROP_STABILITY:
+      g_free (self->stability);
+      self->stability = g_value_dup_string (value);
+      break;
+
+    case PROP_NAME:
+      g_free (self->name);
+      self->name = g_value_dup_string (value);
+      break;
+
+    case PROP_VALUE:
+      g_free (self->value);
+      self->value = g_value_dup_string (value);
+      break;
+
+    case PROP_C_IDENTIFIER:
+      g_free (self->c_identifier);
+      self->c_identifier = g_value_dup_string (value);
+      break;
+
+    case PROP_GLIB_NICK:
+      g_free (self->glib_nick);
+      self->glib_nick = g_value_dup_string (value);
       break;
 
     default:
@@ -118,203 +383,182 @@ rtfm_gir_member_get_property (GObject    *object,
 }
 
 static void
+rtfm_gir_member_finalize (GObject *object)
+{
+  RtfmGirMember *self = (RtfmGirMember *)object;
+
+  g_clear_pointer (&self->introspectable, g_free);
+  g_clear_pointer (&self->deprecated, g_free);
+  g_clear_pointer (&self->deprecated_version, g_free);
+  g_clear_pointer (&self->version, g_free);
+  g_clear_pointer (&self->stability, g_free);
+  g_clear_pointer (&self->name, g_free);
+  g_clear_pointer (&self->value, g_free);
+  g_clear_pointer (&self->c_identifier, g_free);
+  g_clear_pointer (&self->glib_nick, g_free);
+  g_clear_pointer (&self->children, g_ptr_array_unref);
+
+  G_OBJECT_CLASS (rtfm_gir_member_parent_class)->finalize (object);
+}
+
+static void
 rtfm_gir_member_class_init (RtfmGirMemberClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
-  RtfmGirBaseClass *base_class = RTFM_GIR_BASE_CLASS (klass);
+  RtfmGirParserObjectClass *parent_class = RTFM_GIR_PARSER_OBJECT_CLASS (klass);
 
-  object_class->finalize = rtfm_gir_member_finalize;
   object_class->get_property = rtfm_gir_member_get_property;
+  object_class->set_property = rtfm_gir_member_set_property;
+  object_class->finalize = rtfm_gir_member_finalize;
 
-  base_class->ingest = rtfm_gir_member_ingest;
+  parent_class->ingest = rtfm_gir_member_ingest;
+  parent_class->printf = rtfm_gir_member_printf;
+  parent_class->get_children = rtfm_gir_member_get_children;
+
+  properties [PROP_INTROSPECTABLE] =
+    g_param_spec_string ("introspectable",
+                         "introspectable",
+                         "introspectable",
+                         NULL,
+                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  properties [PROP_DEPRECATED] =
+    g_param_spec_string ("deprecated",
+                         "deprecated",
+                         "deprecated",
+                         NULL,
+                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  properties [PROP_DEPRECATED_VERSION] =
+    g_param_spec_string ("deprecated-version",
+                         "deprecated-version",
+                         "deprecated-version",
+                         NULL,
+                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  properties [PROP_VERSION] =
+    g_param_spec_string ("version",
+                         "version",
+                         "version",
+                         NULL,
+                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  properties [PROP_STABILITY] =
+    g_param_spec_string ("stability",
+                         "stability",
+                         "stability",
+                         NULL,
+                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   properties [PROP_NAME] =
     g_param_spec_string ("name",
                          "name",
                          "name",
                          NULL,
-                         (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   properties [PROP_VALUE] =
     g_param_spec_string ("value",
                          "value",
                          "value",
                          NULL,
-                         (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   properties [PROP_C_IDENTIFIER] =
     g_param_spec_string ("c-identifier",
                          "c-identifier",
                          "c-identifier",
                          NULL,
-                         (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
+                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   properties [PROP_GLIB_NICK] =
     g_param_spec_string ("glib-nick",
                          "glib-nick",
                          "glib-nick",
                          NULL,
-                         (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
-
-  properties [PROP_DOC] =
-    g_param_spec_string ("doc",
-                         "doc",
-                         "doc",
-                         NULL,
-                         (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
-
-  g_object_class_install_properties (object_class, N_PROPS, properties);
+                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 }
 
 static void
 rtfm_gir_member_init (RtfmGirMember *self)
 {
+  self->children = g_ptr_array_new_with_free_func (g_object_unref);
 }
 
-static void
-rtfm_gir_member_start_element (GMarkupParseContext  *context,
-                               const gchar          *element_name,
-                               const gchar         **attribute_names,
-                               const gchar         **attribute_values,
-                               gpointer              user_data,
-                               GError              **error)
+const gchar *
+rtfm_gir_member_get_introspectable (RtfmGirMember *self)
 {
-  RtfmGirMember *self = user_data;
+  g_return_val_if_fail (RTFM_GIR_IS_MEMBER (self), NULL);
 
-  ENTRY;
-
-  g_assert (context != NULL);
-  g_assert (element_name != NULL);
-  g_assert (attribute_names != NULL);
-  g_assert (attribute_values != NULL);
-  g_assert (RTFM_IS_GIR_MEMBER (self));
-  g_assert (error != NULL);
-
-  if (FALSE) {}
-  else if (g_strcmp0 (element_name, "doc") == 0)
-    {
-      /* Do nothing */
-    }
-
-
-  EXIT;
+  return self->introspectable;
 }
 
-static void
-rtfm_gir_member_end_element (GMarkupParseContext  *context,
-                             const gchar          *element_name,
-                             gpointer              user_data,
-                             GError              **error)
+const gchar *
+rtfm_gir_member_get_deprecated (RtfmGirMember *self)
 {
-  RtfmGirMember *self = user_data;
+  g_return_val_if_fail (RTFM_GIR_IS_MEMBER (self), NULL);
 
-  g_assert (context != NULL);
-  g_assert (element_name != NULL);
-  g_assert (RTFM_IS_GIR_MEMBER (self));
-  g_assert (error != NULL);
-
-  if (g_strcmp0 (element_name, self->ingest_element_name) == 0)
-    {
-      g_markup_parse_context_pop (context);
-      g_clear_pointer (&self->ingest_element_name, g_free);
-    }
+  return self->deprecated;
 }
 
-static void
-rtfm_gir_member_text (GMarkupParseContext  *context,
-                      const gchar          *text,
-                      gsize                 text_len,
-                      gpointer              user_data,
-                      GError              **error)
+const gchar *
+rtfm_gir_member_get_deprecated_version (RtfmGirMember *self)
 {
-  RtfmGirMember *self = user_data;
-  const gchar *element_name;
+  g_return_val_if_fail (RTFM_GIR_IS_MEMBER (self), NULL);
 
-  g_assert (context != NULL);
-  g_assert (text != NULL);
-  g_assert (RTFM_IS_GIR_MEMBER (self));
-  g_assert (error != NULL);
-
-  element_name = g_markup_parse_context_get_element (context);
-
-  if (FALSE) {}
-  else if (g_strcmp0 (element_name, "doc") == 0)
-    {
-      if (self->doc == NULL)
-        self->doc = g_string_new_len (text, text_len);
-      else
-        g_string_append_len (self->doc, text, text_len);
-    }
+  return self->deprecated_version;
 }
 
-static void
-rtfm_gir_member_error (GMarkupParseContext *context,
-                       GError              *error,
-                       gpointer             user_data)
+const gchar *
+rtfm_gir_member_get_version (RtfmGirMember *self)
 {
-  RtfmGirMember *self = user_data;
+  g_return_val_if_fail (RTFM_GIR_IS_MEMBER (self), NULL);
 
-  g_assert (context != NULL);
-  g_assert (RTFM_IS_GIR_MEMBER (self));
-  g_assert (error != NULL);
-
-  g_clear_pointer (&self->ingest_element_name, g_free);
+  return self->version;
 }
 
-static const GMarkupParser markup_parser = {
-  rtfm_gir_member_start_element,
-  rtfm_gir_member_end_element,
-  rtfm_gir_member_text,
-  NULL,
-  rtfm_gir_member_error,
-};
-
-static gboolean
-rtfm_gir_member_ingest (RtfmGirBase          *base,
-                        GMarkupParseContext  *context,
-                        const gchar          *element_name,
-                        const gchar         **attribute_names,
-                        const gchar         **attribute_values,
-                        GError              **error)
+const gchar *
+rtfm_gir_member_get_stability (RtfmGirMember *self)
 {
-  RtfmGirMember *self = (RtfmGirMember *)base;
-  const gchar *name = NULL;
-  const gchar *value = NULL;
-  const gchar *c_identifier = NULL;
-  const gchar *glib_nick = NULL;
+  g_return_val_if_fail (RTFM_GIR_IS_MEMBER (self), NULL);
 
-  ENTRY;
+  return self->stability;
+}
 
-  g_assert (RTFM_IS_GIR_MEMBER (self));
-  g_assert (context != NULL);
-  g_assert (element_name != NULL);
-  g_assert (attribute_names != NULL);
-  g_assert (attribute_values != NULL);
+const gchar *
+rtfm_gir_member_get_name (RtfmGirMember *self)
+{
+  g_return_val_if_fail (RTFM_GIR_IS_MEMBER (self), NULL);
 
-  self->ingest_element_name = g_strdup (element_name);
+  return self->name;
+}
 
-  self->name = NULL;
-  self->value = NULL;
-  self->c_identifier = NULL;
-  self->glib_nick = NULL;
+const gchar *
+rtfm_gir_member_get_value (RtfmGirMember *self)
+{
+  g_return_val_if_fail (RTFM_GIR_IS_MEMBER (self), NULL);
 
-  if (!rtfm_g_markup_collect_some_attributes (element_name,
-                                              attribute_names,
-                                              attribute_values,
-                                              error,
-                                              G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "name", &name,
-                                              G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "value", &value,
-                                              G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "c:identifier", &c_identifier,
-                                              G_MARKUP_COLLECT_STRING | G_MARKUP_COLLECT_OPTIONAL, "glib:nick", &glib_nick,
-                                              G_MARKUP_COLLECT_INVALID))
-    RETURN (FALSE);
+  return self->value;
+}
 
-  self->name = rtfm_gir_base_intern_string (RTFM_GIR_BASE (self), name);
-  self->value = rtfm_gir_base_intern_string (RTFM_GIR_BASE (self), value);
-  self->c_identifier = rtfm_gir_base_intern_string (RTFM_GIR_BASE (self), c_identifier);
-  self->glib_nick = rtfm_gir_base_intern_string (RTFM_GIR_BASE (self), glib_nick);
+const gchar *
+rtfm_gir_member_get_c_identifier (RtfmGirMember *self)
+{
+  g_return_val_if_fail (RTFM_GIR_IS_MEMBER (self), NULL);
 
-  g_markup_parse_context_push (context, &markup_parser, self);
+  return self->c_identifier;
+}
 
-  RETURN (TRUE);
+const gchar *
+rtfm_gir_member_get_glib_nick (RtfmGirMember *self)
+{
+  g_return_val_if_fail (RTFM_GIR_IS_MEMBER (self), NULL);
+
+  return self->glib_nick;
+}
+
+RtfmGirMember *
+rtfm_gir_member_new (void)
+{
+  return g_object_new (RTFM_GIR_TYPE_MEMBER, NULL);
 }

@@ -19,15 +19,16 @@
 #ifndef RTFM_GIR_INCLUDE_H
 #define RTFM_GIR_INCLUDE_H
 
-#include "rtfm-gir-base.h"
+#include "rtfm-gir-parser-types.h"
 
 G_BEGIN_DECLS
 
-#define RTFM_TYPE_GIR_INCLUDE (rtfm_gir_include_get_type())
+RtfmGirInclude *rtfm_gir_include_new (void);
 
-G_DECLARE_FINAL_TYPE (RtfmGirInclude, rtfm_gir_include, RTFM, GIR_INCLUDE, RtfmGirBase)
+const gchar *rtfm_gir_include_get_name (RtfmGirInclude *self);
 
+const gchar *rtfm_gir_include_get_version (RtfmGirInclude *self);
 
 G_END_DECLS
 
-#endif /* RTFM_GIR_INCLUDE_H */
+#endif /* RTFM_GIR_INCLUDE */
