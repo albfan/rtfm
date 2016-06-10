@@ -33,7 +33,6 @@ typedef struct
   GCancellable  *cancellable;
 
   RtfmStackList *browse;
-  RtfmStackList *search;
 } RtfmSidebarPrivate;
 
 G_DEFINE_TYPE_WITH_PRIVATE (RtfmSidebar, rtfm_sidebar, GTK_TYPE_BOX)
@@ -178,7 +177,6 @@ rtfm_sidebar_disconnect (RtfmSidebar *self)
     }
 
   rtfm_stack_list_clear (priv->browse);
-  rtfm_stack_list_clear (priv->search);
 }
 
 static void
@@ -311,7 +309,6 @@ rtfm_sidebar_class_init (RtfmSidebarClass *klass)
   gtk_widget_class_set_template_from_resource (widget_class, "/org/gnome/rtfm/ui/rtfm-sidebar.ui");
   gtk_widget_class_set_css_name (widget_class, "rtfmsidebar");
   gtk_widget_class_bind_template_child_private (widget_class, RtfmSidebar, browse);
-  gtk_widget_class_bind_template_child_private (widget_class, RtfmSidebar, search);
 
   signals [ITEM_ACTIVATED] =
     g_signal_new ("item-activated",

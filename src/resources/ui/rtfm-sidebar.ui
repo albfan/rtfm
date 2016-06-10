@@ -3,19 +3,8 @@
   <template class="RtfmSidebar" parent="GtkBox">
     <property name="orientation">vertical</property>
     <child>
-      <object class="GtkStack" id="stack">
-        <property name="expand">true</property>
+      <object class="RtfmStackList" id="browse">
         <property name="visible">true</property>
-        <child>
-          <object class="RtfmStackList" id="browse">
-            <property name="visible">true</property>
-          </object>
-        </child>
-        <child>
-          <object class="RtfmStackList" id="search">
-            <property name="visible">true</property>
-          </object>
-        </child>
       </object>
     </child>
   </template>
