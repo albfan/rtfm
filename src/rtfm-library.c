@@ -577,7 +577,10 @@ rtfm_library_search_cb (GObject      *object,
   g_assert (G_IS_TASK (task));
 
   if (!rtfm_provider_search_finish (provider, result, &error))
-    g_warning ("%s", error->message);
+    {
+      if (!g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+        g_warning ("%s", error->message);
+    }
 
   state = g_task_get_task_data (task);
 
