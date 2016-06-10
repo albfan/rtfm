@@ -289,7 +289,7 @@ fuzzy_do_match (const FuzzyLookup    *lookup,
                                          GUINT_TO_POINTER (iter->document_id),
                                          NULL,
                                          (gpointer *)&lookup_score) ||
-          iter_score < GPOINTER_TO_INT (score))
+          iter_score < GPOINTER_TO_INT (lookup_score))
         g_hash_table_insert (lookup->matches,
                              GUINT_TO_POINTER (iter->document_id),
                              GINT_TO_POINTER (iter_score));
