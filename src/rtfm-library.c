@@ -66,6 +66,13 @@ typedef struct
   guint           active;
 } PopulateState;
 
+typedef struct
+{
+  RtfmSearchSettings *search_settings;
+  RtfmSearchResults  *search_results;
+  GList              *providers;
+} SearchState;
+
 G_DEFINE_TYPE (RtfmLibrary, rtfm_library, G_TYPE_OBJECT)
 
 enum {
@@ -75,6 +82,18 @@ enum {
 };
 
 static GParamSpec *properties [N_PROPS];
+
+static void
+search_state_free (gpointer data)
+{
+  SearchState *state = data;
+
+  g_clear_object (&state->search_settings);
+  g_clear_object (&state->search_results);
+  g_list_free_full (state->providers, g_object_unref);
+  state->providers = NULL;
+  g_slice_free (SearchState, state);
+}
 
 static void
 populate_state_free (gpointer data)
@@ -542,4 +561,84 @@ rtfm_library_get_root (RtfmLibrary *self)
   g_return_val_if_fail (RTFM_IS_LIBRARY (self), NULL);
 
   return self->root;
+}
+
+static void
+rtfm_library_search_cb (GObject      *object,
+                        GAsyncResult *result,
+                        gpointer      user_data)
+{
+  RtfmProvider *provider = (RtfmProvider *)object;
+  g_autoptr(GTask) task = user_data;
+  g_autoptr(GError) error = NULL;
+  SearchState *state;
+
+  g_assert (RTFM_IS_PROVIDER (provider));
+  g_assert (G_IS_TASK (task));
+
+  if (!rtfm_provider_search_finish (provider, result, &error))
+    g_warning ("%s", error->message);
+
+  state = g_task_get_task_data (task);
+
+  state->providers = g_list_remove (state->providers, provider);
+  g_object_unref (provider);
+
+  if (state->providers == NULL)
+    g_task_return_boolean (task, TRUE);
+}
+
+void
+rtfm_library_search_async (RtfmLibrary         *self,
+                           RtfmSearchSettings  *search_settings,
+                           RtfmSearchResults   *search_results,
+                           GCancellable        *cancellable,
+                           GAsyncReadyCallback  callback,
+                           gpointer             user_data)
+{
+  g_autoptr(GTask) task = NULL;
+  SearchState *state;
+  GList *providers = NULL;
+  GList *iter;
+
+  g_return_if_fail (RTFM_IS_LIBRARY (self));
+  g_return_if_fail (RTFM_IS_SEARCH_SETTINGS (search_settings));
+  g_return_if_fail (RTFM_IS_SEARCH_RESULTS (search_results));
+  g_return_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable));
+
+  task = g_task_new (self, cancellable, callback, user_data);
+  g_task_set_check_cancellable (task, FALSE);
+  g_task_set_source_tag (task, rtfm_library_search_async);
+
+  peas_extension_set_foreach (self->providers, collect_providers, &providers);
+
+  state = g_slice_new0 (SearchState);
+  state->search_settings = g_object_ref (search_settings);
+  state->search_results = g_object_ref (search_results);
+  state->providers = providers;
+
+  g_task_set_task_data (task, state, search_state_free);
+
+  for (iter = providers; iter != NULL; iter = iter->next)
+    {
+      RtfmProvider *provider = iter->data;
+
+      rtfm_provider_search_async (provider,
+                                  search_settings,
+                                  search_results,
+                                  cancellable,
+                                  rtfm_library_search_cb,
+                                  g_object_ref (task));
+    }
+}
+
+gboolean
+rtfm_library_search_finish (RtfmLibrary   *self,
+                            GAsyncResult  *result,
+                            GError       **error)
+{
+  g_return_val_if_fail (RTFM_IS_LIBRARY (self), FALSE);
+  g_return_val_if_fail (G_IS_TASK (result), FALSE);
+
+  return g_task_propagate_boolean (G_TASK (result), error);
 }

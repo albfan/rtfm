@@ -40,6 +40,15 @@ void          rtfm_library_populate_async  (RtfmLibrary           *self,
 gboolean      rtfm_library_populate_finish (RtfmLibrary           *self,
                                             GAsyncResult          *result,
                                             GError               **error);
+void          rtfm_library_search_async    (RtfmLibrary           *self,
+                                            RtfmSearchSettings    *search_settings,
+                                            RtfmSearchResults     *search_results,
+                                            GCancellable          *cancellable,
+                                            GAsyncReadyCallback    callback,
+                                            gpointer               user_data);
+gboolean      rtfm_library_search_finish   (RtfmLibrary           *self,
+                                            GAsyncResult          *result,
+                                            GError               **error);
 
 G_END_DECLS
 
