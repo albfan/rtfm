@@ -77,7 +77,7 @@ rtfm_search_results_finalize (GObject *object)
 {
   RtfmSearchResults *self = (RtfmSearchResults *)object;
 
-  g_clear_pointer (&self->results, g_ptr_array_unref);
+  g_clear_pointer (&self->results, g_sequence_free);
 
   G_OBJECT_CLASS (rtfm_search_results_parent_class)->finalize (object);
 }
