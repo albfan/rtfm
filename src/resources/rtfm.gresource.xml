@@ -14,6 +14,7 @@
 
     <!-- CSS Files -->
     <file compressed="true">css/rtfm-path-bar.css</file>
+    <file compressed="true">css/rtfm-search-view.css</file>
     <file compressed="true">css/rtfm-sidebar.css</file>
     <file compressed="true">css/rtfm-view.css</file>
     <file compressed="true">css/rtfm-view-group.css</file>

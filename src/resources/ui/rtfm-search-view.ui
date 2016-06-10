@@ -10,9 +10,10 @@
             <property name="visible">True</property>
             <child>
               <object class="GtkBox">
+                <property name="border-width">36</property>
                 <property name="orientation">vertical</property>
                 <property name="halign">center</property>
-                <property name="valign">center</property>
+                <property name="valign">start</property>
                 <property name="visible">True</property>
                 <child>
                   <object class="GtkFrame">

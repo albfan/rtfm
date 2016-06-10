@@ -182,6 +182,8 @@ rtfm_window_search_entry_changed (RtfmWindow     *self,
                              rtfm_window_search_cb,
                              g_object_ref (self));
 
+  rtfm_search_view_set_search_results (self->search_view, self->search_results);
+
 change_page:
   if (text == NULL || *text == '\0')
     gtk_stack_set_visible_child (self->stack, GTK_WIDGET (self->paned));

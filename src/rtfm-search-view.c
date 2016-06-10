@@ -21,6 +21,7 @@
 #include "rtfm-search-result.h"
 #include "rtfm-search-results.h"
 #include "rtfm-search-view.h"
+#include "rtfm-widget.h"
 
 struct _RtfmSearchView
 {
@@ -148,8 +149,14 @@ rtfm_search_view_class_init (RtfmSearchViewClass *klass)
 
   gtk_widget_class_set_template_from_resource (widget_class, "/org/gnome/rtfm/ui/rtfm-search-view.ui");
 
+  gtk_widget_class_set_css_name (widget_class, "searchview");
+
   gtk_widget_class_bind_template_child (widget_class, RtfmSearchView, list_box);
   gtk_widget_class_bind_template_child (widget_class, RtfmSearchView, scrolled_window);
+
+  rtfm_gtk_widget_class_set_css_from_resource (widget_class,
+                                               NULL,
+                                               "/org/gnome/rtfm/css/rtfm-search-view.css");
 }
 
 static void

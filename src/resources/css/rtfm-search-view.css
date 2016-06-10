@@ -1,0 +1,12 @@
+searchview list {
+  min-width: 500px;
+}
+
+searchview list row {
+  padding: 8px;
+  border-bottom: 1px solid alpha(@borders, 0.4);
+}
+
+searchview list row:last-child {
+  border-bottom: none;
+}
