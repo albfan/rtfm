@@ -5,6 +5,7 @@
     <!-- file>gtk/menus.ui</file-->
 
     <!-- UI Files -->
+    <file compressed="true">ui/rtfm-search-view.ui</file>
     <file compressed="true">ui/rtfm-sidebar.ui</file>
     <file compressed="true">ui/rtfm-sidebar-row.ui</file>
     <file compressed="true">ui/rtfm-window.ui</file>
