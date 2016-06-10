@@ -63,7 +63,10 @@ rtfm_gir_search_result_new (GVariant *document,
   g_variant_dict_init (&dict, document);
   g_variant_dict_lookup (&dict, "word", "&s", &text);
 
+  /* TODO determine icon from document */
+
   ret = g_object_new (RTFM_GIR_TYPE_SEARCH_RESULT,
+                      "icon-name", "lang-namespace-symbolic",
                       "score", score,
                       "text", text,
                       NULL);
