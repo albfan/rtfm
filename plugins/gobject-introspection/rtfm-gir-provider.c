@@ -258,10 +258,43 @@ rtfm_gir_provider_populate_finish (RtfmProvider  *provider,
 }
 
 static void
+rtfm_gir_provider_search_async (RtfmProvider        *provider,
+                                RtfmSearchSettings  *settings,
+                                RtfmSearchResults   *results,
+                                GCancellable        *cancellable,
+                                GAsyncReadyCallback  callback,
+                                gpointer             user_data)
+{
+  RtfmGirProvider *self = (RtfmGirProvider *)provider;
+  g_autoptr(GTask) task = NULL;
+
+  g_assert (RTFM_IS_GIR_PROVIDER (self));
+  g_assert (RTFM_IS_SEARCH_SETTINGS (settings));
+  g_assert (RTFM_IS_SEARCH_RESULTS (results));
+  g_assert (!cancellable || G_IS_CANCELLABLE (cancellable));
+
+  task = g_task_new (self, cancellable, callback, user_data);
+  g_task_return_boolean (task, TRUE);
+}
+
+static gboolean
+rtfm_gir_provider_search_finish (RtfmProvider  *provider,
+                                 GAsyncResult  *result,
+                                 GError       **error)
+{
+  g_return_val_if_fail (RTFM_IS_GIR_PROVIDER (provider), FALSE);
+  g_return_val_if_fail (G_IS_TASK (result), FALSE);
+
+  return g_task_propagate_boolean (G_TASK (result), error);
+}
+
+static void
 provider_iface_init (RtfmProviderInterface *iface)
 {
   iface->initialize = rtfm_gir_provider_initialize;
   iface->shutdown = rtfm_gir_provider_shutdown;
   iface->populate_async = rtfm_gir_provider_populate_async;
   iface->populate_finish = rtfm_gir_provider_populate_finish;
+  iface->search_async = rtfm_gir_provider_search_async;
+  iface->search_finish = rtfm_gir_provider_search_finish;
 }
