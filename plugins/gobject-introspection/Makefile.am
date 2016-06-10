@@ -89,6 +89,8 @@ librtfm_plugin_gir_la_SOURCES = \
 	rtfm-gir-provider.h \
 	rtfm-gir-plugin.c \
 	rtfm-gir-plugin.h \
+	rtfm-gir-util.c \
+	rtfm-gir-util.h \
 	rtfm-gir-view-addin.c \
 	rtfm-gir-view-addin.h \
 	$(NULL)
