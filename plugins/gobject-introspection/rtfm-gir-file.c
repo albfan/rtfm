@@ -21,7 +21,9 @@
 #include <string.h>
 
 #include "rtfm-gir-file.h"
+#include "rtfm-gir-namespace.h"
 #include "rtfm-gir-parser.h"
+#include "rtfm-gir-util.h"
 
 struct _RtfmGirFile
 {
@@ -73,6 +75,44 @@ rtfm_gir_file_build_index (RtfmGirFile       *self,
       for (i = 0; i < children->len; i++)
         rtfm_gir_file_build_index (self, builder, g_ptr_array_index (children, i));
     }
+}
+
+static void
+namespace_indexer (RtfmGirFile         *self,
+                   FuzzyIndexBuilder   *builder,
+                   RtfmGirParserObject *object)
+{
+  RtfmGirNamespace *namespace = (RtfmGirNamespace *)object;
+  g_autoptr(GVariant) document = NULL;
+  g_autofree gchar *id = NULL;
+  const gchar *name;
+  GVariantDict dict;
+
+  g_assert (RTFM_GIR_IS_FILE (self));
+  g_assert (FUZZY_IS_INDEX_BUILDER (builder));
+  g_assert (RTFM_GIR_IS_NAMESPACE (namespace));
+
+  id = rtfm_gir_generate_id (namespace);
+  name = rtfm_gir_namespace_get_name (namespace);
+
+  g_variant_dict_init (&dict, NULL);
+  g_variant_dict_insert (&dict, "id", "s", id);
+  g_variant_dict_insert (&dict, "word", "s", name);
+  document = g_variant_ref_sink (g_variant_dict_end (&dict));
+
+#define INSERT_KEY(key)                                          \
+  G_STMT_START {                                                 \
+    const gchar *tmp = rtfm_gir_namespace_get_##key (namespace); \
+    if (tmp != NULL)                                             \
+      fuzzy_index_builder_insert (builder, tmp, document);       \
+  } G_STMT_END
+
+  INSERT_KEY (name);
+  INSERT_KEY (c_identifier_prefixes);
+  INSERT_KEY (c_symbol_prefixes);
+  INSERT_KEY (shared_library);
+
+#undef INSERT_KEY
 }
 
 static void
@@ -155,6 +195,7 @@ rtfm_gir_file_class_init (RtfmGirFileClass *klass)
   g_object_class_install_properties (object_class, N_PROPS, properties);
 
   indexers = g_hash_table_new (NULL, NULL);
+  g_hash_table_insert (indexers, GSIZE_TO_POINTER (RTFM_GIR_TYPE_NAMESPACE), namespace_indexer);
 }
 
 static void
