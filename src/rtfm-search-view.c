@@ -29,6 +29,7 @@ struct _RtfmSearchView
 
   RtfmSearchResults *search_results;
 
+  GtkStack          *stack;
   GtkListBox        *list_box;
   GtkScrolledWindow *scrolled_window;
 };
@@ -80,19 +81,31 @@ rtfm_search_view_create_row_func (gpointer item,
   gtk_container_add (GTK_CONTAINER (box), GTK_WIDGET (image));
   gtk_container_add (GTK_CONTAINER (box), GTK_WIDGET (label));
 
+  if (g_strcmp0 ("results", gtk_stack_get_visible_child_name (self->stack)) != 0)
+    gtk_stack_set_visible_child_name (self->stack, "results");
+
   return GTK_WIDGET (box);
 }
 
 static void
 rtfm_search_view_connect (RtfmSearchView *self)
 {
+  guint n_items;
+
   g_return_if_fail (RTFM_IS_SEARCH_VIEW (self));
+
+  n_items = g_list_model_get_n_items (G_LIST_MODEL (self->search_results));
 
   gtk_list_box_bind_model (self->list_box,
                            G_LIST_MODEL (self->search_results),
                            rtfm_search_view_create_row_func,
                            self,
                            NULL);
+
+  if (n_items == 0)
+    gtk_stack_set_visible_child_name (self->stack, "no-results");
+  else
+    gtk_stack_set_visible_child_name (self->stack, "results");
 }
 
 static void
@@ -176,6 +189,7 @@ rtfm_search_view_class_init (RtfmSearchViewClass *klass)
 
   gtk_widget_class_bind_template_child (widget_class, RtfmSearchView, list_box);
   gtk_widget_class_bind_template_child (widget_class, RtfmSearchView, scrolled_window);
+  gtk_widget_class_bind_template_child (widget_class, RtfmSearchView, stack);
 
   rtfm_gtk_widget_class_set_css_from_resource (widget_class,
                                                NULL,
