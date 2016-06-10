@@ -18,13 +18,18 @@
 
 #define G_LOG_DOMAIN "rtfm-search-view"
 
+#include "rtfm-search-result.h"
 #include "rtfm-search-results.h"
 #include "rtfm-search-view.h"
 
 struct _RtfmSearchView
 {
   GtkBin             parent_instance;
+
   RtfmSearchResults *search_results;
+
+  GtkListBox        *list_box;
+  GtkScrolledWindow *scrolled_window;
 };
 
 G_DEFINE_TYPE (RtfmSearchView, rtfm_search_view, GTK_TYPE_BIN)
@@ -37,11 +42,33 @@ enum {
 
 static GParamSpec *properties [N_PROPS];
 
+static GtkWidget *
+rtfm_search_view_create_row_func (gpointer item,
+                                  gpointer user_data)
+{
+  RtfmSearchView *self = user_data;
+  RtfmSearchResult *result = item;
+
+  g_assert (RTFM_IS_SEARCH_RESULT (result));
+  g_assert (RTFM_IS_SEARCH_VIEW (self));
+
+  return g_object_new (GTK_TYPE_LABEL,
+                       "visible", TRUE,
+                       "xalign", 0.0f,
+                       "label", rtfm_search_result_get_text (result),
+                       NULL);
+}
+
 static void
 rtfm_search_view_connect (RtfmSearchView *self)
 {
   g_return_if_fail (RTFM_IS_SEARCH_VIEW (self));
 
+  gtk_list_box_bind_model (self->list_box,
+                           G_LIST_MODEL (self->search_results),
+                           rtfm_search_view_create_row_func,
+                           self,
+                           NULL);
 }
 
 static void
@@ -49,6 +76,7 @@ rtfm_search_view_disconnect (RtfmSearchView *self)
 {
   g_return_if_fail (RTFM_IS_SEARCH_VIEW (self));
 
+  gtk_list_box_bind_model (self->list_box, NULL, NULL, NULL, NULL);
 }
 
 static void
@@ -119,6 +147,9 @@ rtfm_search_view_class_init (RtfmSearchViewClass *klass)
   g_object_class_install_properties (object_class, N_PROPS, properties);
 
   gtk_widget_class_set_template_from_resource (widget_class, "/org/gnome/rtfm/ui/rtfm-search-view.ui");
+
+  gtk_widget_class_bind_template_child (widget_class, RtfmSearchView, list_box);
+  gtk_widget_class_bind_template_child (widget_class, RtfmSearchView, scrolled_window);
 }
 
 static void
