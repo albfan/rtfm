@@ -175,18 +175,6 @@ pos_doc_pair_compare (gconstpointer a,
   return ret;
 }
 
-static gint
-document_id_compare (gconstpointer a,
-                     gconstpointer b)
-{
-  if (a > b)
-    return 1;
-  else if (a < b)
-    return -1;
-  else
-    return 0;
-}
-
 static GVariant *
 fuzzy_index_builder_build_keys (FuzzyIndexBuilder *self)
 {
@@ -215,10 +203,10 @@ fuzzy_index_builder_build_index (FuzzyIndexBuilder *self)
   g_autoptr(GPtrArray) ar = NULL;
   g_autoptr(GHashTable) rows = NULL;
   GVariantDict dict;
-  gpointer *keys;
+  GHashTableIter iter;
+  gpointer keyptr;
   GArray *row;
   guint i;
-  guint len;
 
   g_assert (FUZZY_IS_INDEX_BUILDER (self));
 
@@ -229,12 +217,12 @@ fuzzy_index_builder_build_index (FuzzyIndexBuilder *self)
     {
       KVPair *kvpair = &g_array_index (self->kv_pairs, KVPair, i);
       PosDocPair cdpair = { 0, kvpair->document_id };
-      const gchar *iter;
+      const gchar *tmp;
       guint pos = 0;
 
-      for (iter = kvpair->key; *iter != '\0'; iter = g_utf8_next_char (iter))
+      for (tmp = kvpair->key; *tmp != '\0'; tmp = g_utf8_next_char (tmp))
         {
-          gunichar ch = g_utf8_get_char (iter);
+          gunichar ch = g_utf8_get_char (tmp);
 
           row = g_hash_table_lookup (rows, GUINT_TO_POINTER (ch));
 
@@ -249,18 +237,17 @@ fuzzy_index_builder_build_index (FuzzyIndexBuilder *self)
         }
     }
 
-  keys = g_hash_table_get_keys_as_array (rows, &len);
-  qsort (keys, len, sizeof (gpointer), document_id_compare);
-
   g_variant_dict_init (&dict, NULL);
 
-  for (i = 0; i < len; i++)
-    {
-      GVariant *variant;
-      gchar key[16];
+  g_hash_table_iter_init (&iter, rows);
 
-      g_snprintf (key, sizeof key, "%c", GPOINTER_TO_UINT (keys[i]));
-      row = g_hash_table_lookup (rows, keys[i]);
+  while (g_hash_table_iter_next (&iter, &keyptr, (gpointer *)&row))
+    {
+      gchar key[16];
+      GVariant *variant;
+      gunichar ch = GPOINTER_TO_UINT (keyptr);
+
+      g_snprintf (key, sizeof key, "%c", ch);
       g_array_sort (row, pos_doc_pair_compare);
 
       variant = g_variant_new_fixed_array ((const GVariantType *)"(ii)",
