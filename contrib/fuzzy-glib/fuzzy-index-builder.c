@@ -30,6 +30,7 @@ struct _FuzzyIndexBuilder
   GPtrArray    *documents;
   GStringChunk *keys;
   GArray       *kv_pairs;
+  GHashTable   *metadata;
 };
 
 typedef struct
@@ -60,6 +61,7 @@ fuzzy_index_builder_finalize (GObject *object)
   g_clear_pointer (&self->documents, g_ptr_array_unref);
   g_clear_pointer (&self->keys, g_string_chunk_free);
   g_clear_pointer (&self->kv_pairs, g_array_unref);
+  g_clear_pointer (&self->metadata, g_hash_table_unref);
 
   G_OBJECT_CLASS (fuzzy_index_builder_parent_class)->finalize (object);
 }
@@ -249,6 +251,29 @@ fuzzy_index_builder_build_index (FuzzyIndexBuilder *self)
   return g_variant_dict_end (&dict);
 }
 
+static GVariant *
+fuzzy_index_builder_build_metadata (FuzzyIndexBuilder *self)
+{
+  GVariantDict dict;
+  GHashTableIter iter;
+
+  g_assert (FUZZY_IS_INDEX_BUILDER (self));
+
+  g_variant_dict_init (&dict, NULL);
+
+  if (self->metadata != NULL)
+    {
+      const gchar *key;
+      GVariant *value;
+
+      g_hash_table_iter_init (&iter, self->metadata);
+      while (g_hash_table_iter_next (&iter, (gpointer *)&key, (gpointer *)&value))
+        g_variant_dict_insert_value (&dict, key, value);
+    }
+
+  return g_variant_dict_end (&dict);
+}
+
 static void
 fuzzy_index_builder_write_worker (GTask        *task,
                                   gpointer      source_object,
@@ -273,6 +298,9 @@ fuzzy_index_builder_write_worker (GTask        *task,
 
   /* Set our version number for the document */
   g_variant_dict_insert (&dict, "version", "i", 1);
+
+  /* Build our dicitionary of metadata */
+  g_variant_dict_insert_value (&dict, "metadata", fuzzy_index_builder_build_metadata (self));
 
   /* Add our doc_id → string reverse map */
   g_variant_dict_insert_value (&dict, "keys", fuzzy_index_builder_build_keys (self));
@@ -353,6 +381,28 @@ fuzzy_index_builder_write_finish (FuzzyIndexBuilder  *self,
   return g_task_propagate_boolean (G_TASK (result), error);
 }
 
+gboolean
+fuzzy_index_builder_write (FuzzyIndexBuilder  *self,
+                           GFile              *file,
+                           gint                io_priority,
+                           GCancellable       *cancellable,
+                           GError            **error)
+{
+  g_autoptr(GTask) task = NULL;
+
+  g_return_val_if_fail (FUZZY_IS_INDEX_BUILDER (self), FALSE);
+  g_return_val_if_fail (G_IS_FILE (file), FALSE);
+  g_return_val_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable), FALSE);
+
+  task = g_task_new (self, cancellable, NULL, NULL);
+  g_task_set_source_tag (task, fuzzy_index_builder_write);
+  g_task_set_priority (task, io_priority);
+  g_task_set_task_data (task, g_object_ref (file), g_object_unref);
+  g_task_run_in_thread_sync (task, fuzzy_index_builder_write_worker);
+
+  return g_task_propagate_boolean (task, error);
+}
+
 /**
  * fuzzy_index_builder_get_document:
  *
@@ -369,4 +419,49 @@ fuzzy_index_builder_get_document (FuzzyIndexBuilder *self,
   g_return_val_if_fail ((guint)document_id < self->documents->len, NULL);
 
   return g_ptr_array_index (self->documents, (guint)document_id);
+}
+
+void
+fuzzy_index_builder_set_metadata (FuzzyIndexBuilder *self,
+                                  const gchar       *key,
+                                  GVariant          *value)
+{
+  g_return_if_fail (FUZZY_IS_INDEX_BUILDER (self));
+  g_return_if_fail (key != NULL);
+
+  if (self->metadata == NULL)
+    self->metadata = g_hash_table_new_full (g_str_hash,
+                                            g_str_equal,
+                                            g_free,
+                                            (GDestroyNotify)g_variant_unref);
+
+  if (value != NULL)
+    g_hash_table_insert (self->metadata,
+                         g_strdup (key),
+                         g_variant_ref_sink (value));
+  else
+    g_hash_table_remove (self->metadata, key);
+}
+
+void
+fuzzy_index_builder_set_metadata_string (FuzzyIndexBuilder *self,
+                                         const gchar       *key,
+                                         const gchar       *value)
+{
+  g_return_if_fail (FUZZY_IS_INDEX_BUILDER (self));
+  g_return_if_fail (key != NULL);
+  g_return_if_fail (value != NULL);
+
+  fuzzy_index_builder_set_metadata (self, key, g_variant_new_string (value));
+}
+
+void
+fuzzy_index_builder_set_metadata_uint64 (FuzzyIndexBuilder *self,
+                                         const gchar       *key,
+                                         guint64            value)
+{
+  g_return_if_fail (FUZZY_IS_INDEX_BUILDER (self));
+  g_return_if_fail (key != NULL);
+
+  fuzzy_index_builder_set_metadata (self, key, g_variant_new_uint64 (value));
 }

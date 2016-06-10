@@ -27,24 +27,34 @@ G_BEGIN_DECLS
 
 G_DECLARE_FINAL_TYPE (FuzzyIndex, fuzzy_index, FUZZY, INDEX, GObject)
 
-FuzzyIndex *fuzzy_index_new              (void);
-void        fuzzy_index_load_file_async  (FuzzyIndex           *self,
-                                          GFile                *file,
-                                          GCancellable         *cancellable,
-                                          GAsyncReadyCallback   callback,
-                                          gpointer              user_data);
-gboolean    fuzzy_index_load_file_finish (FuzzyIndex           *self,
-                                          GAsyncResult         *result,
-                                          GError              **error);
-void        fuzzy_index_query_async      (FuzzyIndex          *self,
-                                          const gchar         *query,
-                                          guint                max_matches,
-                                          GCancellable        *cancellable,
-                                          GAsyncReadyCallback  callback,
-                                          gpointer             user_data);
-GListModel *fuzzy_index_query_finish     (FuzzyIndex          *self,
-                                          GAsyncResult         *result,
-                                          GError              **error);
+FuzzyIndex  *fuzzy_index_new                 (void);
+gboolean     fuzzy_index_load_file           (FuzzyIndex           *self,
+                                              GFile                *file,
+                                              GCancellable         *cancellable,
+                                              GError              **error);
+void         fuzzy_index_load_file_async     (FuzzyIndex           *self,
+                                              GFile                *file,
+                                              GCancellable         *cancellable,
+                                              GAsyncReadyCallback   callback,
+                                              gpointer              user_data);
+gboolean     fuzzy_index_load_file_finish    (FuzzyIndex           *self,
+                                              GAsyncResult         *result,
+                                              GError              **error);
+void         fuzzy_index_query_async         (FuzzyIndex           *self,
+                                              const gchar          *query,
+                                              guint                 max_matches,
+                                              GCancellable         *cancellable,
+                                              GAsyncReadyCallback   callback,
+                                              gpointer              user_data);
+GListModel  *fuzzy_index_query_finish        (FuzzyIndex           *self,
+                                              GAsyncResult         *result,
+                                              GError              **error);
+GVariant    *fuzzy_index_get_metadata        (FuzzyIndex           *self,
+                                              const gchar          *key);
+guint64      fuzzy_index_get_metadata_uint64 (FuzzyIndex           *self,
+                                              const gchar          *key);
+const gchar *fuzzy_index_get_metadata_string (FuzzyIndex           *self,
+                                              const gchar          *key);
 
 G_END_DECLS
 

@@ -31,6 +31,11 @@ FuzzyIndexBuilder *fuzzy_index_builder_new          (void);
 guint64            fuzzy_index_builder_insert       (FuzzyIndexBuilder    *self,
                                                      const gchar          *key,
                                                      GVariant             *document);
+gboolean           fuzzy_index_builder_write        (FuzzyIndexBuilder    *self,
+                                                     GFile                *file,
+                                                     gint                  io_priority,
+                                                     GCancellable         *cancellable,
+                                                     GError              **error);
 void               fuzzy_index_builder_write_async  (FuzzyIndexBuilder    *self,
                                                      GFile                *file,
                                                      gint                  io_priority,
@@ -42,6 +47,17 @@ gboolean           fuzzy_index_builder_write_finish (FuzzyIndexBuilder    *self,
                                                      GError              **error);
 const GVariant    *fuzzy_index_builder_get_document (FuzzyIndexBuilder    *self,
                                                      guint64               document_id);
+void               fuzzy_index_builder_set_metadata (FuzzyIndexBuilder    *self,
+                                                     const gchar          *key,
+                                                     GVariant             *value);
+void               fuzzy_index_builder_set_metadata_string
+                                                    (FuzzyIndexBuilder    *self,
+                                                     const gchar          *key,
+                                                     const gchar          *value);
+void               fuzzy_index_builder_set_metadata_uint64
+                                                    (FuzzyIndexBuilder    *self,
+                                                     const gchar          *key,
+                                                     guint64               value);
 
 G_END_DECLS
 

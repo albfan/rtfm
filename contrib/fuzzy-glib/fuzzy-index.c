@@ -32,6 +32,7 @@ struct _FuzzyIndex
   GVariantDict *documents;
   GVariantDict *keys;
   GVariantDict *tables;
+  GVariantDict *metadata;
 };
 
 G_DEFINE_TYPE (FuzzyIndex, fuzzy_index, G_TYPE_OBJECT)
@@ -69,30 +70,28 @@ fuzzy_index_new (void)
   return g_object_new (FUZZY_TYPE_INDEX, NULL);
 }
 
-void
-fuzzy_index_load_file_async (FuzzyIndex          *self,
-                             GFile               *file,
-                             GCancellable        *cancellable,
-                             GAsyncReadyCallback  callback,
-                             gpointer             user_data)
+static void
+fuzzy_index_load_file_worker (GTask        *task,
+                              gpointer      source_object,
+                              gpointer      task_data,
+                              GCancellable *cancellable)
 {
   g_autofree gchar *path = NULL;
-  g_autoptr(GTask) task = NULL;
   g_autoptr(GMappedFile) mapped_file = NULL;
   g_autoptr(GVariant) variant = NULL;
   g_autoptr(GVariant) documents = NULL;
   g_autoptr(GVariant) keys = NULL;
   g_autoptr(GVariant) tables = NULL;
+  g_autoptr(GVariant) metadata = NULL;
+  FuzzyIndex *self = source_object;
+  GFile *file = task_data;
   GVariantDict dict;
   GError *error = NULL;
   gint version = 0;
 
-  g_return_if_fail (FUZZY_IS_INDEX (self));
-  g_return_if_fail (G_IS_FILE (file));
-  g_return_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable));
-
-  task = g_task_new (self, cancellable, callback, user_data);
-  g_task_set_task_data (task, g_object_ref (file), g_object_unref);
+  g_assert (FUZZY_IS_INDEX (self));
+  g_assert (G_IS_FILE (file));
+  g_assert (!cancellable || G_IS_CANCELLABLE (cancellable));
 
   if (self->loaded)
     {
@@ -104,10 +103,6 @@ fuzzy_index_load_file_async (FuzzyIndex          *self,
     }
 
   self->loaded = TRUE;
-
-  /*
-   * TODO: Move this to worker thread.
-   */
 
   if (!g_file_is_native (file) || NULL == (path = g_file_get_path (file)))
     {
@@ -158,7 +153,7 @@ fuzzy_index_load_file_async (FuzzyIndex          *self,
   tables = g_variant_dict_lookup_value (&dict, "tables", G_VARIANT_TYPE_VARDICT);
   g_variant_dict_clear (&dict);
 
-  if (keys == NULL || documents == NULL || tables == NULL)
+  if (keys == NULL || documents == NULL || tables == NULL || metadata == NULL)
     {
       g_task_return_new_error (task,
                                G_IO_ERROR,
@@ -172,8 +167,29 @@ fuzzy_index_load_file_async (FuzzyIndex          *self,
   self->documents = g_variant_dict_new (documents);
   self->keys = g_variant_dict_new (keys);
   self->tables = g_variant_dict_new (tables);
+  self->metadata = g_variant_dict_new (metadata);
 
   g_task_return_boolean (task, TRUE);
+}
+
+void
+fuzzy_index_load_file_async (FuzzyIndex          *self,
+                             GFile               *file,
+                             GCancellable        *cancellable,
+                             GAsyncReadyCallback  callback,
+                             gpointer             user_data)
+{
+  g_autoptr(GTask) task = NULL;
+
+  g_return_if_fail (FUZZY_IS_INDEX (self));
+  g_return_if_fail (G_IS_FILE (file));
+  g_return_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable));
+
+  task = g_task_new (self, cancellable, callback, user_data);
+  g_task_set_source_tag (task, fuzzy_index_load_file);
+  g_task_set_task_data (task, g_object_ref (file), g_object_unref);
+  g_task_set_check_cancellable (task, FALSE);
+  g_task_run_in_thread (task, fuzzy_index_load_file_worker);
 }
 
 gboolean
@@ -185,6 +201,27 @@ fuzzy_index_load_file_finish (FuzzyIndex    *self,
   g_return_val_if_fail (G_IS_TASK (result), FALSE);
 
   return g_task_propagate_boolean (G_TASK (result), error);
+}
+
+gboolean
+fuzzy_index_load_file (FuzzyIndex    *self,
+                       GFile         *file,
+                       GCancellable  *cancellable,
+                       GError       **error)
+{
+  g_autoptr(GTask) task = NULL;
+
+  g_return_val_if_fail (FUZZY_IS_INDEX (self), FALSE);
+  g_return_val_if_fail (G_IS_FILE (file), FALSE);
+  g_return_val_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable), FALSE);
+
+  task = g_task_new (self, cancellable, NULL, NULL);
+  g_task_set_source_tag (task, fuzzy_index_load_file);
+  g_task_set_task_data (task, g_object_ref (file), g_object_unref);
+  g_task_set_check_cancellable (task, FALSE);
+  g_task_run_in_thread_sync (task, fuzzy_index_load_file_worker);
+
+  return g_task_propagate_boolean (task, error);
 }
 
 static void
@@ -253,4 +290,57 @@ fuzzy_index_query_finish (FuzzyIndex    *self,
   g_return_val_if_fail (G_IS_TASK (result), NULL);
 
   return g_task_propagate_pointer (G_TASK (result), error);
+}
+
+/**
+ * fuzzy_index_get_metadata:
+ *
+ * Looks up the metadata for @key.
+ *
+ * Returns: (transfer full) (nullable): A #GVariant or %NULL.
+ */
+GVariant *
+fuzzy_index_get_metadata (FuzzyIndex  *self,
+                          const gchar *key)
+{
+  g_return_val_if_fail (FUZZY_IS_INDEX (self), NULL);
+  g_return_val_if_fail (key != NULL, NULL);
+
+  if (self->metadata != NULL)
+    return g_variant_dict_lookup_value (self->metadata, key, NULL);
+
+  return NULL;
+}
+
+guint64
+fuzzy_index_get_metadata_uint64 (FuzzyIndex  *self,
+                                 const gchar *key)
+{
+  g_autoptr(GVariant) ret = NULL;
+
+  ret = fuzzy_index_get_metadata (self, key);
+
+  if (ret != NULL)
+    return g_variant_get_uint64 (ret);
+
+  return G_GUINT64_CONSTANT (0);
+}
+
+const gchar *
+fuzzy_index_get_metadata_string (FuzzyIndex  *self,
+                                 const gchar *key)
+{
+  g_autoptr(GVariant) ret = NULL;
+
+  ret = fuzzy_index_get_metadata (self, key);
+
+  /*
+   * This looks unsafe, but is safe because strings are \0 terminated
+   * inside the variants and the result is a pointer to internal data.
+   * Since that data exists on our mmap() region, we are all good.
+   */
+  if (ret != NULL)
+    return g_variant_get_string (ret, NULL);
+
+  return NULL;
 }
