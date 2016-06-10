@@ -38,13 +38,42 @@ enum {
   N_PROPS
 };
 
+typedef void (*RtfmGirIndexer) (RtfmGirFile         *self,
+                                FuzzyIndexBuilder   *builder,
+                                RtfmGirParserObject *object);
+
 static GParamSpec *properties [N_PROPS];
+static GHashTable *indexers;
 
 static void async_initable_iface_init (GAsyncInitableIface *iface);
 
 G_DEFINE_TYPE_EXTENDED (RtfmGirFile, rtfm_gir_file, G_TYPE_OBJECT, 0,
                         G_IMPLEMENT_INTERFACE (G_TYPE_ASYNC_INITABLE,
                                                async_initable_iface_init))
+
+static void
+rtfm_gir_file_build_index (RtfmGirFile       *self,
+                           FuzzyIndexBuilder *builder,
+                           gpointer           instance)
+{
+  RtfmGirParserObject *object = instance;
+  RtfmGirIndexer indexer;
+  GPtrArray *children;
+  guint i;
+
+  g_assert (RTFM_GIR_IS_FILE (self));
+  g_assert (FUZZY_IS_INDEX_BUILDER (builder));
+  g_assert (RTFM_GIR_IS_PARSER_OBJECT (object));
+
+  if (NULL != (indexer = g_hash_table_lookup (indexers, GSIZE_TO_POINTER (G_OBJECT_TYPE (object)))))
+    indexer (self, builder, object);
+
+  if (NULL != (children = rtfm_gir_parser_object_get_children (object)))
+    {
+      for (i = 0; i < children->len; i++)
+        rtfm_gir_file_build_index (self, builder, g_ptr_array_index (children, i));
+    }
+}
 
 static void
 rtfm_gir_file_finalize (GObject *object)
@@ -124,6 +153,8 @@ rtfm_gir_file_class_init (RtfmGirFileClass *klass)
                          (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   g_object_class_install_properties (object_class, N_PROPS, properties);
+
+  indexers = g_hash_table_new (NULL, NULL);
 }
 
 static void
@@ -294,16 +325,6 @@ check_index_version (FuzzyIndex  *index,
 }
 
 static void
-build_index_from_repository (FuzzyIndexBuilder *builder,
-                             RtfmGirRepository *repository)
-{
-  g_assert (FUZZY_IS_INDEX_BUILDER (builder));
-  g_assert (RTFM_GIR_IS_REPOSITORY (repository));
-
-  /* TODO: Add strings from repository.. */
-}
-
-static void
 rtfm_gir_file_load_index_worker (GTask        *task,
                                  gpointer      source_object,
                                  gpointer      task_data,
@@ -316,10 +337,12 @@ rtfm_gir_file_load_index_worker (GTask        *task,
   g_autoptr(GFile) index_file = NULL;
   g_autoptr(GFileInfo) file_info = NULL;
   g_autofree gchar *index_path = NULL;
+  RtfmGirFile *self = source_object;
   GFile *file = task_data;
   GError *error = NULL;
   guint64 mtime = 0;
 
+  g_assert (RTFM_GIR_IS_FILE (self));
   g_assert (G_IS_TASK (task));
   g_assert (G_IS_FILE (file));
   g_assert (!cancellable || G_IS_CANCELLABLE (cancellable));
@@ -402,7 +425,7 @@ rtfm_gir_file_load_index_worker (GTask        *task,
   builder = fuzzy_index_builder_new ();
   fuzzy_index_builder_set_metadata_string (builder, "self", index_path);
   fuzzy_index_builder_set_metadata_uint64 (builder, "mtime", mtime);
-  build_index_from_repository (builder, repository);
+  rtfm_gir_file_build_index (self, builder, repository);
 
   /*
    * Write the search index to disk.
