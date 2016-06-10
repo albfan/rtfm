@@ -56,8 +56,12 @@ rtfm_gir_search_result_new (GVariant *document,
 {
   const gchar *text = NULL;
   RtfmGirSearchResult *ret;
+  GVariantDict dict;
 
   g_return_val_if_fail (document != NULL, NULL);
+
+  g_variant_dict_init (&dict, document);
+  g_variant_dict_lookup (&dict, "word", "&s", &text);
 
   ret = g_object_new (RTFM_GIR_TYPE_SEARCH_RESULT,
                       "score", score,
@@ -65,6 +69,8 @@ rtfm_gir_search_result_new (GVariant *document,
                       NULL);
 
   ret->document = g_variant_ref_sink (document);
+
+  g_variant_dict_clear (&dict);
 
   return RTFM_SEARCH_RESULT (ret);
 }
