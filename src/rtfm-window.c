@@ -48,7 +48,15 @@ struct _RtfmWindow
   RtfmSidebar          *sidebar;
   GtkStack             *stack;
   RtfmView             *view;
+
+  guint                 active_search_count;
 };
+
+typedef enum
+{
+  RTFM_WINDOW_MODE_BROWSE,
+  RTFM_WINDOW_MODE_SEARCH,
+} RtfmWindowMode;
 
 G_DEFINE_TYPE (RtfmWindow, rtfm_window, GTK_TYPE_APPLICATION_WINDOW)
 
@@ -69,6 +77,32 @@ rtfm_window_cancel_search (RtfmWindow *self)
     {
       if (!g_cancellable_is_cancelled (self->search_cancellable))
         g_cancellable_cancel (self->search_cancellable);
+    }
+}
+
+static void
+rtfm_window_set_mode (RtfmWindow     *self,
+                      RtfmWindowMode  mode)
+{
+  g_return_if_fail (RTFM_IS_WINDOW (self));
+  g_return_if_fail (mode == RTFM_WINDOW_MODE_BROWSE ||
+                    mode == RTFM_WINDOW_MODE_SEARCH);
+
+  switch (mode)
+    {
+    case RTFM_WINDOW_MODE_BROWSE:
+      if (self->active_search_count > 0)
+        rtfm_window_cancel_search (self);
+      gtk_stack_set_visible_child (self->stack, GTK_WIDGET (self->paned));
+      break;
+
+    case RTFM_WINDOW_MODE_SEARCH:
+      gtk_stack_set_visible_child (self->stack, GTK_WIDGET (self->search_view));
+      break;
+
+    default:
+      g_assert_not_reached ();
+      break;
     }
 }
 
@@ -141,6 +175,8 @@ rtfm_window_search_cb (GObject      *object,
   g_assert (RTFM_IS_WINDOW (self));
   g_assert (G_IS_ASYNC_RESULT (result));
 
+  self->active_search_count--;
+
   if (!rtfm_library_search_finish (library, result, &error))
     {
       if (!g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
@@ -175,6 +211,8 @@ rtfm_window_search_entry_changed (RtfmWindow     *self,
 
   rtfm_search_settings_set_search_text (self->search_settings, text);
 
+  self->active_search_count++;
+
   rtfm_library_search_async (self->library,
                              self->search_settings,
                              self->search_results,
@@ -186,9 +224,9 @@ rtfm_window_search_entry_changed (RtfmWindow     *self,
 
 change_page:
   if (text == NULL || *text == '\0')
-    gtk_stack_set_visible_child (self->stack, GTK_WIDGET (self->paned));
+    rtfm_window_set_mode (self, RTFM_WINDOW_MODE_BROWSE);
   else
-    gtk_stack_set_visible_child (self->stack, GTK_WIDGET (self->search_view));
+    rtfm_window_set_mode (self, RTFM_WINDOW_MODE_SEARCH);
 }
 
 static void
@@ -198,8 +236,10 @@ rtfm_window_search_entry_stop_search (RtfmWindow     *self,
   g_assert (RTFM_IS_WINDOW (self));
   g_assert (GTK_IS_SEARCH_ENTRY (search_entry));
 
-  /* Cancel any active search request */
-  rtfm_window_cancel_search (self);
+  if (self->active_search_count == 0)
+    rtfm_window_set_mode (self, RTFM_WINDOW_MODE_BROWSE);
+  else
+    rtfm_window_cancel_search (self);
 }
 
 static void
