@@ -225,7 +225,7 @@ rtfm_gir_provider_populate_async (RtfmProvider        *provider,
 {
   g_autoptr(GTask) task = NULL;
   RtfmGirProvider *self = (RtfmGirProvider *)provider;
-  RtfmPath *path;
+  g_autoptr(RtfmPath) path = NULL;
   RtfmItem *item;
 
   g_assert (RTFM_IS_GIR_PROVIDER (self));
