@@ -56,7 +56,7 @@ rtfm_provider_real_populate_finish (RtfmProvider  *self,
 static void
 rtfm_provider_real_search_async (RtfmProvider        *self,
                                  RtfmSearchSettings  *search_settings,
-                                 RtfmCollection      *collection,
+                                 RtfmSearchResults   *search_results,
                                  GCancellable        *cancellable,
                                  GAsyncReadyCallback  callback,
                                  gpointer             user_data)
@@ -65,7 +65,7 @@ rtfm_provider_real_search_async (RtfmProvider        *self,
 
   g_return_if_fail (RTFM_IS_PROVIDER (self));
   g_return_if_fail (RTFM_IS_SEARCH_SETTINGS (search_settings));
-  g_return_if_fail (RTFM_IS_COLLECTION (collection));
+  g_return_if_fail (RTFM_IS_SEARCH_RESULTS (search_results));
   g_return_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable));
 
   task = g_task_new (self, cancellable, callback, user_data);
@@ -152,17 +152,17 @@ rtfm_provider_populate_finish (RtfmProvider  *self,
 void
 rtfm_provider_search_async (RtfmProvider        *self,
                             RtfmSearchSettings  *search_settings,
-                            RtfmCollection      *collection,
+                            RtfmSearchResults   *search_results,
                             GCancellable        *cancellable,
                             GAsyncReadyCallback  callback,
                             gpointer             user_data)
 {
   g_return_if_fail (RTFM_IS_PROVIDER (self));
   g_return_if_fail (RTFM_IS_SEARCH_SETTINGS (search_settings));
-  g_return_if_fail (RTFM_IS_COLLECTION (collection));
+  g_return_if_fail (RTFM_IS_SEARCH_RESULTS (search_results));
   g_return_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable));
 
-  RTFM_PROVIDER_GET_IFACE (self)->search_async (self, search_settings, collection, cancellable, callback, user_data);
+  RTFM_PROVIDER_GET_IFACE (self)->search_async (self, search_settings, search_results, cancellable, callback, user_data);
 }
 
 gboolean

@@ -57,7 +57,7 @@ struct _RtfmProviderInterface
   /* Perform search across the provider data set */
   void       (*search_async)         (RtfmProvider         *self,
                                       RtfmSearchSettings   *search_settings,
-                                      RtfmCollection       *collection,
+                                      RtfmSearchResults    *search_results,
                                       GCancellable         *cancellable,
                                       GAsyncReadyCallback   callback,
                                       gpointer              user_data);
@@ -95,7 +95,7 @@ gboolean        rtfm_provider_populate_finish (RtfmProvider         *self,
                                                GError              **error);
 void            rtfm_provider_search_async    (RtfmProvider         *self,
                                                RtfmSearchSettings   *search_settings,
-                                               RtfmCollection       *collection,
+                                               RtfmSearchResults    *search_results,
                                                GCancellable         *cancellable,
                                                GAsyncReadyCallback   callback,
                                                gpointer              user_data);

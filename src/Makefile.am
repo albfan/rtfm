@@ -19,6 +19,10 @@ librtfm_public_api = \
 	rtfm-provider.h \
 	rtfm-search-settings.c \
 	rtfm-search-settings.h \
+	rtfm-search-result.c \
+	rtfm-search-result.h \
+	rtfm-search-results.c \
+	rtfm-search-results.h \
 	rtfm-sidebar.c \
 	rtfm-sidebar.h \
 	rtfm-sidebar-row.c \
