@@ -42,10 +42,12 @@ compare_by_score (gconstpointer a,
   gfloat score1 = rtfm_search_result_get_score (result1);
   gfloat score2 = rtfm_search_result_get_score (result2);
 
+  /* Sort high to low */
+
   if (score1 < score2)
-    return -1;
-  else if (score1 > score2)
     return 1;
+  else if (score1 > score2)
+    return -1;
   else
     return 0;
 }
