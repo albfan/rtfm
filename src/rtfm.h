@@ -34,6 +34,8 @@ G_BEGIN_DECLS
 # include "rtfm-provider.h"
 # include "rtfm-sidebar.h"
 # include "rtfm-sidebar-row.h"
+# include "rtfm-search-result.h"
+# include "rtfm-search-results.h"
 # include "rtfm-search-settings.h"
 # include "rtfm-stack-list.h"
 # include "rtfm-view.h"
