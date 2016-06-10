@@ -31,9 +31,9 @@
 
 struct _RtfmGirProvider
 {
-  GObject     object;
-
-  GPtrArray  *files;
+  GObject    object;
+  GPtrArray *files;
+  GPtrArray *search_indexes;
 };
 
 static void provider_iface_init (RtfmProviderInterface *iface);
@@ -50,6 +50,31 @@ static void
 rtfm_gir_provider_init (RtfmGirProvider *self)
 {
   self->files = g_ptr_array_new_with_free_func (g_object_unref);
+  self->search_indexes = g_ptr_array_new_with_free_func (g_object_unref);
+}
+
+static void
+rtfm_gir_provider_load_index_cb (GObject      *object,
+                                 GAsyncResult *result,
+                                 gpointer      user_data)
+{
+  g_autoptr(RtfmGirProvider) self = user_data;
+  g_autoptr(FuzzyIndex) index = NULL;
+  RtfmGirFile *file = (RtfmGirFile *)object;
+  GError *error = NULL;
+
+  g_assert (RTFM_GIR_IS_FILE (file));
+  g_assert (RTFM_IS_GIR_PROVIDER (self));
+  g_assert (G_IS_ASYNC_RESULT (result));
+
+  index = rtfm_gir_file_load_index_finish (file, result, &error);
+
+  g_print ("load_index_cb %p\n", index);
+
+  if (index == NULL)
+    g_warning ("%s", error->message);
+  else
+    g_ptr_array_add (self->search_indexes, g_steal_pointer (&index));
 }
 
 static void
@@ -111,36 +136,16 @@ rtfm_gir_provider_load_directory (RtfmGirProvider *self,
   for (i = 0; i < self->files->len; i++)
     {
       RtfmGirFile *item = g_ptr_array_index (self->files, i);
-      g_autoptr(GFile) file = NULL;
-      g_autofree gchar *gir_path = NULL;
-      g_autofree gchar *index_path = NULL;
-      g_autofree gchar *name = NULL;
-      g_autoptr(GChecksum) checksum = NULL;
-      const gchar *hex;
-      GFile *gir_file = NULL;
 
-
-      gir_file = rtfm_gir_file_get_file (item);
-      gir_path = g_file_get_path (gir_file);
-
-      checksum = g_checksum_new (G_CHECKSUM_SHA1);
-      g_checksum_update (checksum, gir_path, strlen (gir_path));
-      hex = g_checksum_get_string (checksum);
-      name = g_strdup_printf ("%s.gvariant", hex);
-      index_path = g_build_filename (g_get_user_cache_dir (),
-                                     "rtfm",
-                                     "gobject-introspection",
-                                     name,
-                                     NULL);
-      file = g_file_new_for_path (index_path);
-
-#if 0
-      rtfm_gir_repository_build_index_async (repository,
-                                             file,
-                                             cancellable,
-                                             NULL,
-                                             NULL);
-#endif
+      /*
+       * Load the search index asynchronously, which may cause the
+       * file to be parsed (and released afterwards), index build,
+       * and remapping into virtual memory.
+       */
+      rtfm_gir_file_load_index_async (item,
+                                      cancellable,
+                                      rtfm_gir_provider_load_index_cb,
+                                      g_object_ref (self));
     }
 }
 
