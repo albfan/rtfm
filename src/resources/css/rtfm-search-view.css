@@ -10,3 +10,8 @@ searchview list row {
 searchview list row:last-child {
   border-bottom: none;
 }
+
+searchview list row image {
+  margin-right: 10px;
+  opacity: 0.55;
+}

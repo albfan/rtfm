@@ -49,15 +49,38 @@ rtfm_search_view_create_row_func (gpointer item,
 {
   RtfmSearchView *self = user_data;
   RtfmSearchResult *result = item;
+  const gchar *text;
+  const gchar *icon_name;
+  GtkImage *image;
+  GtkBox *box;
+  GtkLabel *label;
 
   g_assert (RTFM_IS_SEARCH_RESULT (result));
   g_assert (RTFM_IS_SEARCH_VIEW (self));
 
-  return g_object_new (GTK_TYPE_LABEL,
-                       "visible", TRUE,
-                       "xalign", 0.0f,
-                       "label", rtfm_search_result_get_text (result),
-                       NULL);
+  text = rtfm_search_result_get_text (result);
+  icon_name = rtfm_search_result_get_icon_name (result);
+
+  box = g_object_new (GTK_TYPE_BOX,
+                      "orientation", GTK_ORIENTATION_HORIZONTAL,
+                      "visible", TRUE,
+                      NULL);
+
+  image = g_object_new (GTK_TYPE_IMAGE,
+                        "icon-name", icon_name,
+                        "visible", TRUE,
+                        NULL);
+
+  label = g_object_new (GTK_TYPE_LABEL,
+                        "visible", TRUE,
+                        "xalign", 0.0f,
+                        "label", text,
+                        NULL);
+
+  gtk_container_add (GTK_CONTAINER (box), GTK_WIDGET (image));
+  gtk_container_add (GTK_CONTAINER (box), GTK_WIDGET (label));
+
+  return GTK_WIDGET (box);
 }
 
 static void
