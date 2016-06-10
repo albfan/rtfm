@@ -12,6 +12,8 @@ searchview list row:last-child {
 }
 
 searchview list row image {
+  min-width: 16px;
+  min-height: 16px;
   margin-right: 10px;
   opacity: 0.55;
 }
