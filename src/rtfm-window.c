@@ -22,6 +22,8 @@
 #include "rtfm-library.h"
 #include "rtfm-path.h"
 #include "rtfm-path-element.h"
+#include "rtfm-search-results.h"
+#include "rtfm-search-settings.h"
 #include "rtfm-sidebar.h"
 #include "rtfm-view.h"
 #include "rtfm-widget.h"
@@ -32,6 +34,11 @@ struct _RtfmWindow
   GtkApplicationWindow  parent_instance;
 
   RtfmLibrary          *library;
+
+  /* Active Search */
+  RtfmSearchResults    *search_results;
+  RtfmSearchSettings   *search_settings;
+  GCancellable         *search_cancellable;
 
   GSimpleAction        *focus_search;
   GtkSearchEntry       *search_entry;
@@ -106,6 +113,75 @@ rtfm_window_action_focus_search (GSimpleAction *action,
 }
 
 static void
+rtfm_window_search_cb (GObject      *object,
+                       GAsyncResult *result,
+                       gpointer      user_data)
+{
+  g_autoptr(RtfmWindow) self = user_data;
+  g_autoptr(GError) error = NULL;
+  RtfmLibrary *library = (RtfmLibrary *)object;
+
+  g_assert (RTFM_IS_LIBRARY (library));
+  g_assert (RTFM_IS_WINDOW (self));
+  g_assert (G_IS_ASYNC_RESULT (result));
+
+  if (!rtfm_library_search_finish (library, result, &error))
+    {
+      if (!g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+        g_message ("%s", error->message);
+      return;
+    }
+
+}
+
+static void
+rtfm_window_search_entry_changed (RtfmWindow     *self,
+                                  GtkSearchEntry *search_entry)
+{
+  const gchar *text;
+
+  g_assert (RTFM_IS_WINDOW (self));
+  g_assert (GTK_IS_SEARCH_ENTRY (search_entry));
+
+  /* Cancel any active search request */
+  if (self->search_cancellable && !g_cancellable_is_cancelled (self->search_cancellable))
+    g_cancellable_cancel (self->search_cancellable);
+
+  /* Clear state from previous search requests */
+  g_clear_object (&self->search_results);
+  g_clear_object (&self->search_cancellable);
+
+  /* Check if we are searching for something new */
+  text = gtk_entry_get_text (GTK_ENTRY (search_entry));
+  if (!text || !*text)
+    return;
+
+  self->search_cancellable = g_cancellable_new ();
+  self->search_results = rtfm_search_results_new ();
+
+  rtfm_search_settings_set_search_text (self->search_settings, text);
+
+  rtfm_library_search_async (self->library,
+                             self->search_settings,
+                             self->search_results,
+                             self->search_cancellable,
+                             rtfm_window_search_cb,
+                             g_object_ref (self));
+}
+
+static void
+rtfm_window_search_entry_stop_search (RtfmWindow     *self,
+                                      GtkSearchEntry *search_entry)
+{
+  g_assert (RTFM_IS_WINDOW (self));
+  g_assert (GTK_IS_SEARCH_ENTRY (search_entry));
+
+  /* Cancel any active search request */
+  if (self->search_cancellable && !g_cancellable_is_cancelled (self->search_cancellable))
+    g_cancellable_cancel (self->search_cancellable);
+}
+
+static void
 rtfm_window_constructed (GObject *object)
 {
   RtfmWindow *self = (RtfmWindow *)object;
@@ -122,6 +198,10 @@ rtfm_window_finalize (GObject *object)
   RtfmWindow *self = (RtfmWindow *)object;
 
   g_clear_object (&self->library);
+
+  g_clear_object (&self->search_cancellable);
+  g_clear_object (&self->search_results);
+  g_clear_object (&self->search_settings);
 
   G_OBJECT_CLASS (rtfm_window_parent_class)->finalize (object);
 }
@@ -189,6 +269,8 @@ rtfm_window_class_init (RtfmWindowClass *klass)
   gtk_widget_class_bind_template_child (widget_class, RtfmWindow, sidebar);
   gtk_widget_class_bind_template_child (widget_class, RtfmWindow, view);
   gtk_widget_class_bind_template_callback (widget_class, rtfm_window_sidebar_item_activated);
+  gtk_widget_class_bind_template_callback (widget_class, rtfm_window_search_entry_changed);
+  gtk_widget_class_bind_template_callback (widget_class, rtfm_window_search_entry_stop_search);
 
   rtfm_gtk_widget_class_set_css_from_resource (widget_class,
                                                NULL,
@@ -203,6 +285,8 @@ rtfm_window_init (RtfmWindow *self)
   };
 
   gtk_widget_init_template (GTK_WIDGET (self));
+
+  self->search_settings = rtfm_search_settings_new ();
 
   g_action_map_add_action_entries (G_ACTION_MAP (self),
                                    actions,

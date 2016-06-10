@@ -54,6 +54,8 @@
             <property name="width-chars">40</property>
             <property name="placeholder-text" translatable="yes">Search Documentation (Ctrl+K)</property>
             <property name="visible">true</property>
+            <signal name="changed" handler="rtfm_window_search_entry_changed" swapped="true"/>
+            <signal name="stop-search" handler="rtfm_window_search_entry_stop_search" swapped="true"/>
           </object>
         </child>
         <child>
@@ -76,7 +78,7 @@
         <child>
           <object class="RtfmSidebar" id="sidebar">
             <property name="visible">true</property>
-	    <signal name="item-activated" handler="rtfm_window_sidebar_item_activated" swapped="true"/>
+            <signal name="item-activated" handler="rtfm_window_sidebar_item_activated" swapped="true"/>
           </object>
           <packing>
             <property name="shrink">false</property>
