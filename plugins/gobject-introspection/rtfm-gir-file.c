@@ -28,9 +28,19 @@
 struct _RtfmGirFile
 {
   GObject            parent_instance;
+
   GFile             *file;
   RtfmGirRepository *repository;
   FuzzyIndex        *index;
+
+  /*
+   * The following is for tracking requests to build the
+   * search index for the gir file. If we have an active
+   * request, we simply queue the task instead of requesting
+   * dupliated work.
+   */
+  GMutex             mutex;
+  GSList            *index_tasks;
 };
 
 enum {
@@ -124,6 +134,8 @@ rtfm_gir_file_finalize (GObject *object)
   g_clear_object (&self->repository);
   g_clear_object (&self->index);
 
+  g_mutex_clear (&self->mutex);
+
   G_OBJECT_CLASS (rtfm_gir_file_parent_class)->finalize (object);
 }
 
@@ -201,6 +213,7 @@ rtfm_gir_file_class_init (RtfmGirFileClass *klass)
 static void
 rtfm_gir_file_init (RtfmGirFile *self)
 {
+  g_mutex_init (&self->mutex);
 }
 
 static void
@@ -379,6 +392,9 @@ rtfm_gir_file_load_index_worker (GTask        *task,
   g_autoptr(GFileInfo) file_info = NULL;
   g_autofree gchar *index_path = NULL;
   RtfmGirFile *self = source_object;
+  FuzzyIndex *result = NULL;
+  GSList *list;
+  GSList *iter;
   GFile *file = task_data;
   GError *error = NULL;
   guint64 mtime = 0;
@@ -387,9 +403,6 @@ rtfm_gir_file_load_index_worker (GTask        *task,
   g_assert (G_IS_TASK (task));
   g_assert (G_IS_FILE (file));
   g_assert (!cancellable || G_IS_CANCELLABLE (cancellable));
-
-  if (g_task_return_error_if_cancelled (task))
-    return;
 
   /*
    * Query information on our .gir file so we have an mtime to
@@ -400,12 +413,8 @@ rtfm_gir_file_load_index_worker (GTask        *task,
                                  G_FILE_QUERY_INFO_NONE,
                                  cancellable,
                                  &error);
-
   if (file_info == NULL)
-    {
-      g_task_return_error (task, error);
-      return;
-    }
+    goto finish;
 
   mtime = g_file_info_get_attribute_uint64 (file_info, G_FILE_ATTRIBUTE_TIME_MODIFIED);
 
@@ -423,17 +432,14 @@ rtfm_gir_file_load_index_worker (GTask        *task,
       if (fuzzy_index_load_file (prev_index, index_file, cancellable, &error) &&
           check_index_version (prev_index, file, mtime, &error))
         {
-          g_task_return_pointer (task, g_steal_pointer (&prev_index), g_object_unref);
-          return;
+          result = prev_index;
+          goto finish;
         }
 
       g_message ("%s", error->message);
 
       g_clear_error (&error);
     }
-
-  if (g_task_return_error_if_cancelled (task))
-    return;
 
   /*
    * Parse our own copy of the repository so that we don't need
@@ -446,19 +452,8 @@ rtfm_gir_file_load_index_worker (GTask        *task,
   parser = rtfm_gir_parser_new ();
 
   repository = rtfm_gir_parser_parse_file (parser, file, cancellable, &error);
-
   if (repository == NULL)
-    {
-      g_task_return_error (task, error);
-      return;
-    }
-
-  /*
-   * Cancel after parsing if we happen to be able to avoid building
-   * the search index.
-   */
-  if (g_task_return_error_if_cancelled (task))
-    return;
+    goto finish;
 
   /*
    * Now build our index from strings in the repository.
@@ -476,22 +471,37 @@ rtfm_gir_file_load_index_worker (GTask        *task,
                                   g_task_get_priority (task),
                                   cancellable,
                                   &error))
-    {
-      g_task_return_error (task, error);
-      return;
-    }
+    goto finish;
 
   /*
    * Now mmap()'d our search index.
    */
   new_index = fuzzy_index_new ();
   if (!fuzzy_index_load_file (new_index, index_file, cancellable, &error))
+    goto finish;
+
+  result = new_index;
+
+finish:
+  g_mutex_lock (&self->mutex);
+
+  list = self->index_tasks;
+  self->index_tasks = NULL;
+
+  for (iter = list; iter != NULL; iter = iter->next)
     {
-      g_task_return_error (task, error);
-      return;
+      GTask *iter_task = iter->data;
+
+      if (result != NULL)
+        g_task_return_pointer (iter_task, g_object_ref (result), g_object_unref);
+      else
+        g_task_return_error (iter_task, g_error_copy (error));
     }
 
-  g_task_return_pointer (task, g_steal_pointer (&new_index), g_object_unref);
+  g_mutex_unlock (&self->mutex);
+
+  g_slist_free_full (list, g_object_unref);
+  g_clear_error (&error);
 }
 
 void
@@ -501,9 +511,12 @@ rtfm_gir_file_load_index_async (RtfmGirFile         *self,
                                 gpointer             user_data)
 {
   g_autoptr(GTask) task = NULL;
+  g_autoptr(GMutexLocker) locker = NULL;
 
   g_return_if_fail (RTFM_GIR_IS_FILE (self));
   g_return_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable));
+
+  locker = g_mutex_locker_new (&self->mutex);
 
   task = g_task_new (self, cancellable, callback, user_data);
   g_task_set_check_cancellable (task, FALSE);
@@ -515,7 +528,13 @@ rtfm_gir_file_load_index_async (RtfmGirFile         *self,
       return;
     }
 
-  g_task_run_in_thread (task, rtfm_gir_file_load_index_worker);
+  /*
+   * If there is another build request active, queue the result to
+   * be completed by that worker instead of queing duplicated work.
+   */
+  self->index_tasks = g_slist_prepend (self->index_tasks, g_object_ref (task));
+  if (self->index_tasks->next == NULL)
+    g_task_run_in_thread (task, rtfm_gir_file_load_index_worker);
 }
 
 FuzzyIndex *
