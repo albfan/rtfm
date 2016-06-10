@@ -26,12 +26,14 @@ typedef struct
 {
   gchar *category;
   gchar *text;
+  GQuark icon_name;
   gfloat score;
 } RtfmSearchResultPrivate;
 
 enum {
   PROP_0,
   PROP_CATEGORY,
+  PROP_ICON_NAME,
   PROP_SCORE,
   PROP_TEXT,
   N_PROPS
@@ -73,6 +75,10 @@ rtfm_search_result_get_property (GObject    *object,
       g_value_set_string (value, rtfm_search_result_get_category (self));
       break;
 
+    case PROP_ICON_NAME:
+      g_value_set_string (value, rtfm_search_result_get_icon_name (self));
+      break;
+
     case PROP_SCORE:
       g_value_set_float (value, rtfm_search_result_get_score (self));
       break;
@@ -98,6 +104,10 @@ rtfm_search_result_set_property (GObject      *object,
     {
     case PROP_CATEGORY:
       rtfm_search_result_set_category (self, g_value_get_string (value));
+      break;
+
+    case PROP_ICON_NAME:
+      rtfm_search_result_set_icon_name (self, g_value_get_string (value));
       break;
 
     case PROP_SCORE:
@@ -127,7 +137,14 @@ rtfm_search_result_class_init (RtfmSearchResultClass *klass)
                          "Category",
                          "The search result category",
                          NULL,
-                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+                         (G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS));
+
+  properties [PROP_ICON_NAME] =
+    g_param_spec_string ("icon-name",
+                         "Icon Name",
+                         "An icon name for the search result",
+                         NULL,
+                         (G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS));
 
   properties [PROP_SCORE] =
     g_param_spec_float ("score",
@@ -136,14 +153,14 @@ rtfm_search_result_class_init (RtfmSearchResultClass *klass)
                         0,
                         G_MAXFLOAT,
                         0,
-                        (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+                        (G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS));
 
   properties [PROP_TEXT] =
     g_param_spec_string ("text",
                          "Text",
                          "The search result text",
                          NULL,
-                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+                         (G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS));
 
   g_object_class_install_properties (object_class, N_PROPS, properties);
 
@@ -257,4 +274,33 @@ rtfm_search_result_load (RtfmSearchResult *self)
   g_signal_emit (self, signals [LOAD], 0, &item);
 
   return item;
+}
+
+const gchar *
+rtfm_search_result_get_icon_name (RtfmSearchResult *self)
+{
+  RtfmSearchResultPrivate *priv = rtfm_search_result_get_instance_private (self);
+
+  g_return_val_if_fail (RTFM_IS_SEARCH_RESULT (self), NULL);
+
+  return g_quark_to_string (priv->icon_name);
+}
+
+void
+rtfm_search_result_set_icon_name (RtfmSearchResult *self,
+                                  const gchar      *icon_name)
+{
+  RtfmSearchResultPrivate *priv = rtfm_search_result_get_instance_private (self);
+  GQuark q_icon_name = 0;
+
+  g_return_if_fail (RTFM_IS_SEARCH_RESULT (self));
+
+  if (icon_name != NULL)
+    q_icon_name = g_quark_from_string (icon_name);
+
+  if (q_icon_name != priv->icon_name)
+    {
+      priv->icon_name = q_icon_name;
+      g_object_notify_by_pspec (G_OBJECT (self), properties [PROP_ICON_NAME]);
+    }
 }

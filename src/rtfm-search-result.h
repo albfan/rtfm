@@ -39,17 +39,20 @@ struct _RtfmSearchResultClass
   gpointer _reserved8;
 };
 
-RtfmSearchResult *rtfm_search_result_new          (void);
-RtfmItem         *rtfm_search_result_load         (RtfmSearchResult *self);
-const gchar      *rtfm_search_result_get_category (RtfmSearchResult *self);
-void              rtfm_search_result_set_category (RtfmSearchResult *self,
-                                                   const gchar      *category);
-gfloat            rtfm_search_result_get_score    (RtfmSearchResult *self);
-void              rtfm_search_result_set_score    (RtfmSearchResult *self,
-                                                   gfloat            score);
-const gchar      *rtfm_search_result_get_text     (RtfmSearchResult *self);
-void              rtfm_search_result_set_text     (RtfmSearchResult *self,
-                                                   const gchar      *text);
+RtfmSearchResult *rtfm_search_result_new           (void);
+RtfmItem         *rtfm_search_result_load          (RtfmSearchResult *self);
+const gchar      *rtfm_search_result_get_category  (RtfmSearchResult *self);
+void              rtfm_search_result_set_category  (RtfmSearchResult *self,
+                                                    const gchar      *category);
+gfloat            rtfm_search_result_get_score     (RtfmSearchResult *self);
+void              rtfm_search_result_set_score     (RtfmSearchResult *self,
+                                                    gfloat            score);
+const gchar      *rtfm_search_result_get_text      (RtfmSearchResult *self);
+void              rtfm_search_result_set_text      (RtfmSearchResult *self,
+                                                    const gchar      *text);
+const gchar      *rtfm_search_result_get_icon_name (RtfmSearchResult *self);
+void              rtfm_search_result_set_icon_name (RtfmSearchResult *self,
+                                                    const gchar      *icon_name);
 
 G_END_DECLS
 
