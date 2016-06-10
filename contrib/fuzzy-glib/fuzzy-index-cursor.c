@@ -392,6 +392,7 @@ fuzzy_index_cursor_worker (GTask        *task,
 
               match.document_id = item->document_id;
               match.score = 0;
+              match.key = find_key_for_document (self, item->document_id);
 
               g_array_append_val (self->matches, match);
             }
