@@ -28,6 +28,9 @@
 #include "rtfm-gir-namespace.h"
 #include "rtfm-gir-provider.h"
 #include "rtfm-gir-repository.h"
+#include "rtfm-gir-search-result.h"
+
+#define RTFM_GIR_PROVIDER_SEARCH_MAX 25
 
 struct _RtfmGirProvider
 {
@@ -36,10 +39,25 @@ struct _RtfmGirProvider
   GPtrArray *search_indexes;
 };
 
+typedef struct
+{
+  RtfmSearchResults *results;
+  guint active;
+} SearchState;
+
 static void provider_iface_init (RtfmProviderInterface *iface);
 
 G_DEFINE_TYPE_EXTENDED (RtfmGirProvider, rtfm_gir_provider, G_TYPE_OBJECT, 0,
                         G_IMPLEMENT_INTERFACE (RTFM_TYPE_PROVIDER, provider_iface_init))
+
+static void
+search_state_free (gpointer data)
+{
+  SearchState *state = data;
+
+  g_clear_object (&state->results);
+  g_slice_free (SearchState, state);
+}
 
 static void
 rtfm_gir_provider_class_init (RtfmGirProviderClass *klass)
@@ -258,23 +276,84 @@ rtfm_gir_provider_populate_finish (RtfmProvider  *provider,
 }
 
 static void
+rtfm_gir_provider_query_cb (GObject      *object,
+                            GAsyncResult *result,
+                            gpointer      user_data)
+{
+  FuzzyIndex *index = (FuzzyIndex *)object;
+  g_autoptr(GListModel) ret = NULL;
+  g_autoptr(GTask) task = user_data;
+  SearchState *state;
+  GError *error = NULL;
+
+  g_assert (FUZZY_IS_INDEX (index));
+
+  state = g_task_get_task_data (task);
+
+  if (NULL != (ret = fuzzy_index_query_finish (index, result, &error)))
+    {
+      guint n_items;
+      guint i;
+
+      n_items = g_list_model_get_n_items (ret);
+
+      for (i = 0; i < n_items; i++)
+        {
+          g_autoptr(RtfmSearchResult) res = NULL;
+          g_autoptr(FuzzyIndexMatch) match = g_list_model_get_item (ret, i);
+          GVariant *variant = fuzzy_index_match_get_document (match);
+          gfloat score = fuzzy_index_match_get_score (match);
+
+          res = rtfm_gir_search_result_new (variant, score);
+          rtfm_search_results_add (state->results, res);
+        }
+    }
+
+  if (--state->active == 0)
+    g_task_return_boolean (task, TRUE);
+}
+
+static void
 rtfm_gir_provider_search_async (RtfmProvider        *provider,
-                                RtfmSearchSettings  *settings,
-                                RtfmSearchResults   *results,
+                                RtfmSearchSettings  *search_settings,
+                                RtfmSearchResults   *search_results,
                                 GCancellable        *cancellable,
                                 GAsyncReadyCallback  callback,
                                 gpointer             user_data)
 {
   RtfmGirProvider *self = (RtfmGirProvider *)provider;
   g_autoptr(GTask) task = NULL;
+  SearchState *state;
+  const gchar *search_text;
+  guint i;
 
   g_assert (RTFM_IS_GIR_PROVIDER (self));
-  g_assert (RTFM_IS_SEARCH_SETTINGS (settings));
-  g_assert (RTFM_IS_SEARCH_RESULTS (results));
+  g_assert (RTFM_IS_SEARCH_SETTINGS (search_settings));
+  g_assert (RTFM_IS_SEARCH_RESULTS (search_results));
   g_assert (!cancellable || G_IS_CANCELLABLE (cancellable));
 
   task = g_task_new (self, cancellable, callback, user_data);
-  g_task_return_boolean (task, TRUE);
+
+  search_text = rtfm_search_settings_get_search_text (search_settings);
+
+  state = g_slice_new0 (SearchState);
+  state->results = g_object_ref (search_results);
+  state->active = self->search_indexes->len;
+
+  g_task_set_task_data (task, state, search_state_free);
+  g_task_set_check_cancellable (task, FALSE);
+
+  for (i = 0; i < self->search_indexes->len; i++)
+    {
+      FuzzyIndex *index = g_ptr_array_index (self->search_indexes, i);
+
+      fuzzy_index_query_async (index,
+                               search_text,
+                               RTFM_GIR_PROVIDER_SEARCH_MAX,
+                               cancellable,
+                               rtfm_gir_provider_query_cb,
+                               g_object_ref (task));
+    }
 }
 
 static gboolean
