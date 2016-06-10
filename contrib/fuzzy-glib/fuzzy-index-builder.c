@@ -52,6 +52,28 @@ typedef struct
 
 G_DEFINE_TYPE (FuzzyIndexBuilder, fuzzy_index_builder, G_TYPE_OBJECT)
 
+static guint
+variant_hash_helper (gconstpointer data)
+{
+  GVariant *variant = (GVariant *)data;
+  GBytes *bytes;
+  guint ret;
+
+  if (!g_variant_is_container (variant))
+    return g_variant_hash (variant);
+
+  /* Generally we wouldn't want to create a bytes to hash
+   * during a hash call, since that'd be fairly expensive.
+   * But since GHashTable caches hash values, its not that
+   * big of a deal.
+   */
+  bytes = g_variant_get_data_as_bytes (variant);
+  ret = g_bytes_hash (bytes);
+  g_bytes_unref (bytes);
+
+  return ret;
+}
+
 static void
 fuzzy_index_builder_finalize (GObject *object)
 {
@@ -78,7 +100,7 @@ static void
 fuzzy_index_builder_init (FuzzyIndexBuilder *self)
 {
   self->documents = g_ptr_array_new_with_free_func ((GDestroyNotify)g_variant_unref);
-  self->documents_hash = g_hash_table_new (g_variant_hash, g_variant_equal);
+  self->documents_hash = g_hash_table_new (variant_hash_helper, g_variant_equal);
   self->kv_pairs = g_array_new (FALSE, FALSE, sizeof (KVPair));
   self->keys = g_string_chunk_new (4096);
 }
