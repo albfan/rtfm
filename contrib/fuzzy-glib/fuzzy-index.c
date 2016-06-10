@@ -220,7 +220,8 @@ fuzzy_index_load_file (FuzzyIndex    *self,
   g_task_set_source_tag (task, fuzzy_index_load_file);
   g_task_set_task_data (task, g_object_ref (file), g_object_unref);
   g_task_set_check_cancellable (task, FALSE);
-  g_task_run_in_thread_sync (task, fuzzy_index_load_file_worker);
+
+  fuzzy_index_load_file_worker (task, self, file, cancellable);
 
   return g_task_propagate_boolean (task, error);
 }

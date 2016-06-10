@@ -407,7 +407,8 @@ fuzzy_index_builder_write (FuzzyIndexBuilder  *self,
   g_task_set_source_tag (task, fuzzy_index_builder_write);
   g_task_set_priority (task, io_priority);
   g_task_set_task_data (task, g_object_ref (file), g_object_unref);
-  g_task_run_in_thread_sync (task, fuzzy_index_builder_write_worker);
+
+  fuzzy_index_builder_write_worker (task, self, file, cancellable);
 
   return g_task_propagate_boolean (task, error);
 }
