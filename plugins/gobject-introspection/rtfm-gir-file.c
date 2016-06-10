@@ -300,7 +300,7 @@ build_index_from_repository (FuzzyIndexBuilder *builder,
   g_assert (FUZZY_IS_INDEX_BUILDER (builder));
   g_assert (RTFM_GIR_IS_REPOSITORY (repository));
 
-  g_print ("Building index for %s\n", rtfm_gir_repository_get_c_identifier_prefixes (repository));
+  /* TODO: Add strings from repository.. */
 }
 
 static void

@@ -151,6 +151,7 @@ fuzzy_index_load_file_worker (GTask        *task,
   documents = g_variant_dict_lookup_value (&dict, "documents", G_VARIANT_TYPE_VARDICT);
   keys = g_variant_dict_lookup_value (&dict, "keys", G_VARIANT_TYPE_VARDICT);
   tables = g_variant_dict_lookup_value (&dict, "tables", G_VARIANT_TYPE_VARDICT);
+  metadata = g_variant_dict_lookup_value (&dict, "metadata", G_VARIANT_TYPE_VARDICT);
   g_variant_dict_clear (&dict);
 
   if (keys == NULL || documents == NULL || tables == NULL || metadata == NULL)
