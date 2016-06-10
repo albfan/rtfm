@@ -69,8 +69,6 @@ rtfm_gir_provider_load_index_cb (GObject      *object,
 
   index = rtfm_gir_file_load_index_finish (file, result, &error);
 
-  g_print ("load_index_cb %p\n", index);
-
   if (index == NULL)
     g_warning ("%s", error->message);
   else
