@@ -49,6 +49,8 @@ librtfm_plugin_gir_la_SOURCES = \
 	rtfm-gir-repository.h \
 	rtfm-gir-return-value.c \
 	rtfm-gir-return-value.h \
+	rtfm-gir-search-result.c \
+	rtfm-gir-search-result.h \
 	rtfm-gir-type.c \
 	rtfm-gir-type.h \
 	rtfm-gir-union.c \
