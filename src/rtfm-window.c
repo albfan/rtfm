@@ -24,6 +24,7 @@
 #include "rtfm-path-element.h"
 #include "rtfm-search-results.h"
 #include "rtfm-search-settings.h"
+#include "rtfm-search-view.h"
 #include "rtfm-sidebar.h"
 #include "rtfm-view.h"
 #include "rtfm-widget.h"
@@ -41,8 +42,11 @@ struct _RtfmWindow
   GCancellable         *search_cancellable;
 
   GSimpleAction        *focus_search;
+  GtkPaned             *paned;
   GtkSearchEntry       *search_entry;
+  RtfmSearchView       *search_view;
   RtfmSidebar          *sidebar;
+  GtkStack             *stack;
   RtfmView             *view;
 };
 
@@ -55,6 +59,18 @@ enum {
 };
 
 static GParamSpec *properties [N_PROPS];
+
+static void
+rtfm_window_cancel_search (RtfmWindow *self)
+{
+  g_assert (RTFM_IS_WINDOW (self));
+
+  if (self->search_cancellable != NULL)
+    {
+      if (!g_cancellable_is_cancelled (self->search_cancellable))
+        g_cancellable_cancel (self->search_cancellable);
+    }
+}
 
 /**
  * rtfm_window_get_library:
@@ -131,7 +147,6 @@ rtfm_window_search_cb (GObject      *object,
         g_message ("%s", error->message);
       return;
     }
-
 }
 
 static void
@@ -144,8 +159,7 @@ rtfm_window_search_entry_changed (RtfmWindow     *self,
   g_assert (GTK_IS_SEARCH_ENTRY (search_entry));
 
   /* Cancel any active search request */
-  if (self->search_cancellable && !g_cancellable_is_cancelled (self->search_cancellable))
-    g_cancellable_cancel (self->search_cancellable);
+  rtfm_window_cancel_search (self);
 
   /* Clear state from previous search requests */
   g_clear_object (&self->search_results);
@@ -153,8 +167,8 @@ rtfm_window_search_entry_changed (RtfmWindow     *self,
 
   /* Check if we are searching for something new */
   text = gtk_entry_get_text (GTK_ENTRY (search_entry));
-  if (!text || !*text)
-    return;
+  if (text == NULL || *text == '\0')
+    goto change_page;
 
   self->search_cancellable = g_cancellable_new ();
   self->search_results = rtfm_search_results_new ();
@@ -167,6 +181,12 @@ rtfm_window_search_entry_changed (RtfmWindow     *self,
                              self->search_cancellable,
                              rtfm_window_search_cb,
                              g_object_ref (self));
+
+change_page:
+  if (text == NULL || *text == '\0')
+    gtk_stack_set_visible_child (self->stack, GTK_WIDGET (self->paned));
+  else
+    gtk_stack_set_visible_child (self->stack, GTK_WIDGET (self->search_view));
 }
 
 static void
@@ -177,8 +197,7 @@ rtfm_window_search_entry_stop_search (RtfmWindow     *self,
   g_assert (GTK_IS_SEARCH_ENTRY (search_entry));
 
   /* Cancel any active search request */
-  if (self->search_cancellable && !g_cancellable_is_cancelled (self->search_cancellable))
-    g_cancellable_cancel (self->search_cancellable);
+  rtfm_window_cancel_search (self);
 }
 
 static void
@@ -265,9 +284,14 @@ rtfm_window_class_init (RtfmWindowClass *klass)
   g_object_class_install_properties (object_class, N_PROPS, properties);
 
   gtk_widget_class_set_template_from_resource (widget_class, "/org/gnome/rtfm/ui/rtfm-window.ui");
+
+  gtk_widget_class_bind_template_child (widget_class, RtfmWindow, paned);
   gtk_widget_class_bind_template_child (widget_class, RtfmWindow, search_entry);
+  gtk_widget_class_bind_template_child (widget_class, RtfmWindow, search_view);
   gtk_widget_class_bind_template_child (widget_class, RtfmWindow, sidebar);
+  gtk_widget_class_bind_template_child (widget_class, RtfmWindow, stack);
   gtk_widget_class_bind_template_child (widget_class, RtfmWindow, view);
+
   gtk_widget_class_bind_template_callback (widget_class, rtfm_window_sidebar_item_activated);
   gtk_widget_class_bind_template_callback (widget_class, rtfm_window_search_entry_changed);
   gtk_widget_class_bind_template_callback (widget_class, rtfm_window_search_entry_stop_search);

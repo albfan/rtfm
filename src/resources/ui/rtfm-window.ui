@@ -71,40 +71,52 @@
       </object>
     </child>
     <child>
-      <object class="GtkPaned" id="paned">
-        <property name="orientation">horizontal</property>
-        <property name="position">200</property>
+      <object class="GtkStack" id="stack">
+        <property name="transition-duration">200</property>
+        <property name="transition-type">crossfade</property>
         <property name="visible">true</property>
         <child>
-          <object class="RtfmSidebar" id="sidebar">
-            <property name="visible">true</property>
-            <signal name="item-activated" handler="rtfm_window_sidebar_item_activated" swapped="true"/>
-          </object>
-          <packing>
-            <property name="shrink">false</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkScrolledWindow">
+          <object class="GtkPaned" id="paned">
+            <property name="orientation">horizontal</property>
+            <property name="position">200</property>
             <property name="visible">true</property>
             <child>
-              <object class="GtkViewport" id="viewport">
+              <object class="RtfmSidebar" id="sidebar">
                 <property name="visible">true</property>
-                <style>
-                  <class name="rtfm-view-area"/>
-                </style>
+                <signal name="item-activated" handler="rtfm_window_sidebar_item_activated" swapped="true"/>
+              </object>
+              <packing>
+                <property name="shrink">false</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkScrolledWindow">
+                <property name="visible">true</property>
                 <child>
-                  <object class="RtfmView" id="view">
-                    <property name="expand">true</property>
+                  <object class="GtkViewport" id="viewport">
                     <property name="visible">true</property>
+                    <style>
+                      <class name="rtfm-view-area"/>
+                    </style>
+                    <child>
+                      <object class="RtfmView" id="view">
+                        <property name="expand">true</property>
+                        <property name="visible">true</property>
+                      </object>
+                    </child>
                   </object>
                 </child>
               </object>
+              <packing>
+                <property name="shrink">false</property>
+              </packing>
             </child>
           </object>
-          <packing>
-            <property name="shrink">false</property>
-          </packing>
+        </child>
+        <child>
+          <object class="RtfmSearchView" id="search_view">
+            <property name="visible">true</property>
+          </object>
         </child>
       </object>
     </child>
