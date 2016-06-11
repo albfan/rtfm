@@ -261,6 +261,7 @@ fuzzy_index_query_async (FuzzyIndex          *self,
   g_return_if_fail (!cancellable || G_IS_CANCELLABLE (cancellable));
 
   task = g_task_new (self, cancellable, callback, user_data);
+  g_task_set_source_tag (task, fuzzy_index_query_async);
 
   cursor = g_object_new (FUZZY_TYPE_INDEX_CURSOR,
                          "documents", self->documents,
@@ -269,6 +270,7 @@ fuzzy_index_query_async (FuzzyIndex          *self,
                          "query", query,
                          "max-matches", max_matches,
                          NULL);
+
   g_async_initable_init_async (G_ASYNC_INITABLE (cursor),
                                G_PRIORITY_DEFAULT,
                                cancellable,
