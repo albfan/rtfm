@@ -35,15 +35,25 @@
 struct _RtfmGirProvider
 {
   GObject    object;
+
   GPtrArray *files;
   GPtrArray *search_indexes;
+
+  GSList    *search_index_tasks;
+  guint      search_indexes_loaded : 1;
 };
 
 typedef struct
 {
   RtfmSearchResults *results;
+  gchar *query;
   guint active;
 } SearchState;
+
+typedef struct
+{
+  guint active;
+} LoadIndexState;
 
 static void provider_iface_init (RtfmProviderInterface *iface);
 
@@ -55,13 +65,31 @@ search_state_free (gpointer data)
 {
   SearchState *state = data;
 
+  g_clear_pointer (&state->query, g_free);
   g_clear_object (&state->results);
   g_slice_free (SearchState, state);
 }
 
 static void
+rtfm_gir_provider_finalize (GObject *object)
+{
+  RtfmGirProvider *self = (RtfmGirProvider *)object;
+
+  g_clear_pointer (&self->files, g_ptr_array_unref);
+  g_clear_pointer (&self->search_indexes, g_ptr_array_unref);
+
+  g_slist_free_full (self->search_index_tasks, g_object_unref);
+  self->search_index_tasks = NULL;
+
+  G_OBJECT_CLASS (rtfm_gir_provider_parent_class)->finalize (object);
+}
+
+static void
 rtfm_gir_provider_class_init (RtfmGirProviderClass *klass)
 {
+  GObjectClass *object_class = G_OBJECT_CLASS (klass);
+
+  object_class->finalize = rtfm_gir_provider_finalize;
 }
 
 static void
@@ -76,14 +104,19 @@ rtfm_gir_provider_load_index_cb (GObject      *object,
                                  GAsyncResult *result,
                                  gpointer      user_data)
 {
-  g_autoptr(RtfmGirProvider) self = user_data;
-  g_autoptr(FuzzyIndex) index = NULL;
   RtfmGirFile *file = (RtfmGirFile *)object;
+  g_autoptr(FuzzyIndex) index = NULL;
+  g_autoptr(GTask) task = user_data;
+  RtfmGirProvider *self;
+  LoadIndexState *state;
   GError *error = NULL;
 
   g_assert (RTFM_GIR_IS_FILE (file));
-  g_assert (RTFM_IS_GIR_PROVIDER (self));
+  g_assert (G_IS_TASK (task));
   g_assert (G_IS_ASYNC_RESULT (result));
+
+  self = g_task_get_source_object (task);
+  state = g_task_get_task_data (task);
 
   index = rtfm_gir_file_load_index_finish (file, result, &error);
 
@@ -91,6 +124,79 @@ rtfm_gir_provider_load_index_cb (GObject      *object,
     g_warning ("%s", error->message);
   else
     g_ptr_array_add (self->search_indexes, g_steal_pointer (&index));
+
+  state->active--;
+
+  if (state->active == 0)
+    {
+      GSList *tasks;
+      GSList *iter;
+
+      self->search_indexes_loaded = TRUE;
+
+      tasks = self->search_index_tasks;
+      self->search_index_tasks = NULL;
+
+      for (iter = tasks; iter != NULL; iter = iter->next)
+        {
+          g_autoptr(GTask) iter_task = iter->data;
+
+          g_task_return_boolean (iter_task, TRUE);
+        }
+
+      g_slist_free (tasks);
+    }
+}
+
+static void
+rtfm_gir_provider_load_indexes_async (RtfmGirProvider     *self,
+                                      GCancellable        *cancellable,
+                                      GAsyncReadyCallback  callback,
+                                      gpointer             user_data)
+{
+  g_autoptr(GTask) task = NULL;
+  LoadIndexState *state;
+  guint i;
+
+  g_assert (RTFM_IS_GIR_PROVIDER (self));
+  g_assert (!cancellable || G_IS_CANCELLABLE (cancellable));
+
+  task = g_task_new (self, cancellable, callback, user_data);
+  g_task_set_source_tag (task, rtfm_gir_provider_load_indexes_async);
+  g_task_set_check_cancellable (task, FALSE);
+
+  if (self->search_indexes_loaded || self->files->len == 0)
+    {
+      g_task_return_boolean (task, TRUE);
+      return;
+    }
+
+  state = g_new (LoadIndexState, 1);
+  state->active = self->files->len;
+  g_task_set_task_data (task, state, g_free);
+
+  self->search_index_tasks = g_slist_prepend (self->search_index_tasks, g_object_ref (task));
+
+  for (i = 0; i < self->files->len; i++)
+    {
+      RtfmGirFile *file = g_ptr_array_index (self->files, i);
+
+      rtfm_gir_file_load_index_async (file,
+                                      cancellable,
+                                      rtfm_gir_provider_load_index_cb,
+                                      g_object_ref (task));
+    }
+}
+
+static gboolean
+rtfm_gir_provider_load_indexes_finish (RtfmGirProvider  *self,
+                                       GAsyncResult     *result,
+                                       GError          **error)
+{
+  g_assert (RTFM_IS_GIR_PROVIDER (self));
+  g_assert (G_IS_TASK (result));
+
+  return g_task_propagate_boolean (G_TASK (result), error);
 }
 
 static void
@@ -149,20 +255,7 @@ rtfm_gir_provider_load_directory (RtfmGirProvider *self,
   if (!g_file_test (index_dir, G_FILE_TEST_IS_DIR))
     g_mkdir_with_parents (index_dir, 0750);
 
-  for (i = 0; i < self->files->len; i++)
-    {
-      RtfmGirFile *item = g_ptr_array_index (self->files, i);
-
-      /*
-       * Load the search index asynchronously, which may cause the
-       * file to be parsed (and released afterwards), index build,
-       * and remapping into virtual memory.
-       */
-      rtfm_gir_file_load_index_async (item,
-                                      cancellable,
-                                      rtfm_gir_provider_load_index_cb,
-                                      g_object_ref (self));
-    }
+  rtfm_gir_provider_load_indexes_async (self, NULL, NULL, NULL);
 }
 
 static void
@@ -287,6 +380,7 @@ rtfm_gir_provider_query_cb (GObject      *object,
   GError *error = NULL;
 
   g_assert (FUZZY_IS_INDEX (index));
+  g_assert (G_IS_TASK (task));
 
   state = g_task_get_task_data (task);
 
@@ -318,8 +412,52 @@ rtfm_gir_provider_query_cb (GObject      *object,
         }
     }
 
-  if (--state->active == 0)
+  state->active--;
+
+  if (state->active == 0)
     g_task_return_boolean (task, TRUE);
+}
+
+static void
+rtfm_gir_provider_search_ready_cb (GObject      *object,
+                                   GAsyncResult *result,
+                                   gpointer      user_data)
+{
+  RtfmGirProvider *self = (RtfmGirProvider *)object;
+  g_autoptr(GTask) task = user_data;
+  SearchState *state;
+  GError *error = NULL;
+  guint i;
+
+  g_assert (RTFM_IS_GIR_PROVIDER (self));
+  g_assert (G_IS_TASK (task));
+
+  if (!rtfm_gir_provider_load_indexes_finish (self, result, &error))
+    {
+      g_task_return_error (task, error);
+      return;
+    }
+
+  state = g_task_get_task_data (task);
+  state->active = self->search_indexes->len;
+
+  if (state->active == 0)
+    {
+      g_task_return_boolean (task, TRUE);
+      return;
+    }
+
+  for (i = 0; i < self->search_indexes->len; i++)
+    {
+      FuzzyIndex *index = g_ptr_array_index (self->search_indexes, i);
+
+      fuzzy_index_query_async (index,
+                               state->query,
+                               RTFM_GIR_PROVIDER_SEARCH_MAX,
+                               g_task_get_cancellable (task),
+                               rtfm_gir_provider_query_cb,
+                               g_object_ref (task));
+    }
 }
 
 static void
@@ -346,29 +484,16 @@ rtfm_gir_provider_search_async (RtfmProvider        *provider,
   search_text = rtfm_search_settings_get_search_text (search_settings);
 
   state = g_slice_new0 (SearchState);
+  state->query = g_strdup (search_text);
   state->results = g_object_ref (search_results);
   state->active = self->search_indexes->len;
 
   g_task_set_task_data (task, state, search_state_free);
-  g_task_set_check_cancellable (task, FALSE);
 
-  if (self->search_indexes->len == 0)
-    {
-      g_task_return_boolean (task, TRUE);
-      return;
-    }
-
-  for (i = 0; i < self->search_indexes->len; i++)
-    {
-      FuzzyIndex *index = g_ptr_array_index (self->search_indexes, i);
-
-      fuzzy_index_query_async (index,
-                               search_text,
-                               RTFM_GIR_PROVIDER_SEARCH_MAX,
-                               cancellable,
-                               rtfm_gir_provider_query_cb,
-                               g_object_ref (task));
-    }
+  rtfm_gir_provider_load_indexes_async (self,
+                                        cancellable,
+                                        rtfm_gir_provider_search_ready_cb,
+                                        g_object_ref (task));
 }
 
 static gboolean
