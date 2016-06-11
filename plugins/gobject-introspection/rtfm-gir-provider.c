@@ -304,7 +304,16 @@ rtfm_gir_provider_query_cb (GObject      *object,
           GVariant *variant = fuzzy_index_match_get_document (match);
           gfloat score = fuzzy_index_match_get_score (match);
 
+          /*
+           * If this score is too low to get added to the results, then we can
+           * stop doing any more processing on these search results (as they
+           * are sorted by score).
+           */
+          if (!rtfm_search_results_accepts_with_score (state->results, score))
+            break;
+
           res = rtfm_gir_search_result_new (variant, score);
+
           rtfm_search_results_add (state->results, res);
         }
     }
