@@ -30,6 +30,8 @@
 #include "rtfm-widget.h"
 #include "rtfm-window.h"
 
+#define SEARCH_TIMEOUT_DELAY 100
+
 struct _RtfmWindow
 {
   GtkApplicationWindow  parent_instance;
@@ -50,6 +52,7 @@ struct _RtfmWindow
   RtfmView             *view;
 
   guint                 active_search_count;
+  guint                 queued_search_timeout;
 };
 
 typedef enum
@@ -185,24 +188,18 @@ rtfm_window_search_cb (GObject      *object,
     }
 }
 
-static void
-rtfm_window_search_entry_changed (RtfmWindow     *self,
-                                  GtkSearchEntry *search_entry)
+static gboolean
+rtfm_window_do_search (gpointer user_data)
 {
+  RtfmWindow *self = user_data;
   const gchar *text;
 
   g_assert (RTFM_IS_WINDOW (self));
-  g_assert (GTK_IS_SEARCH_ENTRY (search_entry));
 
-  /* Cancel any active search request */
-  rtfm_window_cancel_search (self);
-
-  /* Clear state from previous search requests */
-  g_clear_object (&self->search_results);
-  g_clear_object (&self->search_cancellable);
+  self->queued_search_timeout = 0;
 
   /* Check if we are searching for something new */
-  text = gtk_entry_get_text (GTK_ENTRY (search_entry));
+  text = gtk_entry_get_text (GTK_ENTRY (self->search_entry));
   if (text == NULL || *text == '\0')
     goto change_page;
 
@@ -227,6 +224,38 @@ change_page:
     rtfm_window_set_mode (self, RTFM_WINDOW_MODE_BROWSE);
   else
     rtfm_window_set_mode (self, RTFM_WINDOW_MODE_SEARCH);
+
+  return G_SOURCE_REMOVE;
+}
+
+static void
+rtfm_window_queue_search_query (RtfmWindow *self)
+{
+  g_assert (RTFM_IS_WINDOW (self));
+
+  if (self->queued_search_timeout == 0)
+    self->queued_search_timeout =
+      g_timeout_add (SEARCH_TIMEOUT_DELAY, rtfm_window_do_search, self);
+}
+
+static void
+rtfm_window_search_entry_changed (RtfmWindow     *self,
+                                  GtkSearchEntry *search_entry)
+{
+  g_assert (RTFM_IS_WINDOW (self));
+  g_assert (GTK_IS_SEARCH_ENTRY (search_entry));
+
+  /* Cancel any active search request */
+  rtfm_window_cancel_search (self);
+
+  /* Clear state from previous search requests */
+  g_clear_object (&self->search_results);
+  g_clear_object (&self->search_cancellable);
+
+  /* Queue a request to begin the search so we can coalesce
+   * searches within a short period of time.
+   */
+  rtfm_window_queue_search_query (self);
 }
 
 static void
@@ -257,6 +286,12 @@ static void
 rtfm_window_finalize (GObject *object)
 {
   RtfmWindow *self = (RtfmWindow *)object;
+
+  if (self->queued_search_timeout != 0)
+    {
+      g_source_remove (self->queued_search_timeout);
+      self->queued_search_timeout = 0;
+    }
 
   g_clear_object (&self->library);
 
