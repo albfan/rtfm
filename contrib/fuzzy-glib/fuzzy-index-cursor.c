@@ -362,6 +362,9 @@ fuzzy_index_cursor_worker (GTask        *task,
       gsize n_elements;
       gchar char_key[8];
 
+      if (g_unichar_isspace (ch))
+        continue;
+
       char_key [g_unichar_to_utf8 (ch, char_key)] = '\0';
       table = g_variant_dict_lookup_value (self->tables,
                                            char_key,
@@ -375,6 +378,9 @@ fuzzy_index_cursor_worker (GTask        *task,
       g_array_append_val (tables_n_elements, n_elements);
       g_ptr_array_add (tables, (gpointer)fixed);
     }
+
+  if (tables->len == 0)
+    goto cleanup;
 
   g_assert (tables->len > 0);
   g_assert (tables->len == tables_n_elements->len);
