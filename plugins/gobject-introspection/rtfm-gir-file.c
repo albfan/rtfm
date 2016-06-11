@@ -22,6 +22,8 @@
 
 #include "rtfm-gir-class.h"
 #include "rtfm-gir-file.h"
+#include "rtfm-gir-function.h"
+#include "rtfm-gir-method.h"
 #include "rtfm-gir-namespace.h"
 #include "rtfm-gir-parser.h"
 #include "rtfm-gir-util.h"
@@ -165,6 +167,82 @@ class_indexer (RtfmGirFile       *self,
 }
 
 static void
+function_indexer (RtfmGirFile       *self,
+                  FuzzyIndexBuilder *builder,
+                  RtfmGirFunction   *function)
+{
+  g_autoptr(GVariant) document = NULL;
+  g_autofree gchar *id = NULL;
+  const gchar *name;
+  GVariantDict dict;
+
+  g_assert (RTFM_GIR_IS_FILE (self));
+  g_assert (FUZZY_IS_INDEX_BUILDER (builder));
+  g_assert (RTFM_GIR_IS_FUNCTION (function));
+
+  id = rtfm_gir_generate_id (function);
+  name = rtfm_gir_function_get_c_identifier (function);
+
+  if (name == NULL)
+    return;
+
+  g_variant_dict_init (&dict, NULL);
+  g_variant_dict_insert (&dict, "id", "s", id);
+  g_variant_dict_insert (&dict, "word", "s", name);
+  document = g_variant_ref_sink (g_variant_dict_end (&dict));
+
+#define INSERT_KEY(key)                                        \
+  G_STMT_START {                                               \
+    const gchar *tmp = rtfm_gir_function_get_##key (function); \
+    if (tmp != NULL)                                           \
+      fuzzy_index_builder_insert (builder, tmp, document);     \
+  } G_STMT_END
+
+  INSERT_KEY (c_identifier);
+  INSERT_KEY (name);
+
+#undef INSERT_KEY
+}
+
+static void
+method_indexer (RtfmGirFile       *self,
+                FuzzyIndexBuilder *builder,
+                RtfmGirMethod     *method)
+{
+  g_autoptr(GVariant) document = NULL;
+  g_autofree gchar *id = NULL;
+  const gchar *name;
+  GVariantDict dict;
+
+  g_assert (RTFM_GIR_IS_FILE (self));
+  g_assert (FUZZY_IS_INDEX_BUILDER (builder));
+  g_assert (RTFM_GIR_IS_METHOD (method));
+
+  id = rtfm_gir_generate_id (method);
+  name = rtfm_gir_method_get_c_identifier (method);
+
+  if (name == NULL)
+    return;
+
+  g_variant_dict_init (&dict, NULL);
+  g_variant_dict_insert (&dict, "id", "s", id);
+  g_variant_dict_insert (&dict, "word", "s", name);
+  document = g_variant_ref_sink (g_variant_dict_end (&dict));
+
+#define INSERT_KEY(key)                                    \
+  G_STMT_START {                                           \
+    const gchar *tmp = rtfm_gir_method_get_##key (method); \
+    if (tmp != NULL)                                       \
+      fuzzy_index_builder_insert (builder, tmp, document); \
+  } G_STMT_END
+
+  INSERT_KEY (c_identifier);
+  INSERT_KEY (name);
+
+#undef INSERT_KEY
+}
+
+static void
 rtfm_gir_file_finalize (GObject *object)
 {
   RtfmGirFile *self = (RtfmGirFile *)object;
@@ -252,6 +330,8 @@ rtfm_gir_file_class_init (RtfmGirFileClass *klass)
 
   REGISTER_INDEXER (CLASS, class);
   REGISTER_INDEXER (NAMESPACE, namespace);
+  REGISTER_INDEXER (METHOD, method);
+  REGISTER_INDEXER (FUNCTION, function);
 
 #undef REGISTER_INDEXER
 }
