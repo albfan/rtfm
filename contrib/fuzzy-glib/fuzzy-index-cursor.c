@@ -319,6 +319,9 @@ fuzzy_index_cursor_worker (GTask        *task,
   g_assert (FUZZY_IS_INDEX_CURSOR (self));
   g_assert (G_IS_TASK (task));
 
+  if (g_task_return_error_if_cancelled (task))
+    return;
+
   /* No matches with empty query */
   if (self->query == NULL || *self->query == '\0')
     goto cleanup;
@@ -401,6 +404,9 @@ fuzzy_index_cursor_worker (GTask        *task,
       goto cleanup;
     }
 
+  if (g_task_return_error_if_cancelled (task))
+    return;
+
   g_hash_table_iter_init (&iter, matches);
 
   while (g_hash_table_iter_next (&iter, &key, &value))
@@ -413,6 +419,9 @@ fuzzy_index_cursor_worker (GTask        *task,
 
       g_array_append_val (self->matches, match);
     }
+
+  if (g_task_return_error_if_cancelled (task))
+    return;
 
   g_array_sort (self->matches, fuzzy_match_compare);
   if (lookup.max_matches > 0 && lookup.max_matches < self->matches->len)
