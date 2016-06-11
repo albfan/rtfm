@@ -159,6 +159,7 @@ class_indexer (RtfmGirFile       *self,
 
   INSERT_KEY (name);
   INSERT_KEY (c_symbol_prefix);
+  INSERT_KEY (c_type);
 
 #undef INSERT_KEY
 }
