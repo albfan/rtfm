@@ -271,3 +271,35 @@ rtfm_search_results_set_max_results (RtfmSearchResults *self,
       g_object_notify_by_pspec (G_OBJECT (self), properties [PROP_MAX_RESULTS]);
     }
 }
+
+/**
+ * rtfm_search_results_accepts_with_score:
+ * @self: A #RtfmSearchResults
+ * @score: The score of a potential search result
+ *
+ * This is a helper function that checks to see if a search result can
+ * hold a potential search result with a given score. If the search
+ * results have reached their maximum size and the score is lower than
+ * the lowest item, some search providers may be able to avoid inflating
+ * additional #RtfmSearchResult instances altogether.
+ *
+ * Returns: %TRUE if the result would be accepted into the result set.
+ *   Otherwise %FALSE is returned.
+ */
+gboolean
+rtfm_search_results_accepts_with_score (RtfmSearchResults *self,
+                                        gfloat             score)
+{
+  GSequenceIter *iter;
+  RtfmSearchResult *result;
+
+  g_return_val_if_fail (RTFM_IS_SEARCH_RESULTS (self), FALSE);
+
+  if (self->max_results == 0 || self->n_items < self->max_results)
+    return TRUE;
+
+  iter = g_sequence_iter_prev (g_sequence_get_end_iter (self->results));
+  result = g_sequence_get (iter);
+
+  return score > rtfm_search_result_get_score (result);
+}
