@@ -21,22 +21,47 @@
 #include "rtfm-gir-parser-types.h"
 #include "rtfm-gir-util.h"
 
+static gchar *
+get_namespace_id (RtfmGirParserObject *object)
+{
+  for (;
+       object != NULL && !RTFM_GIR_IS_NAMESPACE (object);
+       object = rtfm_gir_parser_object_get_parent (object))
+    {
+      /* Do Nothing */
+    }
+
+  if (RTFM_GIR_IS_NAMESPACE (object))
+    {
+      g_autofree gchar *name = NULL;
+      g_autofree gchar *version = NULL;
+
+      g_object_get (object,
+                    "name", &name,
+                    "version", &version,
+                    NULL);
+
+      return g_strdup_printf ("gir:namespace[%s-%s]", name, version);
+    }
+
+  return NULL;
+}
+
+
 gchar *
 rtfm_gir_generate_id (gpointer instance)
 {
   g_return_val_if_fail (G_IS_OBJECT (instance), NULL);
 
   if (RTFM_GIR_IS_NAMESPACE (instance))
+    return get_namespace_id (instance);
+
+  if (RTFM_GIR_IS_CLASS (instance))
     {
+      g_autofree gchar *prefix = get_namespace_id (instance);
       g_autofree gchar *name = NULL;
-      g_autofree gchar *version = NULL;
 
-      g_object_get (instance,
-                    "name", &name,
-                    "version", &version,
-                    NULL);
-
-      return g_strdup_printf ("gir:%s-%s", name, version);
+      return g_strdup_printf ("%s:class[%s]", prefix, name);
     }
 
   return NULL;

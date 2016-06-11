@@ -79,7 +79,7 @@ rtfm_gir_item_new (GObject *object)
           if (tmp != NULL)
             *tmp = '\0';
 
-          id = g_strdup_printf ("gir:%s", name);
+          id = g_strdup_printf ("gir:namespace[%s]", name);
           parts = g_strsplit (name, "-", 0);
           title = g_strdup (parts[0]);
           if (g_strv_length (parts) > 1)
