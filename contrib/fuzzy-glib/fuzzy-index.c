@@ -26,6 +26,7 @@ struct _FuzzyIndex
   GObject       object;
 
   guint         loaded : 1;
+  guint         case_sensitive : 1;
 
   GMappedFile  *mapped_file;
   GVariant     *variant;
@@ -88,6 +89,7 @@ fuzzy_index_load_file_worker (GTask        *task,
   GVariantDict dict;
   GError *error = NULL;
   gint version = 0;
+  gboolean case_sensitive = FALSE;
 
   g_assert (FUZZY_IS_INDEX (self));
   g_assert (G_IS_FILE (file));
@@ -169,6 +171,12 @@ fuzzy_index_load_file_worker (GTask        *task,
   self->keys = g_variant_dict_new (keys);
   self->tables = g_variant_dict_new (tables);
   self->metadata = g_variant_dict_new (metadata);
+
+  if (g_variant_dict_lookup (self->metadata,
+                             "case-sensitive",
+                             "b",
+                             &case_sensitive))
+    self->case_sensitive = !!case_sensitive;
 
   g_task_return_boolean (task, TRUE);
 }
@@ -264,6 +272,7 @@ fuzzy_index_query_async (FuzzyIndex          *self,
   g_task_set_source_tag (task, fuzzy_index_query_async);
 
   cursor = g_object_new (FUZZY_TYPE_INDEX_CURSOR,
+                         "case-sensitive", self->case_sensitive,
                          "documents", self->documents,
                          "keys", self->keys,
                          "tables", self->tables,

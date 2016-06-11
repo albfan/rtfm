@@ -32,6 +32,7 @@ struct _FuzzyIndexCursor
   GVariantDict *tables;
   GArray       *matches;
   guint         max_matches;
+  guint         case_sensitive : 1;
 };
 
 typedef struct
@@ -60,6 +61,7 @@ typedef struct
 
 enum {
   PROP_0,
+  PROP_CASE_SENSITIVE,
   PROP_DOCUMENTS,
   PROP_KEYS,
   PROP_TABLES,
@@ -101,6 +103,10 @@ fuzzy_index_cursor_get_property (GObject    *object,
 
   switch (prop_id)
     {
+    case PROP_CASE_SENSITIVE:
+      g_value_set_boolean (value, self->case_sensitive);
+      break;
+
     case PROP_MAX_MATCHES:
       g_value_set_uint (value, self->max_matches);
       break;
@@ -124,6 +130,10 @@ fuzzy_index_cursor_set_property (GObject      *object,
 
   switch (prop_id)
     {
+    case PROP_CASE_SENSITIVE:
+      self->case_sensitive = g_value_get_boolean (value);
+      break;
+
     case PROP_DOCUMENTS:
       self->documents = g_value_dup_boxed (value);
       break;
@@ -157,6 +167,13 @@ fuzzy_index_cursor_class_init (FuzzyIndexCursorClass *klass)
   object_class->finalize = fuzzy_index_cursor_finalize;
   object_class->get_property = fuzzy_index_cursor_get_property;
   object_class->set_property = fuzzy_index_cursor_set_property;
+
+  properties [PROP_CASE_SENSITIVE] =
+    g_param_spec_boolean ("case-sensitive",
+                          "Case Sensitive",
+                          "Case Sensitive",
+                          FALSE,
+                          (G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
 
   properties [PROP_DOCUMENTS] =
     g_param_spec_boxed ("documents",
@@ -311,6 +328,8 @@ fuzzy_index_cursor_worker (GTask        *task,
   g_autoptr(GPtrArray) tables = NULL;
   g_autoptr(GArray) tables_n_elements = NULL;
   g_autofree gint *tables_state = NULL;
+  g_autofree gchar *freeme = NULL;
+  const gchar *query;
   FuzzyLookup lookup = { 0 };
   GHashTableIter iter;
   const gchar *str;
@@ -325,6 +344,11 @@ fuzzy_index_cursor_worker (GTask        *task,
   /* No matches with empty query */
   if (self->query == NULL || *self->query == '\0')
     goto cleanup;
+
+  /* If we are not case-sensitive, we need to downcase the query string */
+  query = self->query;
+  if (self->case_sensitive == FALSE)
+    query = freeme = g_utf8_strdown (query, -1);
 
   tables = g_ptr_array_new ();
   tables_n_elements = g_array_new (FALSE, FALSE, sizeof (gsize));

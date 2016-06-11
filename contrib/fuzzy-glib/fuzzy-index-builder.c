@@ -26,6 +26,8 @@ struct _FuzzyIndexBuilder
 {
   GObject       object;
 
+  guint         case_sensitive : 1;
+
   GHashTable   *documents_hash;
   GPtrArray    *documents;
   GStringChunk *keys;
@@ -51,6 +53,14 @@ typedef struct
 } PosDocPair;
 
 G_DEFINE_TYPE (FuzzyIndexBuilder, fuzzy_index_builder, G_TYPE_OBJECT)
+
+enum {
+  PROP_0,
+  PROP_CASE_SENSITIVE,
+  N_PROPS
+};
+
+static GParamSpec *properties [N_PROPS];
 
 static guint
 variant_hash_helper (gconstpointer data)
@@ -89,11 +99,60 @@ fuzzy_index_builder_finalize (GObject *object)
 }
 
 static void
+fuzzy_index_builder_get_property (GObject    *object,
+                                  guint       prop_id,
+                                  GValue     *value,
+                                  GParamSpec *pspec)
+{
+  FuzzyIndexBuilder *self = FUZZY_INDEX_BUILDER (object);
+
+  switch (prop_id)
+    {
+    case PROP_CASE_SENSITIVE:
+      g_value_set_boolean (value, fuzzy_index_builder_get_case_sensitive (self));
+      break;
+
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+    }
+}
+
+static void
+fuzzy_index_builder_set_property (GObject      *object,
+                                  guint         prop_id,
+                                  const GValue *value,
+                                  GParamSpec   *pspec)
+{
+  FuzzyIndexBuilder *self = FUZZY_INDEX_BUILDER (object);
+
+  switch (prop_id)
+    {
+    case PROP_CASE_SENSITIVE:
+      fuzzy_index_builder_set_case_sensitive (self, g_value_get_boolean (value));
+      break;
+
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+    }
+}
+
+static void
 fuzzy_index_builder_class_init (FuzzyIndexBuilderClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
   object_class->finalize = fuzzy_index_builder_finalize;
+  object_class->get_property = fuzzy_index_builder_get_property;
+  object_class->set_property = fuzzy_index_builder_set_property;
+
+  properties [PROP_CASE_SENSITIVE] =
+    g_param_spec_boolean ("case-sensitive",
+                          "Case Sensitive",
+                          "Case Sensitive",
+                          FALSE,
+                          (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  g_object_class_install_properties (object_class, N_PROPS, properties);
 }
 
 static void
@@ -132,6 +191,7 @@ fuzzy_index_builder_insert (FuzzyIndexBuilder *self,
                             const gchar       *key,
                             GVariant          *document)
 {
+  g_autofree gchar *freeme = NULL;
   GVariant *real_document = NULL;
   gpointer document_id = NULL;
   KVPair pair;
@@ -139,6 +199,9 @@ fuzzy_index_builder_insert (FuzzyIndexBuilder *self,
   g_return_val_if_fail (FUZZY_IS_INDEX_BUILDER (self), 0);
   g_return_val_if_fail (key != NULL, 0);
   g_return_val_if_fail (document != NULL, 0);
+
+  if (self->case_sensitive == FALSE)
+    key = freeme = g_utf8_strdown (key, -1);
 
   if (!g_hash_table_lookup_extended (self->documents_hash,
                                      document,
@@ -279,6 +342,8 @@ fuzzy_index_builder_build_metadata (FuzzyIndexBuilder *self)
       while (g_hash_table_iter_next (&iter, (gpointer *)&key, (gpointer *)&value))
         g_variant_dict_insert_value (&dict, key, value);
     }
+
+  g_variant_dict_insert (&dict, "case-sensitive", "b", self->case_sensitive);
 
   return g_variant_dict_end (&dict);
 }
@@ -474,4 +539,27 @@ fuzzy_index_builder_set_metadata_uint64 (FuzzyIndexBuilder *self,
   g_return_if_fail (key != NULL);
 
   fuzzy_index_builder_set_metadata (self, key, g_variant_new_uint64 (value));
+}
+
+gboolean
+fuzzy_index_builder_get_case_sensitive (FuzzyIndexBuilder *self)
+{
+  g_return_val_if_fail (FUZZY_IS_INDEX_BUILDER (self), FALSE);
+
+  return self->case_sensitive;
+}
+
+void
+fuzzy_index_builder_set_case_sensitive (FuzzyIndexBuilder *self,
+                                        gboolean           case_sensitive)
+{
+  g_return_if_fail (FUZZY_IS_INDEX_BUILDER (self));
+
+  case_sensitive = !!case_sensitive;
+
+  if (self->case_sensitive != case_sensitive)
+    {
+      self->case_sensitive = case_sensitive;
+      g_object_notify_by_pspec (G_OBJECT (self), properties [PROP_CASE_SENSITIVE]);
+    }
 }
