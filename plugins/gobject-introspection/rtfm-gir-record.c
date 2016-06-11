@@ -112,6 +112,8 @@ rtfm_gir_record_start_element (GMarkupParseContext *context,
       if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
         return;
 
+      _rtfm_gir_parser_object_set_parent (RTFM_GIR_PARSER_OBJECT (child), RTFM_GIR_PARSER_OBJECT (self));
+
       g_ptr_array_add (self->children, g_steal_pointer (&child));
     }
   else if (g_str_equal (element_name, "doc-stability"))
@@ -122,6 +124,8 @@ rtfm_gir_record_start_element (GMarkupParseContext *context,
 
       if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
         return;
+
+      _rtfm_gir_parser_object_set_parent (RTFM_GIR_PARSER_OBJECT (child), RTFM_GIR_PARSER_OBJECT (self));
 
       g_ptr_array_add (self->children, g_steal_pointer (&child));
     }
@@ -134,6 +138,8 @@ rtfm_gir_record_start_element (GMarkupParseContext *context,
       if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
         return;
 
+      _rtfm_gir_parser_object_set_parent (RTFM_GIR_PARSER_OBJECT (child), RTFM_GIR_PARSER_OBJECT (self));
+
       g_ptr_array_add (self->children, g_steal_pointer (&child));
     }
   else if (g_str_equal (element_name, "doc-deprecated"))
@@ -144,6 +150,8 @@ rtfm_gir_record_start_element (GMarkupParseContext *context,
 
       if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
         return;
+
+      _rtfm_gir_parser_object_set_parent (RTFM_GIR_PARSER_OBJECT (child), RTFM_GIR_PARSER_OBJECT (self));
 
       g_ptr_array_add (self->children, g_steal_pointer (&child));
     }
@@ -156,6 +164,8 @@ rtfm_gir_record_start_element (GMarkupParseContext *context,
       if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
         return;
 
+      _rtfm_gir_parser_object_set_parent (RTFM_GIR_PARSER_OBJECT (child), RTFM_GIR_PARSER_OBJECT (self));
+
       g_ptr_array_add (self->children, g_steal_pointer (&child));
     }
   else if (g_str_equal (element_name, "field"))
@@ -166,6 +176,8 @@ rtfm_gir_record_start_element (GMarkupParseContext *context,
 
       if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
         return;
+
+      _rtfm_gir_parser_object_set_parent (RTFM_GIR_PARSER_OBJECT (child), RTFM_GIR_PARSER_OBJECT (self));
 
       g_ptr_array_add (self->children, g_steal_pointer (&child));
     }
@@ -178,6 +190,8 @@ rtfm_gir_record_start_element (GMarkupParseContext *context,
       if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
         return;
 
+      _rtfm_gir_parser_object_set_parent (RTFM_GIR_PARSER_OBJECT (child), RTFM_GIR_PARSER_OBJECT (self));
+
       g_ptr_array_add (self->children, g_steal_pointer (&child));
     }
   else if (g_str_equal (element_name, "union"))
@@ -188,6 +202,8 @@ rtfm_gir_record_start_element (GMarkupParseContext *context,
 
       if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
         return;
+
+      _rtfm_gir_parser_object_set_parent (RTFM_GIR_PARSER_OBJECT (child), RTFM_GIR_PARSER_OBJECT (self));
 
       g_ptr_array_add (self->children, g_steal_pointer (&child));
     }
@@ -200,6 +216,8 @@ rtfm_gir_record_start_element (GMarkupParseContext *context,
       if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
         return;
 
+      _rtfm_gir_parser_object_set_parent (RTFM_GIR_PARSER_OBJECT (child), RTFM_GIR_PARSER_OBJECT (self));
+
       g_ptr_array_add (self->children, g_steal_pointer (&child));
     }
   else if (g_str_equal (element_name, "constructor"))
@@ -211,6 +229,8 @@ rtfm_gir_record_start_element (GMarkupParseContext *context,
       if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
         return;
 
+      _rtfm_gir_parser_object_set_parent (RTFM_GIR_PARSER_OBJECT (child), RTFM_GIR_PARSER_OBJECT (self));
+
       g_ptr_array_add (self->children, g_steal_pointer (&child));
     }
   else if (g_str_equal (element_name, "property"))
@@ -221,6 +241,8 @@ rtfm_gir_record_start_element (GMarkupParseContext *context,
 
       if (!rtfm_gir_parser_object_ingest (RTFM_GIR_PARSER_OBJECT (child), context, element_name, attribute_names, attribute_values, error))
         return;
+
+      _rtfm_gir_parser_object_set_parent (RTFM_GIR_PARSER_OBJECT (child), RTFM_GIR_PARSER_OBJECT (self));
 
       g_ptr_array_add (self->children, g_steal_pointer (&child));
     }

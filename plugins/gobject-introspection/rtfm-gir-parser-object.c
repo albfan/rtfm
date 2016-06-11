@@ -22,6 +22,7 @@
 
 typedef struct
 {
+  RtfmGirParserObject  *parent;
   RtfmGirParserContext *parser_context;
 } RtfmGirParserObjectPrivate;
 
@@ -106,6 +107,37 @@ rtfm_gir_parser_object_get_parser_context (RtfmGirParserObject *self)
   g_return_val_if_fail (RTFM_GIR_IS_PARSER_OBJECT (self), NULL);
 
   return priv->parser_context;
+}
+
+void
+_rtfm_gir_parser_object_set_parent (RtfmGirParserObject *self,
+                                    RtfmGirParserObject *parent)
+{
+  RtfmGirParserObjectPrivate *priv = rtfm_gir_parser_object_get_instance_private (self);
+
+  g_return_if_fail (RTFM_GIR_IS_PARSER_OBJECT (self));
+  g_return_if_fail (!parent || RTFM_GIR_IS_PARSER_OBJECT (parent));
+
+  priv->parent = parent;
+}
+
+/**
+ * rtfm_gir_parser_object_get_parent:
+ *
+ * Gets the parent #RtfmGirParserObject that was parsed
+ * from the underlying document.
+ *
+ * Returns: (transfer none) (nullable): A #RtfmGirParserObject or %NULL
+ *   if the object is the root of the tree.
+ */
+RtfmGirParserObject *
+rtfm_gir_parser_object_get_parent (RtfmGirParserObject *self)
+{
+  RtfmGirParserObjectPrivate *priv = rtfm_gir_parser_object_get_instance_private (self);
+
+  g_return_val_if_fail (RTFM_GIR_IS_PARSER_OBJECT (self), NULL);
+
+  return priv->parent;
 }
 
 static void
