@@ -30,7 +30,7 @@
 #include "rtfm-widget.h"
 #include "rtfm-window.h"
 
-#define SEARCH_TIMEOUT_DELAY 100
+#define SEARCH_TIMEOUT_DELAY 50
 
 struct _RtfmWindow
 {
