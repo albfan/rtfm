@@ -89,13 +89,15 @@ rtfm_search_results_do_add (RtfmSearchResults *self,
       score = rtfm_search_result_get_score (search_result);
       lowest_score = rtfm_search_result_get_score (lowest);
 
-      if (score > lowest_score)
-        {
-          g_sequence_set (last_iter, g_object_ref (search_result));
-          g_list_model_items_changed (G_LIST_MODEL (self), self->n_items - 1, 1, 1);
-        }
+      if (score >= lowest_score)
+        return;
 
-      return;
+      g_sequence_remove (last_iter);
+      position = self->max_results - 1;
+
+      g_list_model_items_changed (G_LIST_MODEL (self), position, 1, 0);
+
+      self->n_items--;
     }
 
   self->n_items++;
