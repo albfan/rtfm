@@ -1,14 +1,5 @@
 # Rtfm Todo
 
-## Search
-
-We have only created our search interface, we haven't implemented any of the
-search indexes. Each plugin will probably want to implement a search index
-(if necessary). For example, the G-I plugin will likely create a xapian
-index in the background when new .gir files are added. The search query
-will access this rather than parse .gir files and manually look. This way
-we only parse gir files when necesary (to browse the hierarchy).
-
 ## Views
 
 Only basic plumbing for views exist. We need to create data items when the
