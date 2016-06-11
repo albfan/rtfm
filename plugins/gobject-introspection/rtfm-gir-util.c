@@ -21,48 +21,70 @@
 #include "rtfm-gir-parser-types.h"
 #include "rtfm-gir-util.h"
 
-static gchar *
-get_namespace_id (RtfmGirParserObject *object)
-{
-  for (;
-       object != NULL && !RTFM_GIR_IS_NAMESPACE (object);
-       object = rtfm_gir_parser_object_get_parent (object))
-    {
-      /* Do Nothing */
-    }
+#include "rtfm-gir-function.h"
+#include "rtfm-gir-method.h"
+#include "rtfm-gir-class.h"
+#include "rtfm-gir-namespace.h"
 
-  if (RTFM_GIR_IS_NAMESPACE (object))
+static void
+build_path_to_instance (gpointer  instance,
+                        GString  *string)
+{
+  g_assert (RTFM_GIR_IS_PARSER_OBJECT (instance));
+  g_assert (string->len > 0);
+
+  if (string->str[string->len-1] == ']')
+    g_string_append_c (string, '/');
+
+  if (FALSE) {}
+  else if (RTFM_GIR_IS_NAMESPACE (instance))
     {
       g_autofree gchar *name = NULL;
       g_autofree gchar *version = NULL;
 
-      g_object_get (object,
+      g_object_get (instance,
                     "name", &name,
                     "version", &version,
                     NULL);
 
-      return g_strdup_printf ("gir:namespace[%s-%s]", name, version);
+      g_string_append_printf (string, "namespace[%s-%s]",
+                              rtfm_gir_namespace_get_name (instance),
+                              rtfm_gir_namespace_get_version (instance));
     }
-
-  return NULL;
+  else if (RTFM_GIR_IS_CLASS (instance))
+    {
+      g_string_append_printf (string, "class[%s]",
+                              rtfm_gir_class_get_name (instance));
+    }
+  else if (RTFM_GIR_IS_FUNCTION (instance))
+    {
+      g_string_append_printf (string, "function[%s]",
+                              rtfm_gir_function_get_name (instance));
+    }
+  else if (RTFM_GIR_IS_METHOD (instance))
+    {
+      g_string_append_printf (string, "method[%s]",
+                              rtfm_gir_method_get_name (instance));
+    }
 }
-
 
 gchar *
 rtfm_gir_generate_id (gpointer instance)
 {
+  g_autoptr(GPtrArray) ar = NULL;
+  GString *str;
+  guint i;
+
   g_return_val_if_fail (G_IS_OBJECT (instance), NULL);
 
-  if (RTFM_GIR_IS_NAMESPACE (instance))
-    return get_namespace_id (instance);
+  str = g_string_new ("gir:");
 
-  if (RTFM_GIR_IS_CLASS (instance))
-    {
-      g_autofree gchar *prefix = get_namespace_id (instance);
-      g_autofree gchar *name = NULL;
+  ar = g_ptr_array_new ();
+  for (; instance != NULL; instance = rtfm_gir_parser_object_get_parent (instance))
+    g_ptr_array_add (ar, instance);
 
-      return g_strdup_printf ("%s:class[%s]", prefix, name);
-    }
+  for (i = ar->len; i > 0; i--)
+    build_path_to_instance (g_ptr_array_index (ar, i - 1), str);
 
-  return NULL;
+  return g_string_free (str, FALSE);
 }
