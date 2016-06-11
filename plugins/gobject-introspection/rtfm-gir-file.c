@@ -20,6 +20,7 @@
 
 #include <string.h>
 
+#include "rtfm-gir-class.h"
 #include "rtfm-gir-file.h"
 #include "rtfm-gir-namespace.h"
 #include "rtfm-gir-parser.h"
@@ -90,9 +91,8 @@ rtfm_gir_file_build_index (RtfmGirFile       *self,
 static void
 namespace_indexer (RtfmGirFile         *self,
                    FuzzyIndexBuilder   *builder,
-                   RtfmGirParserObject *object)
+                   RtfmGirNamespace    *namespace)
 {
-  RtfmGirNamespace *namespace = (RtfmGirNamespace *)object;
   g_autoptr(GVariant) document = NULL;
   g_autofree gchar *id = NULL;
   const gchar *name;
@@ -121,6 +121,44 @@ namespace_indexer (RtfmGirFile         *self,
   INSERT_KEY (c_identifier_prefixes);
   INSERT_KEY (c_symbol_prefixes);
   INSERT_KEY (shared_library);
+
+#undef INSERT_KEY
+}
+
+static void
+class_indexer (RtfmGirFile       *self,
+               FuzzyIndexBuilder *builder,
+               RtfmGirClass      *klass)
+{
+  g_autoptr(GVariant) document = NULL;
+  g_autofree gchar *id = NULL;
+  const gchar *name;
+  GVariantDict dict;
+
+  g_assert (RTFM_GIR_IS_FILE (self));
+  g_assert (FUZZY_IS_INDEX_BUILDER (builder));
+  g_assert (RTFM_GIR_IS_CLASS (klass));
+
+  id = rtfm_gir_generate_id (klass);
+  name = rtfm_gir_class_get_c_type (klass);
+
+  if (name == NULL)
+    return;
+
+  g_variant_dict_init (&dict, NULL);
+  g_variant_dict_insert (&dict, "id", "s", id);
+  g_variant_dict_insert (&dict, "word", "s", name);
+  document = g_variant_ref_sink (g_variant_dict_end (&dict));
+
+#define INSERT_KEY(key)                                    \
+  G_STMT_START {                                           \
+    const gchar *tmp = rtfm_gir_class_get_##key (klass);   \
+    if (tmp != NULL)                                       \
+      fuzzy_index_builder_insert (builder, tmp, document); \
+  } G_STMT_END
+
+  INSERT_KEY (name);
+  INSERT_KEY (c_symbol_prefix);
 
 #undef INSERT_KEY
 }
@@ -207,7 +245,14 @@ rtfm_gir_file_class_init (RtfmGirFileClass *klass)
   g_object_class_install_properties (object_class, N_PROPS, properties);
 
   indexers = g_hash_table_new (NULL, NULL);
-  g_hash_table_insert (indexers, GSIZE_TO_POINTER (RTFM_GIR_TYPE_NAMESPACE), namespace_indexer);
+
+#define REGISTER_INDEXER(TYPE, type) \
+  g_hash_table_insert (indexers, GSIZE_TO_POINTER (RTFM_GIR_TYPE_##TYPE), type##_indexer)
+
+  REGISTER_INDEXER (CLASS, class);
+  REGISTER_INDEXER (NAMESPACE, namespace);
+
+#undef REGISTER_INDEXER
 }
 
 static void
