@@ -633,6 +633,9 @@ rtfm_library_search_async (RtfmLibrary         *self,
                                   rtfm_library_search_cb,
                                   g_object_ref (task));
     }
+
+  if (providers == NULL)
+    g_task_return_boolean (task, TRUE);
 }
 
 gboolean
