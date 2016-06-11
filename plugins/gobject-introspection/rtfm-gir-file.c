@@ -21,6 +21,7 @@
 #include <string.h>
 
 #include "rtfm-gir-class.h"
+#include "rtfm-gir-constructor.h"
 #include "rtfm-gir-file.h"
 #include "rtfm-gir-function.h"
 #include "rtfm-gir-method.h"
@@ -243,6 +244,44 @@ method_indexer (RtfmGirFile       *self,
 }
 
 static void
+constructor_indexer (RtfmGirFile        *self,
+                     FuzzyIndexBuilder  *builder,
+                     RtfmGirConstructor *constructor)
+{
+  g_autoptr(GVariant) document = NULL;
+  g_autofree gchar *id = NULL;
+  const gchar *name;
+  GVariantDict dict;
+
+  g_assert (RTFM_GIR_IS_FILE (self));
+  g_assert (FUZZY_IS_INDEX_BUILDER (builder));
+  g_assert (RTFM_GIR_IS_CONSTRUCTOR (constructor));
+
+  id = rtfm_gir_generate_id (constructor);
+  name = rtfm_gir_constructor_get_c_identifier (constructor);
+
+  if (name == NULL)
+    return;
+
+  g_variant_dict_init (&dict, NULL);
+  g_variant_dict_insert (&dict, "id", "s", id);
+  g_variant_dict_insert (&dict, "word", "s", name);
+  document = g_variant_ref_sink (g_variant_dict_end (&dict));
+
+#define INSERT_KEY(key)                                              \
+  G_STMT_START {                                                     \
+    const gchar *tmp = rtfm_gir_constructor_get_##key (constructor); \
+    if (tmp != NULL)                                                 \
+      fuzzy_index_builder_insert (builder, tmp, document);           \
+  } G_STMT_END
+
+  INSERT_KEY (c_identifier);
+  INSERT_KEY (name);
+
+#undef INSERT_KEY
+}
+
+static void
 rtfm_gir_file_finalize (GObject *object)
 {
   RtfmGirFile *self = (RtfmGirFile *)object;
@@ -329,9 +368,10 @@ rtfm_gir_file_class_init (RtfmGirFileClass *klass)
   g_hash_table_insert (indexers, GSIZE_TO_POINTER (RTFM_GIR_TYPE_##TYPE), type##_indexer)
 
   REGISTER_INDEXER (CLASS, class);
-  REGISTER_INDEXER (NAMESPACE, namespace);
-  REGISTER_INDEXER (METHOD, method);
+  REGISTER_INDEXER (CONSTRUCTOR, constructor);
   REGISTER_INDEXER (FUNCTION, function);
+  REGISTER_INDEXER (METHOD, method);
+  REGISTER_INDEXER (NAMESPACE, namespace);
 
 #undef REGISTER_INDEXER
 }

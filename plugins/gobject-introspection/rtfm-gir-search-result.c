@@ -75,6 +75,8 @@ rtfm_gir_search_result_new (GVariant *document,
       if (FALSE) {}
       else if (strstr (id, "method[") != NULL)
         icon_name = "lang-method-symbolic";
+      else if (strstr (id, "ctor[") != NULL)
+        icon_name = "lang-method-symbolic";
       else if (strstr (id, "function[") != NULL)
         icon_name = "lang-function-symbolic";
       else if (strstr (id, "class[") != NULL)

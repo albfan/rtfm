@@ -21,9 +21,10 @@
 #include "rtfm-gir-parser-types.h"
 #include "rtfm-gir-util.h"
 
+#include "rtfm-gir-class.h"
+#include "rtfm-gir-constructor.h"
 #include "rtfm-gir-function.h"
 #include "rtfm-gir-method.h"
-#include "rtfm-gir-class.h"
 #include "rtfm-gir-namespace.h"
 
 static void
@@ -65,6 +66,11 @@ build_path_to_instance (gpointer  instance,
     {
       g_string_append_printf (string, "method[%s]",
                               rtfm_gir_method_get_name (instance));
+    }
+  else if (RTFM_GIR_IS_CONSTRUCTOR (instance))
+    {
+      g_string_append_printf (string, "ctor[%s]",
+                              rtfm_gir_constructor_get_name (instance));
     }
 }
 
