@@ -16,6 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define G_LOG_DOMAIN "rtfm-gir-search-result"
+
+#include <string.h>
+
 #include "rtfm-gir-search-result.h"
 
 struct _RtfmGirSearchResult
@@ -55,18 +59,27 @@ rtfm_gir_search_result_new (GVariant *document,
                             gfloat    score)
 {
   const gchar *text = NULL;
+  const gchar *id = NULL;
+  const gchar *icon_name = NULL;
   RtfmGirSearchResult *ret;
   GVariantDict dict;
 
   g_return_val_if_fail (document != NULL, NULL);
 
   g_variant_dict_init (&dict, document);
+  g_variant_dict_lookup (&dict, "id", "&s", &id);
   g_variant_dict_lookup (&dict, "word", "&s", &text);
 
-  /* TODO determine icon from document */
+  if (id != NULL)
+    {
+      if (strstr (id, ":class[") != NULL)
+        icon_name = "lang-class-symbolic";
+      else
+        icon_name = "lang-namespace-symbolic";
+    }
 
   ret = g_object_new (RTFM_GIR_TYPE_SEARCH_RESULT,
-                      "icon-name", "lang-namespace-symbolic",
+                      "icon-name", icon_name,
                       "score", score,
                       "text", text,
                       NULL);
