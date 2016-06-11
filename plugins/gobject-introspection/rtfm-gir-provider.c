@@ -352,6 +352,12 @@ rtfm_gir_provider_search_async (RtfmProvider        *provider,
   g_task_set_task_data (task, state, search_state_free);
   g_task_set_check_cancellable (task, FALSE);
 
+  if (self->search_indexes->len == 0)
+    {
+      g_task_return_boolean (task, TRUE);
+      return;
+    }
+
   for (i = 0; i < self->search_indexes->len; i++)
     {
       FuzzyIndex *index = g_ptr_array_index (self->search_indexes, i);
