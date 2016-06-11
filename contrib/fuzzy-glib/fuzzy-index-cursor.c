@@ -354,7 +354,7 @@ fuzzy_index_cursor_worker (GTask        *task,
   tables_n_elements = g_array_new (FALSE, FALSE, sizeof (gsize));
   matches = g_hash_table_new (NULL, NULL);
 
-  for (str = self->query; *str; str = g_utf8_next_char (str))
+  for (str = query; *str; str = g_utf8_next_char (str))
     {
       gunichar ch = g_utf8_get_char (str);
       g_autoptr(GVariant) table = NULL;
@@ -386,7 +386,7 @@ fuzzy_index_cursor_worker (GTask        *task,
   lookup.tables_n_elements = (const gsize *)tables_n_elements->data;
   lookup.tables_state = tables_state;
   lookup.n_tables = tables->len;
-  lookup.needle = self->query;
+  lookup.needle = query;
   lookup.max_matches = self->max_matches;
 
   if G_LIKELY (lookup.n_tables > 1)
