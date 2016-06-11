@@ -24,6 +24,8 @@
 struct _RtfmSearchResults
 {
   GObject    parent_instance;
+  guint      max_results;
+  guint      n_items;
   GSequence *results;
 };
 
@@ -31,6 +33,14 @@ static void list_model_iface_init (GListModelInterface *iface);
 
 G_DEFINE_TYPE_EXTENDED (RtfmSearchResults, rtfm_search_results, G_TYPE_OBJECT, 0,
                         G_IMPLEMENT_INTERFACE (G_TYPE_LIST_MODEL, list_model_iface_init))
+
+enum {
+  PROP_0,
+  PROP_MAX_RESULTS,
+  N_PROPS
+};
+
+static GParamSpec *properties [N_PROPS];
 
 static gint
 compare_by_score (gconstpointer a,
@@ -62,6 +72,34 @@ rtfm_search_results_do_add (RtfmSearchResults *self,
   g_assert (RTFM_IS_SEARCH_RESULTS (self));
   g_assert (RTFM_IS_SEARCH_RESULT (search_result));
 
+  /*
+   * If we are already at our maximum number of items, we might be able to
+   * just evict the lowest scoring item and replace it with this one.
+   */
+  if (self->max_results != 0 && self->n_items == self->max_results)
+    {
+      GSequenceIter *last_iter;
+      RtfmSearchResult *lowest;
+      gfloat score;
+      gfloat lowest_score;
+
+      last_iter = g_sequence_iter_prev (g_sequence_get_end_iter (self->results));
+      lowest = g_sequence_get (last_iter);
+
+      score = rtfm_search_result_get_score (search_result);
+      lowest_score = rtfm_search_result_get_score (lowest);
+
+      if (score > lowest_score)
+        {
+          g_sequence_set (last_iter, g_object_ref (search_result));
+          g_list_model_items_changed (G_LIST_MODEL (self), self->n_items - 1, 1, 1);
+        }
+
+      return;
+    }
+
+  self->n_items++;
+
   iter = g_sequence_insert_sorted (self->results,
                                    g_object_ref (search_result),
                                    compare_by_score,
@@ -83,11 +121,65 @@ rtfm_search_results_finalize (GObject *object)
 }
 
 static void
+rtfm_search_results_get_property (GObject    *object,
+                                  guint       prop_id,
+                                  GValue     *value,
+                                  GParamSpec *pspec)
+{
+  RtfmSearchResults *self = RTFM_SEARCH_RESULTS (object);
+
+  switch (prop_id)
+    {
+    case PROP_MAX_RESULTS:
+      g_value_set_uint (value, rtfm_search_results_get_max_results (self));
+      break;
+
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+    }
+}
+
+static void
+rtfm_search_results_set_property (GObject      *object,
+                                  guint         prop_id,
+                                  const GValue *value,
+                                  GParamSpec   *pspec)
+{
+  RtfmSearchResults *self = RTFM_SEARCH_RESULTS (object);
+
+  switch (prop_id)
+    {
+    case PROP_MAX_RESULTS:
+      rtfm_search_results_set_max_results (self, g_value_get_uint (value));
+      break;
+
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+    }
+}
+
+static void
 rtfm_search_results_class_init (RtfmSearchResultsClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
   object_class->finalize = rtfm_search_results_finalize;
+  object_class->get_property = rtfm_search_results_get_property;
+  object_class->set_property = rtfm_search_results_set_property;
+
+  properties [PROP_MAX_RESULTS] =
+    g_param_spec_uint ("max-results",
+                       "Max Results",
+                       "The maximum number of results in the collection",
+                       0,
+                       G_MAXUINT,
+                       0,
+                       (G_PARAM_READWRITE |
+                        G_PARAM_CONSTRUCT_ONLY |
+                        G_PARAM_EXPLICIT_NOTIFY |
+                        G_PARAM_STATIC_STRINGS));
+
+  g_object_class_install_properties (object_class, N_PROPS, properties);
 }
 
 static void
@@ -97,9 +189,11 @@ rtfm_search_results_init (RtfmSearchResults *self)
 }
 
 RtfmSearchResults *
-rtfm_search_results_new (void)
+rtfm_search_results_new (guint max_results)
 {
-  return g_object_new (RTFM_TYPE_SEARCH_RESULTS, NULL);
+  return g_object_new (RTFM_TYPE_SEARCH_RESULTS,
+                       "max-results", max_results,
+                       NULL);
 }
 
 static GType
@@ -115,7 +209,7 @@ rtfm_search_results_get_n_items (GListModel *model)
 
   g_assert (RTFM_IS_SEARCH_RESULTS (self));
 
-  return g_sequence_get_length (self->results);
+  return self->n_items;
 }
 
 static gpointer
@@ -155,4 +249,25 @@ rtfm_search_results_add (RtfmSearchResults *self,
    */
 
   rtfm_search_results_do_add (self, search_result);
+}
+
+guint
+rtfm_search_results_get_max_results (RtfmSearchResults *self)
+{
+  g_return_val_if_fail (RTFM_IS_SEARCH_RESULTS (self), 0);
+
+  return self->max_results;
+}
+
+void
+rtfm_search_results_set_max_results (RtfmSearchResults *self,
+                                     guint              max_results)
+{
+  g_return_if_fail (RTFM_IS_SEARCH_RESULTS (self));
+
+  if (max_results != self->max_results)
+    {
+      self->max_results = max_results;
+      g_object_notify_by_pspec (G_OBJECT (self), properties [PROP_MAX_RESULTS]);
+    }
 }

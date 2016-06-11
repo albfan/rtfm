@@ -25,9 +25,12 @@
 
 G_BEGIN_DECLS
 
-RtfmSearchResults *rtfm_search_results_new (void);
-void               rtfm_search_results_add (RtfmSearchResults *self,
-                                            RtfmSearchResult  *result);
+RtfmSearchResults *rtfm_search_results_new             (guint              max_results);
+guint              rtfm_search_results_get_max_results (RtfmSearchResults *self);
+void               rtfm_search_results_set_max_results (RtfmSearchResults *self,
+                                                        guint              max_results);
+void               rtfm_search_results_add             (RtfmSearchResults *self,
+                                                        RtfmSearchResult  *result);
 
 G_END_DECLS
 

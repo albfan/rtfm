@@ -204,7 +204,7 @@ rtfm_window_do_search (gpointer user_data)
     goto change_page;
 
   self->search_cancellable = g_cancellable_new ();
-  self->search_results = rtfm_search_results_new ();
+  self->search_results = rtfm_search_results_new (25);
 
   rtfm_search_settings_set_search_text (self->search_settings, text);
 
