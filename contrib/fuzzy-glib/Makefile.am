@@ -1,4 +1,4 @@
-noinst_PROGRAMS = test-builder
+noinst_PROGRAMS = test-builder test-util
 
 pkglib_LTLIBRARIES = libfuzzy-glib-@API_VERSION@.la
 
@@ -11,6 +11,8 @@ libfuzzy_glib_@API_VERSION@_la_SOURCES = \
 	fuzzy-index-cursor.h \
 	fuzzy-index-match.c \
 	fuzzy-index-match.h \
+	fuzzy-util.c \
+	fuzzy-util.h \
 	fuzzy-version.h \
 	fuzzy-glib.h \
 	$(NULL)
@@ -31,5 +33,9 @@ libfuzzy_glib_@API_VERSION@_la_LDFLAGS = \
 test_builder_SOURCES = test-builder.c
 test_builder_CFLAGS = $(FUZZY_GLIB_CFLAGS)
 test_builder_LDADD = $(FUZZY_GLIB_LIBS) libfuzzy-glib-@API_VERSION@.la
+
+test_util_SOURCES = test-util.c
+test_util_CFLAGS = $(FUZZY_GLIB_CFLAGS)
+test_util_LDADD = $(FUZZY_GLIB_LIBS) libfuzzy-glib-@API_VERSION@.la
 
 -include $(top_srcdir)/git.mk

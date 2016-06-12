@@ -98,11 +98,15 @@ test_index_builder_basic (void)
   g_assert (v != NULL);
   g_variant_unref (v);
 
-  v = g_variant_dict_lookup_value (&dict, "keys", G_VARIANT_TYPE_VARDICT);
+  v = g_variant_dict_lookup_value (&dict, "keys", G_VARIANT_TYPE_ARRAY);
   g_assert (v != NULL);
   g_variant_unref (v);
 
-  v = g_variant_dict_lookup_value (&dict, "documents", G_VARIANT_TYPE_VARDICT);
+  v = g_variant_dict_lookup_value (&dict, "lookaside", G_VARIANT_TYPE_ARRAY);
+  g_assert (v != NULL);
+  g_variant_unref (v);
+
+  v = g_variant_dict_lookup_value (&dict, "documents", G_VARIANT_TYPE_ARRAY);
   g_assert (v != NULL);
   g_variant_unref (v);
 
@@ -228,8 +232,14 @@ test_index_basic (void)
   builder = fuzzy_index_builder_new ();
   g_object_add_weak_pointer (G_OBJECT (builder), (gpointer *)&builder);
 
+  /*
+   * We want to ensure we only get the highest scoring item for a
+   * document (which are deduplicated in the index).
+   */
   fuzzy_index_builder_insert (builder, "gtk_widget_show", g_variant_new_int32 (1));
+  fuzzy_index_builder_insert (builder, "gtk_widget_show_all", g_variant_new_int32 (1));
   fuzzy_index_builder_insert (builder, "gtk_widget_hide", g_variant_new_int32 (2));
+  fuzzy_index_builder_insert (builder, "gtk_widget_hide_all", g_variant_new_int32 (2));
   fuzzy_index_builder_insert (builder, "gtk_widget_get_parent", g_variant_new_int32 (3));
   fuzzy_index_builder_insert (builder, "gtk_widget_get_name", g_variant_new_int32 (4));
   fuzzy_index_builder_insert (builder, "gtk_widget_set_name", g_variant_new_int32 (5));

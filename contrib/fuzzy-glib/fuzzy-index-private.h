@@ -1,6 +1,6 @@
-/* fuzzy-index-cursor.h
+/* fuzzy-index-private.h
  *
- * Copyright (C) 2016 Christian Hergert <christian@hergert.me>
+ * Copyright (C) 2016 Christian Hergert <chergert@redhat.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,21 +16,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef FUZZY_INDEX_CURSOR_H
-#define FUZZY_INDEX_CURSOR_H
-
-#include <gio/gio.h>
+#ifndef FUZZY_INDEX_PRIVATE_H
+#define FUZZY_INDEX_PRIVATE_H
 
 #include "fuzzy-index.h"
 
 G_BEGIN_DECLS
 
-#define FUZZY_TYPE_INDEX_CURSOR (fuzzy_index_cursor_get_type())
-
-G_DECLARE_FINAL_TYPE (FuzzyIndexCursor, fuzzy_index_cursor, FUZZY, INDEX_CURSOR, GObject)
-
-FuzzyIndex *fuzzy_index_cursor_get_index (FuzzyIndexCursor *self);
+GVariant    *_fuzzy_index_lookup_document (FuzzyIndex *self,
+                                           guint       document_id);
+gboolean     _fuzzy_index_resolve         (FuzzyIndex   *self,
+                                           guint         lookaside_id,
+                                           guint        *document_id,
+                                           const gchar **key);
 
 G_END_DECLS
 
-#endif /* FUZZY_INDEX_CURSOR_H */
+#endif /* FUZZY_INDEX_PRIVATE_H */

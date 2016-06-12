@@ -20,6 +20,13 @@
 
 #include "fuzzy-index.h"
 #include "fuzzy-index-cursor.h"
+#include "fuzzy-index-private.h"
+
+typedef struct
+{
+  guint key_id;
+  guint document_id;
+} LookasideEntry;
 
 struct _FuzzyIndex
 {
@@ -29,10 +36,74 @@ struct _FuzzyIndex
   guint         case_sensitive : 1;
 
   GMappedFile  *mapped_file;
-  GVariant     *variant;
-  GVariantDict *documents;
-  GVariantDict *keys;
+
+  /*
+   * Toplevel variant for the whole document. This is loaded from the entire
+   * contents of @mapped_file. It contains a dictionary of "a{sv}"
+   * containing all of our index data tables.
+   */
+  GVariant *variant;
+
+  /*
+   * This is a variant containing the array of documents. The index of the
+   * document is the corresponding document_id used in other data structres.
+   * This maps to the "documents" field in @variant.
+   */
+  GVariant *documents;
+
+  /*
+   * The keys found within the index. The index of the key is the "key_id"
+   * used in other datastructures, such as the @lookaside array.
+   */
+  GVariant *keys;
+
+  /*
+   * Access to the raw keys within the index. The outer array, however,
+   * is allocated and must be freed with g_free(). This is due to not
+   * having direct access to the strings within the buffer.
+   *
+   * TODO: It might be nice to have a GVariantArray similar to
+   *       GVariantDict for faster access. It would essentially
+   *       do the same thing as this but be ref counted. In some
+   *       cases, we might even be able to avoid the lookups if
+   *       the GVariant has backpointers at the end.
+   */
+  const gchar **keys_raw;
+  gsize keys_len;
+
+  /*
+   * The lookaside array is used to disambiguate between multiple keys
+   * pointing to the same document. Each element in the array is of type
+   * "(uu)" with the first field being the "key_id" and the second field
+   * being the "document_id". Each of these are indexes into the
+   * corresponding @documents and @keys arrays.
+   *
+   * This is a fixed array type and therefore can have the raw data
+   * accessed with g_variant_get_fixed_array() to save on lookup
+   * costs.
+   */
+  GVariant *lookaside;
+
+  /*
+   * Raw pointers for fast access to the lookaside buffer.
+   */
+  const LookasideEntry *lookaside_raw;
+  gsize lookaside_len;
+
+  /*
+   * This vardict is used to get the fixed array containing the
+   * (offset, lookaside_id) for each unicode character in the index.
+   * These are accessed by the cursors to layout the fulltext search
+   * index by each character in the input string. Doing so, is what
+   * gives us the O(mn) worst-case running time.
+   */
   GVariantDict *tables;
+
+  /*
+   * The metadata located within the search index. This contains
+   * metadata set with fuzzy_index_builder_set_metadata() or one
+   * of its typed variants.
+   */
   GVariantDict *metadata;
 };
 
@@ -45,9 +116,11 @@ fuzzy_index_finalize (GObject *object)
 
   g_clear_pointer (&self->mapped_file, g_mapped_file_unref);
   g_clear_pointer (&self->variant, g_variant_unref);
-  g_clear_pointer (&self->documents, g_variant_dict_unref);
-  g_clear_pointer (&self->keys, g_variant_dict_unref);
+  g_clear_pointer (&self->documents, g_variant_unref);
+  g_clear_pointer (&self->keys, g_variant_unref);
+  g_clear_pointer (&self->keys_raw, g_free);
   g_clear_pointer (&self->tables, g_variant_dict_unref);
+  g_clear_pointer (&self->lookaside, g_variant_unref);
 
   G_OBJECT_CLASS (fuzzy_index_parent_class)->finalize (object);
 }
@@ -81,6 +154,7 @@ fuzzy_index_load_file_worker (GTask        *task,
   g_autoptr(GMappedFile) mapped_file = NULL;
   g_autoptr(GVariant) variant = NULL;
   g_autoptr(GVariant) documents = NULL;
+  g_autoptr(GVariant) lookaside = NULL;
   g_autoptr(GVariant) keys = NULL;
   g_autoptr(GVariant) tables = NULL;
   g_autoptr(GVariant) metadata = NULL;
@@ -150,8 +224,9 @@ fuzzy_index_load_file_worker (GTask        *task,
       return;
     }
 
-  documents = g_variant_dict_lookup_value (&dict, "documents", G_VARIANT_TYPE_VARDICT);
-  keys = g_variant_dict_lookup_value (&dict, "keys", G_VARIANT_TYPE_VARDICT);
+  documents = g_variant_dict_lookup_value (&dict, "documents", G_VARIANT_TYPE_ARRAY);
+  keys = g_variant_dict_lookup_value (&dict, "keys", G_VARIANT_TYPE_STRING_ARRAY);
+  lookaside = g_variant_dict_lookup_value (&dict, "lookaside", G_VARIANT_TYPE_ARRAY);
   tables = g_variant_dict_lookup_value (&dict, "tables", G_VARIANT_TYPE_VARDICT);
   metadata = g_variant_dict_lookup_value (&dict, "metadata", G_VARIANT_TYPE_VARDICT);
   g_variant_dict_clear (&dict);
@@ -167,15 +242,19 @@ fuzzy_index_load_file_worker (GTask        *task,
 
   self->mapped_file = g_steal_pointer (&mapped_file);
   self->variant = g_steal_pointer (&variant);
-  self->documents = g_variant_dict_new (documents);
-  self->keys = g_variant_dict_new (keys);
+  self->documents = g_steal_pointer (&documents);
+  self->lookaside = g_steal_pointer (&lookaside);
+  self->keys = g_steal_pointer (&keys);
   self->tables = g_variant_dict_new (tables);
   self->metadata = g_variant_dict_new (metadata);
 
-  if (g_variant_dict_lookup (self->metadata,
-                             "case-sensitive",
-                             "b",
-                             &case_sensitive))
+  self->keys_raw = g_variant_get_strv (self->keys, &self->keys_len);
+
+  self->lookaside_raw = g_variant_get_fixed_array (self->lookaside,
+                                                   &self->lookaside_len,
+                                                   sizeof (LookasideEntry));
+
+  if (g_variant_dict_lookup (self->metadata, "case-sensitive", "b", &case_sensitive))
     self->case_sensitive = !!case_sensitive;
 
   g_task_return_boolean (task, TRUE);
@@ -273,11 +352,10 @@ fuzzy_index_query_async (FuzzyIndex          *self,
 
   cursor = g_object_new (FUZZY_TYPE_INDEX_CURSOR,
                          "case-sensitive", self->case_sensitive,
-                         "documents", self->documents,
-                         "keys", self->keys,
-                         "tables", self->tables,
+                         "index", self,
                          "query", query,
                          "max-matches", max_matches,
+                         "tables", self->tables,
                          NULL);
 
   g_async_initable_init_async (G_ASYNC_INITABLE (cursor),
@@ -356,4 +434,54 @@ fuzzy_index_get_metadata_string (FuzzyIndex  *self,
     return g_variant_get_string (ret, NULL);
 
   return NULL;
+}
+
+/**
+ * _fuzzy_index_lookup_document:
+ * @self: A #FuzzyIndex
+ * @document_id: The identifier of the document
+ *
+ * This looks up the document found matching @document_id.
+ *
+ * This should be the document_id resolved through the lookaside
+ * using _fuzzy_index_resolve().
+ *
+ * Returns: (transfer full) (nullable): A #GVariant if successful;
+ *   otherwise %NULL.
+ */
+GVariant *
+_fuzzy_index_lookup_document (FuzzyIndex *self,
+                              guint       document_id)
+{
+  g_assert (FUZZY_IS_INDEX (self));
+
+  return g_variant_get_child_value (self->documents, document_id);
+}
+
+gboolean
+_fuzzy_index_resolve (FuzzyIndex   *self,
+                      guint         lookaside_id,
+                      guint        *document_id,
+                      const gchar **key)
+{
+  const LookasideEntry *entry;
+
+  g_assert (FUZZY_IS_INDEX (self));
+  g_assert (document_id != NULL);
+
+  if G_UNLIKELY (lookaside_id >= self->lookaside_len)
+    return FALSE;
+
+  entry = &self->lookaside_raw [lookaside_id];
+
+  *document_id = entry->document_id;
+
+  if (key != NULL)
+    {
+      if G_UNLIKELY (entry->key_id >= self->keys_len)
+        return FALSE;
+      *key = self->keys_raw [entry->key_id];
+    }
+
+  return TRUE;
 }

@@ -22,13 +22,14 @@
 
 #include "fuzzy-index-cursor.h"
 #include "fuzzy-index-match.h"
+#include "fuzzy-index-private.h"
 
 struct _FuzzyIndexCursor
 {
   GObject       object;
+
+  FuzzyIndex   *index;
   gchar        *query;
-  GVariantDict *documents;
-  GVariantDict *keys;
   GVariantDict *tables;
   GArray       *matches;
   guint         max_matches;
@@ -38,7 +39,7 @@ struct _FuzzyIndexCursor
 typedef struct
 {
   guint position;
-  guint document_id;
+  guint lookaside_id;
 } FuzzyIndexItem;
 
 typedef struct
@@ -50,6 +51,7 @@ typedef struct
 
 typedef struct
 {
+  FuzzyIndex                   *index;
   const FuzzyIndexItem * const *tables;
   const gsize                  *tables_n_elements;
   gint                         *tables_state;
@@ -62,8 +64,7 @@ typedef struct
 enum {
   PROP_0,
   PROP_CASE_SENSITIVE,
-  PROP_DOCUMENTS,
-  PROP_KEYS,
+  PROP_INDEX,
   PROP_TABLES,
   PROP_MAX_MATCHES,
   PROP_QUERY,
@@ -84,10 +85,9 @@ fuzzy_index_cursor_finalize (GObject *object)
 {
   FuzzyIndexCursor *self = (FuzzyIndexCursor *)object;
 
+  g_clear_object (&self->index);
   g_clear_pointer (&self->query, g_free);
   g_clear_pointer (&self->matches, g_array_unref);
-  g_clear_pointer (&self->documents, g_variant_dict_unref);
-  g_clear_pointer (&self->keys, g_variant_dict_unref);
   g_clear_pointer (&self->tables, g_variant_dict_unref);
 
   G_OBJECT_CLASS (fuzzy_index_cursor_parent_class)->finalize (object);
@@ -105,6 +105,10 @@ fuzzy_index_cursor_get_property (GObject    *object,
     {
     case PROP_CASE_SENSITIVE:
       g_value_set_boolean (value, self->case_sensitive);
+      break;
+
+    case PROP_INDEX:
+      g_value_set_object (value, self->index);
       break;
 
     case PROP_MAX_MATCHES:
@@ -134,12 +138,8 @@ fuzzy_index_cursor_set_property (GObject      *object,
       self->case_sensitive = g_value_get_boolean (value);
       break;
 
-    case PROP_DOCUMENTS:
-      self->documents = g_value_dup_boxed (value);
-      break;
-
-    case PROP_KEYS:
-      self->keys = g_value_dup_boxed (value);
+    case PROP_INDEX:
+      self->index = g_value_dup_object (value);
       break;
 
     case PROP_TABLES:
@@ -175,19 +175,12 @@ fuzzy_index_cursor_class_init (FuzzyIndexCursorClass *klass)
                           FALSE,
                           (G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
 
-  properties [PROP_DOCUMENTS] =
-    g_param_spec_boxed ("documents",
-                        "Documents",
-                        "The dictionary of documents",
-                        G_TYPE_VARIANT_DICT,
-                        (G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
-
-  properties [PROP_KEYS] =
-    g_param_spec_boxed ("keys",
-                        "Keys",
-                        "The dictionary of document id to key",
-                        G_TYPE_VARIANT_DICT,
-                        (G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
+  properties [PROP_INDEX] =
+    g_param_spec_object ("index",
+                         "Index",
+                         "The index this cursor is iterating",
+                         FUZZY_TYPE_INDEX,
+                         (G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
 
   properties [PROP_TABLES] =
     g_param_spec_boxed ("tables",
@@ -219,30 +212,6 @@ static void
 fuzzy_index_cursor_init (FuzzyIndexCursor *self)
 {
   self->matches = g_array_new (FALSE, FALSE, sizeof (FuzzyMatch));
-}
-
-static const gchar *
-find_key_for_document (FuzzyIndexCursor *self,
-                       guint             document_id)
-{
-  g_autoptr(GVariant) variant = NULL;
-  const gchar *ret = NULL;
-  gchar key[16];
-
-  g_assert (FUZZY_IS_INDEX_CURSOR (self));
-
-  g_snprintf (key, sizeof key, "%u", document_id);
-  variant = g_variant_dict_lookup_value (self->keys, key, G_VARIANT_TYPE_STRING);
-
-  /*
-   * NOTE: This looks unsafe, but since we are using a single mmap()'d file
-   *       and sub-variants all from the parent variants data, we can simply
-   *       get a pointer into that mmap region.
-   */
-  if (variant != NULL)
-    ret = g_variant_get_string (variant, NULL);
-
-  return ret;
 }
 
 static gint
@@ -283,14 +252,15 @@ fuzzy_do_match (const FuzzyLookup    *lookup,
   for (; state [0] < n_elements; state [0]++)
     {
       gpointer lookup_score;
+      gboolean contains_document;
 
       iter = &table [state [0]];
 
-      if ((iter->document_id < item->document_id) ||
-          ((iter->document_id == item->document_id) &&
+      if ((iter->lookaside_id < item->lookaside_id) ||
+          ((iter->lookaside_id == item->lookaside_id) &&
            (iter->position <= item->position)))
         continue;
-      else if (iter->document_id > item->document_id)
+      else if (iter->lookaside_id > item->lookaside_id)
         break;
 
       iter_score = score + (iter->position - item->position);
@@ -302,13 +272,14 @@ fuzzy_do_match (const FuzzyLookup    *lookup,
           continue;
         }
 
-      if (!g_hash_table_lookup_extended (lookup->matches,
-                                         GUINT_TO_POINTER (iter->document_id),
-                                         NULL,
-                                         (gpointer *)&lookup_score) ||
-          iter_score < GPOINTER_TO_INT (lookup_score))
+      contains_document = g_hash_table_lookup_extended (lookup->matches,
+                                                        GUINT_TO_POINTER (item->lookaside_id),
+                                                        NULL,
+                                                        (gpointer *)&lookup_score);
+
+      if (!contains_document || iter_score < GPOINTER_TO_INT (lookup_score))
         g_hash_table_insert (lookup->matches,
-                             GUINT_TO_POINTER (iter->document_id),
+                             GUINT_TO_POINTER (item->lookaside_id),
                              GINT_TO_POINTER (iter_score));
 
       return TRUE;
@@ -325,6 +296,7 @@ fuzzy_index_cursor_worker (GTask        *task,
 {
   FuzzyIndexCursor *self = source_object;
   g_autoptr(GHashTable) matches = NULL;
+  g_autoptr(GHashTable) by_document = NULL;
   g_autoptr(GPtrArray) tables = NULL;
   g_autoptr(GArray) tables_n_elements = NULL;
   g_autofree gint *tables_state = NULL;
@@ -334,6 +306,7 @@ fuzzy_index_cursor_worker (GTask        *task,
   GHashTableIter iter;
   const gchar *str;
   gpointer key, value;
+  guint i;
 
   g_assert (FUZZY_IS_INDEX_CURSOR (self));
   g_assert (G_IS_TASK (task));
@@ -347,8 +320,8 @@ fuzzy_index_cursor_worker (GTask        *task,
 
   /* If we are not case-sensitive, we need to downcase the query string */
   query = self->query;
-  if (self->case_sensitive == FALSE)
-    query = freeme = g_utf8_strdown (query, -1);
+  if (!self->case_sensitive)
+    query = freeme = g_utf8_casefold (query, -1);
 
   tables = g_ptr_array_new ();
   tables_n_elements = g_array_new (FALSE, FALSE, sizeof (gsize));
@@ -368,7 +341,7 @@ fuzzy_index_cursor_worker (GTask        *task,
       char_key [g_unichar_to_utf8 (ch, char_key)] = '\0';
       table = g_variant_dict_lookup_value (self->tables,
                                            char_key,
-                                           (const GVariantType *)"a(ii)");
+                                           (const GVariantType *)"a(uu)");
 
       /* No possible matches, missing table for character */
       if (table == NULL)
@@ -387,6 +360,7 @@ fuzzy_index_cursor_worker (GTask        *task,
 
   tables_state = g_new0 (gint, tables->len);
 
+  lookup.index = self->index;
   lookup.matches = matches;
   lookup.tables = (const FuzzyIndexItem * const *)tables->pdata;
   lookup.tables_n_elements = (const gsize *)tables_n_elements->data;
@@ -397,8 +371,6 @@ fuzzy_index_cursor_worker (GTask        *task,
 
   if G_LIKELY (lookup.n_tables > 1)
     {
-      guint i;
-
       for (i = 0; i < lookup.tables_n_elements[0]; i++)
         {
           const FuzzyIndexItem *item;
@@ -410,7 +382,6 @@ fuzzy_index_cursor_worker (GTask        *task,
   else
     {
       guint last_id = G_MAXUINT;
-      guint i;
 
       for (i = 0; i < lookup.tables_n_elements[0]; i++)
         {
@@ -419,13 +390,17 @@ fuzzy_index_cursor_worker (GTask        *task,
 
           item = &lookup.tables[0][i];
 
-          if (item->document_id != last_id)
+          if (item->lookaside_id != last_id)
             {
-              last_id = item->document_id;
+              last_id = item->lookaside_id;
 
-              match.document_id = item->document_id;
+              if G_UNLIKELY (!_fuzzy_index_resolve (self->index,
+                                                    item->lookaside_id,
+                                                    &match.document_id,
+                                                    &match.key))
+                continue;
+
               match.score = 0;
-              match.key = find_key_for_document (self, item->document_id);
 
               g_array_append_val (self->matches, match);
             }
@@ -437,17 +412,75 @@ fuzzy_index_cursor_worker (GTask        *task,
   if (g_task_return_error_if_cancelled (task))
     return;
 
+  by_document = g_hash_table_new (NULL, NULL);
+
   g_hash_table_iter_init (&iter, matches);
 
   while (g_hash_table_iter_next (&iter, &key, &value))
     {
+      guint lookaside_id = GPOINTER_TO_UINT (key);
+      guint score = GPOINTER_TO_UINT (value);
       FuzzyMatch match;
+      union {
+        gpointer ptr;
+        gfloat   fval;
+      } other_score;
 
-      match.document_id = GPOINTER_TO_INT (key);
-      match.key = find_key_for_document (self, match.document_id);
-      match.score = 1.0 / (strlen (match.key) + GPOINTER_TO_INT (value));
+      if G_UNLIKELY (!_fuzzy_index_resolve (self->index,
+                                            lookaside_id,
+                                            &match.document_id,
+                                            &match.key))
+        continue;
+
+      match.score = 1.0 / (strlen (match.key) + score);
+
+      if (g_hash_table_lookup_extended (by_document,
+                                        GUINT_TO_POINTER (match.document_id),
+                                        NULL,
+                                        &other_score.ptr) &&
+          other_score.fval <= match.score)
+        continue;
+
+      other_score.fval = match.score;
+
+      g_hash_table_insert (by_document,
+                           GUINT_TO_POINTER (match.document_id),
+                           other_score.ptr);
 
       g_array_append_val (self->matches, match);
+    }
+
+  /*
+   * Because we have to do the deduplication of documents after
+   * searching all the potential matches, we could have duplicates
+   * in the array. So we need to filter them out. Not that big
+   * of a deal, since we can do remove_fast on the index and
+   * we have to sort them afterwards anyway. Potentially, we could
+   * do both at once if we felt like doing our own sort.
+   */
+  for (i = 0; i < self->matches->len; i++)
+    {
+      FuzzyMatch *match;
+      union {
+        gpointer ptr;
+        gfloat   fval;
+      } other_score;
+
+    next:
+      match = &g_array_index (self->matches, FuzzyMatch, i);
+      other_score.ptr = g_hash_table_lookup (by_document,
+                                             GUINT_TO_POINTER (match->document_id));
+
+      /*
+       * This item should have been discarded, but we didn't have enough
+       * information at the time we built the array.
+       */
+      if (other_score.fval < match->score)
+        {
+          g_array_remove_index_fast (self->matches, i);
+          if (i < self->matches->len - 1)
+            goto next;
+        }
     }
 
   if (g_task_return_error_if_cancelled (task))
@@ -522,15 +555,13 @@ fuzzy_index_cursor_get_item (GListModel *model,
   FuzzyIndexCursor *self = (FuzzyIndexCursor *)model;
   g_autoptr(GVariant) document = NULL;
   FuzzyMatch *match;
-  gchar key[16];
 
   g_assert (FUZZY_IS_INDEX_CURSOR (self));
   g_assert (position < self->matches->len);
 
   match = &g_array_index (self->matches, FuzzyMatch, position);
 
-  g_snprintf (key, sizeof key, "%u", match->document_id);
-  document = g_variant_dict_lookup_value (self->documents, key, NULL);
+  document = _fuzzy_index_lookup_document (self->index, match->document_id);
 
   return g_object_new (FUZZY_TYPE_INDEX_MATCH,
                        "document", document,
@@ -545,4 +576,20 @@ list_model_iface_init (GListModelInterface *iface)
   iface->get_item_type = fuzzy_index_cursor_get_item_type;
   iface->get_n_items = fuzzy_index_cursor_get_n_items;
   iface->get_item = fuzzy_index_cursor_get_item;
+}
+
+/**
+ * fuzzy_index_cursor_get_index:
+ * @self: A #FuzzyIndexCursor
+ *
+ * Gets the index the cursor is iterating.
+ *
+ * Returns: (transfer none): A #FuzzyIndex.
+ */
+FuzzyIndex *
+fuzzy_index_cursor_get_index (FuzzyIndexCursor *self)
+{
+  g_return_val_if_fail (FUZZY_IS_INDEX_CURSOR (self), NULL);
+
+  return self->index;
 }
