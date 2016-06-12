@@ -29,42 +29,31 @@ struct _RtfmGirSearchResult
   GVariant *document;
 };
 
+enum {
+  PROP_0,
+  PROP_DOCUMENT,
+  N_PROPS
+};
+
+static GParamSpec *properties [N_PROPS];
+
 G_DEFINE_TYPE (RtfmGirSearchResult, rtfm_gir_search_result, RTFM_TYPE_SEARCH_RESULT)
 
 static void
-rtfm_gir_search_result_finalize (GObject *object)
-{
-  RtfmGirSearchResult *self = (RtfmGirSearchResult *)object;
-
-  g_clear_pointer (&self->document, g_variant_unref);
-
-  G_OBJECT_CLASS (rtfm_gir_search_result_parent_class)->finalize (object);
-}
-
-static void
-rtfm_gir_search_result_class_init (RtfmGirSearchResultClass *klass)
-{
-  GObjectClass *object_class = G_OBJECT_CLASS (klass);
-
-  object_class->finalize = rtfm_gir_search_result_finalize;
-}
-
-static void
-rtfm_gir_search_result_init (RtfmGirSearchResult *self)
-{
-}
-
-RtfmSearchResult *
-rtfm_gir_search_result_new (GVariant *document,
-                            gfloat    score)
+rtfm_gir_search_result_set_document (RtfmGirSearchResult *self,
+                                     GVariant            *document)
 {
   const gchar *text = NULL;
   const gchar *id = NULL;
   const gchar *icon_name = NULL;
-  RtfmGirSearchResult *ret;
   GVariantDict dict;
 
-  g_return_val_if_fail (document != NULL, NULL);
+  g_return_if_fail (RTFM_GIR_IS_SEARCH_RESULT (self));
+
+  if (document == NULL)
+    return;
+
+  self->document = g_variant_ref_sink (document);
 
   g_variant_dict_init (&dict, document);
   g_variant_dict_lookup (&dict, "id", "&s", &id);
@@ -87,15 +76,95 @@ rtfm_gir_search_result_new (GVariant *document,
         icon_name = "lang-namespace-symbolic";
     }
 
-  ret = g_object_new (RTFM_GIR_TYPE_SEARCH_RESULT,
-                      "icon-name", icon_name,
-                      "score", score,
-                      "text", text,
-                      NULL);
-
-  ret->document = g_variant_ref_sink (document);
+  g_object_set (self,
+                "icon-name", icon_name,
+                "text", text,
+                NULL);
 
   g_variant_dict_clear (&dict);
+}
 
-  return RTFM_SEARCH_RESULT (ret);
+static void
+rtfm_gir_search_result_finalize (GObject *object)
+{
+  RtfmGirSearchResult *self = (RtfmGirSearchResult *)object;
+
+  g_clear_pointer (&self->document, g_variant_unref);
+
+  G_OBJECT_CLASS (rtfm_gir_search_result_parent_class)->finalize (object);
+}
+
+static void
+rtfm_gir_search_result_get_property (GObject    *object,
+                                     guint       prop_id,
+                                     GValue     *value,
+                                     GParamSpec *pspec)
+{
+  RtfmGirSearchResult *self = RTFM_GIR_SEARCH_RESULT (object);
+
+  switch (prop_id)
+    {
+    case PROP_DOCUMENT:
+      g_value_set_variant (value, self->document);
+      break;
+
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+    }
+}
+
+static void
+rtfm_gir_search_result_set_property (GObject      *object,
+                                     guint         prop_id,
+                                     const GValue *value,
+                                     GParamSpec   *pspec)
+{
+  RtfmGirSearchResult *self = RTFM_GIR_SEARCH_RESULT (object);
+
+  switch (prop_id)
+    {
+    case PROP_DOCUMENT:
+      rtfm_gir_search_result_set_document (self, g_value_get_variant (value));
+      break;
+
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+    }
+}
+
+static void
+rtfm_gir_search_result_class_init (RtfmGirSearchResultClass *klass)
+{
+  GObjectClass *object_class = G_OBJECT_CLASS (klass);
+
+  object_class->finalize = rtfm_gir_search_result_finalize;
+  object_class->get_property = rtfm_gir_search_result_get_property;
+  object_class->set_property = rtfm_gir_search_result_set_property;
+
+  properties [PROP_DOCUMENT] =
+    g_param_spec_variant ("document",
+                          "Document",
+                          "The document for the search result.",
+                          G_VARIANT_TYPE_ANY,
+                          NULL,
+                          (G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
+
+  g_object_class_install_properties (object_class, N_PROPS, properties);
+}
+
+static void
+rtfm_gir_search_result_init (RtfmGirSearchResult *self)
+{
+}
+
+RtfmSearchResult *
+rtfm_gir_search_result_new (GVariant *document,
+                            gfloat    score)
+{
+  g_return_val_if_fail (document != NULL, NULL);
+
+  return g_object_new (RTFM_GIR_TYPE_SEARCH_RESULT,
+                       "document", document,
+                       "score", score,
+                       NULL);
 }
