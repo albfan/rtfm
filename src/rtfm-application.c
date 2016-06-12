@@ -93,6 +93,7 @@ rtfm_application_search_by_keyword (RtfmApplication *self,
   g_autoptr(GMainLoop) main_loop = NULL;
   g_autoptr(RtfmSearchResults) search_results = NULL;
   g_autoptr(RtfmSearchSettings) search_settings = NULL;
+  g_autoptr(GTimer) timer = NULL;
   RtfmLibrary *library;
   guint i;
   guint n_items;
@@ -107,6 +108,7 @@ rtfm_application_search_by_keyword (RtfmApplication *self,
   rtfm_search_settings_set_search_text (search_settings, keyword);
 
   search_results = rtfm_search_results_new (0);
+  timer = g_timer_new ();
 
   rtfm_library_search_async (library,
                              search_settings,
@@ -132,7 +134,8 @@ rtfm_application_search_by_keyword (RtfmApplication *self,
       g_print ("%s (%f)\n", text, score);
     }
 
-  g_print ("%u results\n", n_items);
+  g_print ("%u results in %lf seconds.\n",
+           n_items, g_timer_elapsed (timer, NULL));
 }
 
 static gboolean
