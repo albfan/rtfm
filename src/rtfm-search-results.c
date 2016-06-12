@@ -73,43 +73,30 @@ rtfm_search_results_do_add (RtfmSearchResults *self,
   g_assert (RTFM_IS_SEARCH_RESULT (search_result));
 
   /*
-   * If we are already at our maximum number of items, we might be able to
-   * just evict the lowest scoring item and replace it with this one.
+   * The smart thing to do here would be to avoid the insertion at all
+   * if the score is not good enough to match. However, in practice that
+   * will be handled by the caller doing an
+   * rtfm_search_results_accepts_with_score() so that it can avoid inflating
+   * the object altother. So this reads a bit simpler even if it both
+   * goes over our max_size momentarily and emits 2 signals.
    */
-  if (self->max_results != 0 && self->n_items == self->max_results)
-    {
-      GSequenceIter *last_iter;
-      RtfmSearchResult *lowest;
-      gfloat score;
-      gfloat lowest_score;
-
-      last_iter = g_sequence_iter_prev (g_sequence_get_end_iter (self->results));
-      lowest = g_sequence_get (last_iter);
-
-      score = rtfm_search_result_get_score (search_result);
-      lowest_score = rtfm_search_result_get_score (lowest);
-
-      if (score >= lowest_score)
-        return;
-
-      g_sequence_remove (last_iter);
-      position = self->max_results - 1;
-
-      g_list_model_items_changed (G_LIST_MODEL (self), position, 1, 0);
-
-      self->n_items--;
-    }
 
   self->n_items++;
-
   iter = g_sequence_insert_sorted (self->results,
                                    g_object_ref (search_result),
                                    compare_by_score,
                                    NULL);
-
   position = g_sequence_iter_get_position (iter);
-
   g_list_model_items_changed (G_LIST_MODEL (self), position, 0, 1);
+
+  if (self->max_results != 0 && self->n_items > self->max_results)
+    {
+      iter = g_sequence_get_end_iter (self->results);
+      iter = g_sequence_iter_prev (iter);
+      position = g_sequence_iter_get_position (iter);
+      g_sequence_remove (iter);
+      g_list_model_items_changed (G_LIST_MODEL (self), position, 1, 0);
+    }
 }
 
 static void
