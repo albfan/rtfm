@@ -20,14 +20,16 @@
 
 #include <string.h>
 
+#include "rtfm-gir-file.h"
+#include "rtfm-gir-parser.h"
+#include "rtfm-gir-util.h"
+
 #include "rtfm-gir-class.h"
 #include "rtfm-gir-constructor.h"
-#include "rtfm-gir-file.h"
 #include "rtfm-gir-function.h"
 #include "rtfm-gir-method.h"
 #include "rtfm-gir-namespace.h"
-#include "rtfm-gir-parser.h"
-#include "rtfm-gir-util.h"
+#include "rtfm-gir-record.h"
 
 struct _RtfmGirFile
 {
@@ -163,6 +165,45 @@ class_indexer (RtfmGirFile       *self,
   INSERT_KEY (name);
   INSERT_KEY (c_symbol_prefix);
   INSERT_KEY (c_type);
+
+#undef INSERT_KEY
+}
+
+static void
+record_indexer (RtfmGirFile       *self,
+                FuzzyIndexBuilder *builder,
+                RtfmGirRecord     *record)
+{
+  g_autoptr(GVariant) document = NULL;
+  g_autofree gchar *id = NULL;
+  const gchar *name;
+  GVariantDict dict;
+
+  g_assert (RTFM_GIR_IS_FILE (self));
+  g_assert (FUZZY_IS_INDEX_BUILDER (builder));
+  g_assert (RTFM_GIR_IS_RECORD (record));
+
+  id = rtfm_gir_generate_id (record);
+  name = rtfm_gir_record_get_c_type (record);
+
+  if (name == NULL)
+    return;
+
+  g_variant_dict_init (&dict, NULL);
+  g_variant_dict_insert (&dict, "id", "s", id);
+  g_variant_dict_insert (&dict, "word", "s", name);
+  document = g_variant_ref_sink (g_variant_dict_end (&dict));
+
+#define INSERT_KEY(key)                                    \
+  G_STMT_START {                                           \
+    const gchar *tmp = rtfm_gir_record_get_##key (record);   \
+    if (tmp != NULL)                                       \
+      fuzzy_index_builder_insert (builder, tmp, document); \
+  } G_STMT_END
+
+  INSERT_KEY (c_type);
+  INSERT_KEY (name);
+  INSERT_KEY (c_symbol_prefix);
 
 #undef INSERT_KEY
 }
@@ -372,6 +413,7 @@ rtfm_gir_file_class_init (RtfmGirFileClass *klass)
   REGISTER_INDEXER (FUNCTION, function);
   REGISTER_INDEXER (METHOD, method);
   REGISTER_INDEXER (NAMESPACE, namespace);
+  REGISTER_INDEXER (RECORD, record);
 
 #undef REGISTER_INDEXER
 }

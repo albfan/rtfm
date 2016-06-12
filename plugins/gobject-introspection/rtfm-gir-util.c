@@ -26,6 +26,7 @@
 #include "rtfm-gir-function.h"
 #include "rtfm-gir-method.h"
 #include "rtfm-gir-namespace.h"
+#include "rtfm-gir-record.h"
 
 static void
 build_path_to_instance (gpointer  instance,
@@ -56,6 +57,11 @@ build_path_to_instance (gpointer  instance,
     {
       g_string_append_printf (string, "class[%s]",
                               rtfm_gir_class_get_name (instance));
+    }
+  else if (RTFM_GIR_IS_RECORD (instance))
+    {
+      g_string_append_printf (string, "record[%s]",
+                              rtfm_gir_record_get_name (instance));
     }
   else if (RTFM_GIR_IS_FUNCTION (instance))
     {
