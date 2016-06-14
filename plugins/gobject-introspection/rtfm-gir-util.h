@@ -21,9 +21,12 @@
 
 #include <glib.h>
 
+#include "rtfm-gir-search-result.h"
+
 G_BEGIN_DECLS
 
-gchar *rtfm_gir_generate_id (gpointer instance);
+gchar  *rtfm_gir_generate_id (gpointer             instance);
+gfloat  rtfm_gir_rescore     (RtfmGirSearchResult *result);
 
 G_END_DECLS
 

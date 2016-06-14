@@ -18,13 +18,23 @@
 
 #define G_LOG_DOMAIN "rtfm-gir-search-result"
 
+#include <glib/gi18n.h>
 #include <string.h>
 
 #include "rtfm-gir-search-result.h"
+#include "rtfm-gir-util.h"
+
+#include "rtfm-gir-constructor.h"
+#include "rtfm-gir-class.h"
+#include "rtfm-gir-function.h"
+#include "rtfm-gir-method.h"
+#include "rtfm-gir-record.h"
 
 struct _RtfmGirSearchResult
 {
   GObject   parent_instance;
+
+  GType     item_type;
 
   GVariant *document;
 };
@@ -46,6 +56,7 @@ rtfm_gir_search_result_set_document (RtfmGirSearchResult *self,
   const gchar *text = NULL;
   const gchar *id = NULL;
   const gchar *icon_name = NULL;
+  const gchar *category = NULL;
   GVariantDict dict;
 
   g_return_if_fail (RTFM_GIR_IS_SEARCH_RESULT (self));
@@ -63,23 +74,51 @@ rtfm_gir_search_result_set_document (RtfmGirSearchResult *self,
     {
       if (FALSE) {}
       else if (strstr (id, "method[") != NULL)
-        icon_name = "lang-method-symbolic";
-      else if (strstr (id, "record[") != NULL)
-        icon_name = "lang-struct-symbolic";
-      else if (strstr (id, "ctor[") != NULL)
-        icon_name = "lang-method-symbolic";
+        {
+          icon_name = "lang-method-symbolic";
+          self->item_type = RTFM_GIR_TYPE_METHOD;
+          category = _("Methods");
+        }
       else if (strstr (id, "function[") != NULL)
-        icon_name = "lang-function-symbolic";
+        {
+          icon_name = "lang-function-symbolic";
+          self->item_type = RTFM_GIR_TYPE_FUNCTION;
+          category = _("Functions");
+        }
+      else if (strstr (id, "ctor[") != NULL)
+        {
+          icon_name = "lang-method-symbolic";
+          self->item_type = RTFM_GIR_TYPE_CONSTRUCTOR;
+          category = _("Constructors");
+        }
+      else if (strstr (id, "record[") != NULL)
+        {
+          icon_name = "lang-struct-symbolic";
+          self->item_type = RTFM_GIR_TYPE_RECORD;
+          category = _("Structs");
+        }
       else if (strstr (id, "class[") != NULL)
-        icon_name = "lang-class-symbolic";
+        {
+          icon_name = "lang-class-symbolic";
+          self->item_type = RTFM_GIR_TYPE_CLASS;
+          category = _("Classes");
+        }
       else if (strstr (id, "namespace[") != NULL)
-        icon_name = "lang-namespace-symbolic";
+        {
+          icon_name = "lang-namespace-symbolic";
+          self->item_type = RTFM_GIR_TYPE_NAMESPACE;
+          category = _("Namespaces");
+        }
     }
 
-  g_object_set (self,
-                "icon-name", icon_name,
-                "text", text,
-                NULL);
+  if (category != NULL)
+    rtfm_search_result_set_category (RTFM_SEARCH_RESULT (self), category);
+
+  if (icon_name != NULL)
+    rtfm_search_result_set_icon_name (RTFM_SEARCH_RESULT (self), icon_name);
+
+  if (text != NULL)
+    rtfm_search_result_set_text (RTFM_SEARCH_RESULT (self), text);
 
   g_variant_dict_clear (&dict);
 }
@@ -161,10 +200,25 @@ RtfmSearchResult *
 rtfm_gir_search_result_new (GVariant *document,
                             gfloat    score)
 {
+  RtfmGirSearchResult *ret;
+
   g_return_val_if_fail (document != NULL, NULL);
 
-  return g_object_new (RTFM_GIR_TYPE_SEARCH_RESULT,
-                       "document", document,
-                       "score", score,
-                       NULL);
+  ret = g_object_new (RTFM_GIR_TYPE_SEARCH_RESULT,
+                      "document", document,
+                      "score", score,
+                      NULL);
+
+  /* Rescore for categories, etc */
+  rtfm_search_result_set_score (RTFM_SEARCH_RESULT (ret), rtfm_gir_rescore (ret));
+
+  return RTFM_SEARCH_RESULT (ret);
+}
+
+GType
+rtfm_gir_search_result_get_item_type (RtfmGirSearchResult *self)
+{
+  g_return_val_if_fail (RTFM_GIR_IS_SEARCH_RESULT (self), G_TYPE_INVALID);
+
+  return self->item_type;
 }

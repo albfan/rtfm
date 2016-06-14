@@ -19,6 +19,7 @@
 #define G_LOG_DOMAIN "rtfm-gir-util"
 
 #include "rtfm-gir-parser-types.h"
+#include "rtfm-gir-search-result.h"
 #include "rtfm-gir-util.h"
 
 #include "rtfm-gir-class.h"
@@ -99,4 +100,27 @@ rtfm_gir_generate_id (gpointer instance)
     build_path_to_instance (g_ptr_array_index (ar, i - 1), str);
 
   return g_string_free (str, FALSE);
+}
+
+gfloat
+rtfm_gir_rescore (RtfmGirSearchResult *result)
+{
+  gfloat score;
+  GType type;
+
+  g_return_val_if_fail (RTFM_IS_SEARCH_RESULT (result), 0.0f);
+
+  type = rtfm_gir_search_result_get_item_type (result);
+  score = rtfm_search_result_get_score (RTFM_SEARCH_RESULT (result));
+
+  score *= .1f;
+
+  if (g_type_is_a (type, RTFM_GIR_TYPE_CLASS) || g_type_is_a (type, RTFM_GIR_TYPE_RECORD))
+    score += .5;
+  else if (g_type_is_a (type, RTFM_GIR_TYPE_CONSTRUCTOR))
+    score += .4;
+  else if (g_type_is_a (type, RTFM_GIR_TYPE_METHOD) || g_type_is_a (type, RTFM_GIR_TYPE_FUNCTION))
+    score += .3;
+
+  return score;
 }
