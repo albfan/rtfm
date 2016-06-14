@@ -21,11 +21,14 @@
 #include "rtfm-search-result.h"
 #include "rtfm-search-results.h"
 #include "rtfm-search-view.h"
+#include "rtfm-search-view-row.h"
 #include "rtfm-widget.h"
 
 struct _RtfmSearchView
 {
   GtkBin             parent_instance;
+
+  guint              invalidate_handler;
 
   RtfmSearchResults *search_results;
 
@@ -50,42 +53,63 @@ rtfm_search_view_create_row_func (gpointer item,
 {
   RtfmSearchView *self = user_data;
   RtfmSearchResult *result = item;
-  const gchar *text;
-  const gchar *icon_name;
-  GtkImage *image;
-  GtkBox *box;
-  GtkLabel *label;
+  GtkWidget *ret;
 
   g_assert (RTFM_IS_SEARCH_RESULT (result));
   g_assert (RTFM_IS_SEARCH_VIEW (self));
 
-  text = rtfm_search_result_get_text (result);
-  icon_name = rtfm_search_result_get_icon_name (result);
-
-  box = g_object_new (GTK_TYPE_BOX,
-                      "orientation", GTK_ORIENTATION_HORIZONTAL,
+  ret = g_object_new (RTFM_TYPE_SEARCH_VIEW_ROW,
+                      "result", result,
                       "visible", TRUE,
                       NULL);
 
-  image = g_object_new (GTK_TYPE_IMAGE,
-                        "icon-name", icon_name,
-                        "visible", TRUE,
-                        NULL);
+  return ret;
+}
 
-  label = g_object_new (GTK_TYPE_LABEL,
-                        "visible", TRUE,
-                        "xalign", 0.0f,
-                        "label", text,
-                        NULL);
+static gboolean
+rtfm_search_view_do_invalidate (gpointer data)
+{
+  RtfmSearchView *self = data;
 
-  gtk_container_add (GTK_CONTAINER (box), GTK_WIDGET (image));
-  gtk_container_add (GTK_CONTAINER (box), GTK_WIDGET (label));
+  g_assert (RTFM_IS_SEARCH_VIEW (self));
 
-  if (g_strcmp0 ("results", gtk_stack_get_visible_child_name (self->stack)) != 0)
+  self->invalidate_handler = 0;
+
+  gtk_list_box_invalidate_headers (self->list_box);
+
+  return G_SOURCE_REMOVE;
+}
+
+static void
+rtfm_search_view_queue_invalidate (RtfmSearchView *self)
+{
+  g_assert (RTFM_IS_SEARCH_VIEW (self));
+
+  if (self->invalidate_handler == 0)
+    self->invalidate_handler = g_timeout_add (0, rtfm_search_view_do_invalidate, self);
+}
+
+static void
+rtfm_search_view_items_changed (RtfmSearchResults *results,
+                                guint              position,
+                                guint              added,
+                                guint              removed,
+                                RtfmSearchView    *self)
+{
+  guint n_items;
+
+  g_assert (RTFM_IS_SEARCH_RESULTS (results));
+
+  n_items = g_list_model_get_n_items (G_LIST_MODEL (results));
+
+  if (n_items == 0)
+    gtk_stack_set_visible_child_name (self->stack, "no-results");
+  else
     gtk_stack_set_visible_child_name (self->stack, "results");
 
-  return GTK_WIDGET (box);
+  rtfm_search_view_queue_invalidate (self);
 }
+
 
 static void
 rtfm_search_view_connect (RtfmSearchView *self)
@@ -102,6 +126,11 @@ rtfm_search_view_connect (RtfmSearchView *self)
                            self,
                            NULL);
 
+  g_signal_connect (self->search_results,
+                    "items-changed",
+                    G_CALLBACK (rtfm_search_view_items_changed),
+                    self);
+
   if (n_items == 0)
     gtk_stack_set_visible_child_name (self->stack, "no-results");
   else
@@ -113,13 +142,63 @@ rtfm_search_view_disconnect (RtfmSearchView *self)
 {
   g_return_if_fail (RTFM_IS_SEARCH_VIEW (self));
 
+  g_signal_handlers_disconnect_by_func (self->search_results,
+                                        G_CALLBACK (rtfm_search_view_items_changed),
+                                        self);
+
   gtk_list_box_bind_model (self->list_box, NULL, NULL, NULL, NULL);
+}
+
+static void
+rtfm_search_view_header_func (GtkListBoxRow *row,
+                              GtkListBoxRow *before,
+                              gpointer       user_data)
+{
+  RtfmSearchResult *before_result;
+  RtfmSearchResult *result;
+  const gchar *cat;
+  const gchar *before_cat = NULL;
+
+  g_assert (RTFM_IS_SEARCH_VIEW_ROW (row));
+  g_assert (!before || RTFM_IS_SEARCH_VIEW_ROW (before));
+
+  result = rtfm_search_view_row_get_result (RTFM_SEARCH_VIEW_ROW (row));
+  cat = rtfm_search_result_get_category (result);
+
+  if (before != NULL)
+    {
+      before_result = rtfm_search_view_row_get_result (RTFM_SEARCH_VIEW_ROW (before));
+      before_cat = rtfm_search_result_get_category (before_result);
+    }
+
+  /* Strings are interned, pointer comparison is fine */
+  if (cat != NULL && cat != before_cat)
+    {
+      GtkLabel *label;
+
+      label = g_object_new (GTK_TYPE_LABEL,
+                            "xalign", 0.0f,
+                            "label", cat,
+                            "visible", TRUE,
+                            NULL);
+      gtk_list_box_row_set_header (row, GTK_WIDGET (label));
+    }
+  else
+    {
+      gtk_list_box_row_set_header (row, NULL);
+    }
 }
 
 static void
 rtfm_search_view_finalize (GObject *object)
 {
   RtfmSearchView *self = (RtfmSearchView *)object;
+
+  if (self->invalidate_handler != 0)
+    {
+      g_source_remove (self->invalidate_handler);
+      self->invalidate_handler = 0;
+    }
 
   g_clear_object (&self->search_results);
 
@@ -200,6 +279,11 @@ static void
 rtfm_search_view_init (RtfmSearchView *self)
 {
   gtk_widget_init_template (GTK_WIDGET (self));
+
+  gtk_list_box_set_header_func (self->list_box,
+                                rtfm_search_view_header_func,
+                                self,
+                                NULL);
 }
 
 GtkWidget *

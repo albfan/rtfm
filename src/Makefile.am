@@ -25,6 +25,8 @@ librtfm_public_api = \
 	rtfm-search-results.h \
 	rtfm-search-view.c \
 	rtfm-search-view.h \
+	rtfm-search-view-row.c \
+	rtfm-search-view-row.h \
 	rtfm-sidebar.c \
 	rtfm-sidebar.h \
 	rtfm-sidebar-row.c \
