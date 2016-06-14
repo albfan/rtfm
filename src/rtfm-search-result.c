@@ -24,7 +24,7 @@
 
 typedef struct
 {
-  gchar *category;
+  const gchar *category;
   gchar *text;
   GQuark icon_name;
   gfloat score;
@@ -55,7 +55,6 @@ rtfm_search_result_finalize (GObject *object)
   RtfmSearchResult *self = (RtfmSearchResult *)object;
   RtfmSearchResultPrivate *priv = rtfm_search_result_get_instance_private (self);
 
-  g_clear_pointer (&priv->category, g_free);
   g_clear_pointer (&priv->text, g_free);
 
   G_OBJECT_CLASS (rtfm_search_result_parent_class)->finalize (object);
@@ -195,10 +194,11 @@ rtfm_search_result_set_category (RtfmSearchResult *self,
 
   g_return_if_fail (RTFM_IS_SEARCH_RESULT (self));
 
-  if (g_strcmp0 (category, priv->category) != 0)
+  category = g_intern_string (category);
+
+  if (category != priv->category)
     {
-      g_free (priv->category);
-      priv->category = g_strdup (category);
+      priv->category = category;
       g_object_notify_by_pspec (G_OBJECT (self), properties [PROP_CATEGORY]);
     }
 }
