@@ -48,6 +48,6 @@ search:
 	GOBJECT_DEBUG=instance-count \
 	PYTHONDONTWRITEBYTECODE=yes \
 	PATH=$(top_builddir)/src:${PATH} \
-	$(LIBTOOL) --mode=execute gdb -ex run --args src/rtfm -k gtk_widget
+	$(LIBTOOL) --mode=execute gdb -ex run --args src/rtfm -k gtkwidget
 
 -include $(top_srcdir)/git.mk
