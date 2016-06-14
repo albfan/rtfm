@@ -58,20 +58,6 @@ struct _FuzzyIndex
   GVariant *keys;
 
   /*
-   * Access to the raw keys within the index. The outer array, however,
-   * is allocated and must be freed with g_free(). This is due to not
-   * having direct access to the strings within the buffer.
-   *
-   * TODO: It might be nice to have a GVariantArray similar to
-   *       GVariantDict for faster access. It would essentially
-   *       do the same thing as this but be ref counted. In some
-   *       cases, we might even be able to avoid the lookups if
-   *       the GVariant has backpointers at the end.
-   */
-  const gchar **keys_raw;
-  gsize keys_len;
-
-  /*
    * The lookaside array is used to disambiguate between multiple keys
    * pointing to the same document. Each element in the array is of type
    * "(uu)" with the first field being the "key_id" and the second field
@@ -118,7 +104,6 @@ fuzzy_index_finalize (GObject *object)
   g_clear_pointer (&self->variant, g_variant_unref);
   g_clear_pointer (&self->documents, g_variant_unref);
   g_clear_pointer (&self->keys, g_variant_unref);
-  g_clear_pointer (&self->keys_raw, g_free);
   g_clear_pointer (&self->tables, g_variant_dict_unref);
   g_clear_pointer (&self->lookaside, g_variant_unref);
 
@@ -247,8 +232,6 @@ fuzzy_index_load_file_worker (GTask        *task,
   self->keys = g_steal_pointer (&keys);
   self->tables = g_variant_dict_new (tables);
   self->metadata = g_variant_dict_new (metadata);
-
-  self->keys_raw = g_variant_get_strv (self->keys, &self->keys_len);
 
   self->lookaside_raw = g_variant_get_fixed_array (self->lookaside,
                                                    &self->lookaside_len,
@@ -478,9 +461,10 @@ _fuzzy_index_resolve (FuzzyIndex   *self,
 
   if (key != NULL)
     {
-      if G_UNLIKELY (entry->key_id >= self->keys_len)
+      if G_UNLIKELY (entry->key_id >= g_variant_n_children (self->keys))
         return FALSE;
-      *key = self->keys_raw [entry->key_id];
+
+      g_variant_get_child (self->keys, entry->key_id, "&s", key);
     }
 
   return TRUE;
