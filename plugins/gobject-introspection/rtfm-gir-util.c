@@ -115,12 +115,17 @@ rtfm_gir_rescore (RtfmGirSearchResult *result)
 
   score *= .1f;
 
-  if (g_type_is_a (type, RTFM_GIR_TYPE_CLASS) || g_type_is_a (type, RTFM_GIR_TYPE_RECORD))
+  if (FALSE) {}
+  else if (g_type_is_a (type, RTFM_GIR_TYPE_CLASS))
     score += .5;
-  else if (g_type_is_a (type, RTFM_GIR_TYPE_CONSTRUCTOR))
+  else if (g_type_is_a (type, RTFM_GIR_TYPE_RECORD))
     score += .4;
-  else if (g_type_is_a (type, RTFM_GIR_TYPE_METHOD) || g_type_is_a (type, RTFM_GIR_TYPE_FUNCTION))
+  else if (g_type_is_a (type, RTFM_GIR_TYPE_CONSTRUCTOR))
     score += .3;
+  else if (g_type_is_a (type, RTFM_GIR_TYPE_METHOD))
+    score += .2;
+  else if (g_type_is_a (type, RTFM_GIR_TYPE_FUNCTION))
+    score += .1;
 
   return score;
 }
