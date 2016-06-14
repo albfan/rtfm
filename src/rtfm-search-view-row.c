@@ -26,8 +26,7 @@ struct _RtfmSearchViewRow
 
   RtfmSearchResult *result;
 
-  GtkImage *image;
-  GtkLabel *label;
+  GtkLabel         *label;
 };
 
 G_DEFINE_TYPE (RtfmSearchViewRow, rtfm_search_view_row, GTK_TYPE_LIST_BOX_ROW)
@@ -63,10 +62,8 @@ rtfm_search_view_row_set_result (RtfmSearchViewRow *self,
   if (g_set_object (&self->result, result))
     {
       const gchar *text = rtfm_search_result_get_text (result);
-      const gchar *icon_name = rtfm_search_result_get_icon_name (result);
 
       gtk_label_set_label (self->label, text);
-      g_object_set (self->image, "icon-name", icon_name, NULL);
     }
 }
 
@@ -147,16 +144,12 @@ rtfm_search_view_row_init (RtfmSearchViewRow *self)
                       "visible", TRUE,
                       NULL);
 
-  self->image = g_object_new (GTK_TYPE_IMAGE,
-                              "visible", TRUE,
-                              NULL);
-
   self->label = g_object_new (GTK_TYPE_LABEL,
+                              "hexpand", TRUE,
                               "visible", TRUE,
                               "xalign", 0.0f,
                               NULL);
 
-  gtk_container_add (GTK_CONTAINER (box), GTK_WIDGET (self->image));
   gtk_container_add (GTK_CONTAINER (box), GTK_WIDGET (self->label));
   gtk_container_add (GTK_CONTAINER (self), GTK_WIDGET (box));
 }

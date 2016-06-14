@@ -4,23 +4,17 @@ searchview list {
 
 searchview list row {
   padding: 8px;
-  border-bottom: 1px solid alpha(@borders, 0.4);
+  border-top: 1px solid alpha(@borders, 0.4);
 }
 
 searchview list row:last-child {
   border-bottom: none;
 }
 
-searchview list row image {
-  min-width: 16px;
-  min-height: 16px;
-  margin-right: 10px;
-  opacity: 0.55;
-}
-
 searchview list > label {
+  font-size: 1.1em;
   font-weight: bold;
   opacity: 0.40;
-  margin-left: 34px;
+  margin-left: 8px;
   margin-top: 6px;
 }
