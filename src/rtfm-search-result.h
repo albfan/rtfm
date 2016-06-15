@@ -50,6 +50,9 @@ void              rtfm_search_result_set_score     (RtfmSearchResult *self,
 const gchar      *rtfm_search_result_get_text      (RtfmSearchResult *self);
 void              rtfm_search_result_set_text      (RtfmSearchResult *self,
                                                     const gchar      *text);
+const gchar      *rtfm_search_result_get_subtitle  (RtfmSearchResult *self);
+void              rtfm_search_result_set_subtitle  (RtfmSearchResult *self,
+                                                    const gchar      *subtitle);
 const gchar      *rtfm_search_result_get_icon_name (RtfmSearchResult *self);
 void              rtfm_search_result_set_icon_name (RtfmSearchResult *self,
                                                     const gchar      *icon_name);

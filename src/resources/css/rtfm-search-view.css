@@ -7,6 +7,10 @@ searchview list row {
   border-top: 1px solid alpha(@borders, 0.4);
 }
 
+searchview list row label:nth-child(2) {
+  opacity: 0.45;
+}
+
 searchview list row:last-child {
   border-bottom: none;
 }

@@ -26,6 +26,7 @@ typedef struct
 {
   const gchar *category;
   gchar *text;
+  gchar *subtitle;
   GQuark icon_name;
   gfloat score;
 } RtfmSearchResultPrivate;
@@ -35,6 +36,7 @@ enum {
   PROP_CATEGORY,
   PROP_ICON_NAME,
   PROP_SCORE,
+  PROP_SUBTITLE,
   PROP_TEXT,
   N_PROPS
 };
@@ -82,6 +84,10 @@ rtfm_search_result_get_property (GObject    *object,
       g_value_set_float (value, rtfm_search_result_get_score (self));
       break;
 
+    case PROP_SUBTITLE:
+      g_value_set_string (value, rtfm_search_result_get_subtitle (self));
+      break;
+
     case PROP_TEXT:
       g_value_set_string (value, rtfm_search_result_get_text (self));
       break;
@@ -111,6 +117,10 @@ rtfm_search_result_set_property (GObject      *object,
 
     case PROP_SCORE:
       rtfm_search_result_set_score (self, g_value_get_float (value));
+      break;
+
+    case PROP_SUBTITLE:
+      rtfm_search_result_set_subtitle (self, g_value_get_string (value));
       break;
 
     case PROP_TEXT:
@@ -153,6 +163,13 @@ rtfm_search_result_class_init (RtfmSearchResultClass *klass)
                         G_MAXFLOAT,
                         0,
                         (G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS));
+
+  properties [PROP_SUBTITLE] =
+    g_param_spec_string ("subtitle",
+                         "Subtitle",
+                         "Subtitle",
+                         NULL,
+                         (G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS));
 
   properties [PROP_TEXT] =
     g_param_spec_string ("text",
@@ -302,5 +319,31 @@ rtfm_search_result_set_icon_name (RtfmSearchResult *self,
     {
       priv->icon_name = q_icon_name;
       g_object_notify_by_pspec (G_OBJECT (self), properties [PROP_ICON_NAME]);
+    }
+}
+
+const gchar *
+rtfm_search_result_get_subtitle (RtfmSearchResult *self)
+{
+  RtfmSearchResultPrivate *priv = rtfm_search_result_get_instance_private (self);
+
+  g_return_val_if_fail (RTFM_IS_SEARCH_RESULT (self), NULL);
+
+  return priv->subtitle;
+}
+
+void
+rtfm_search_result_set_subtitle (RtfmSearchResult *self,
+                                 const gchar      *subtitle)
+{
+  RtfmSearchResultPrivate *priv = rtfm_search_result_get_instance_private (self);
+
+  g_return_if_fail (RTFM_IS_SEARCH_RESULT (self));
+
+  if (g_strcmp0 (subtitle, priv->subtitle) != 0)
+    {
+      g_free (priv->subtitle);
+      priv->subtitle = g_strdup (subtitle);
+      g_object_notify_by_pspec (G_OBJECT (self), properties [PROP_SUBTITLE]);
     }
 }

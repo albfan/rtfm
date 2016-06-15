@@ -27,6 +27,7 @@ struct _RtfmSearchViewRow
   RtfmSearchResult *result;
 
   GtkLabel         *label;
+  GtkLabel         *subtitle;
 };
 
 G_DEFINE_TYPE (RtfmSearchViewRow, rtfm_search_view_row, GTK_TYPE_LIST_BOX_ROW)
@@ -62,8 +63,10 @@ rtfm_search_view_row_set_result (RtfmSearchViewRow *self,
   if (g_set_object (&self->result, result))
     {
       const gchar *text = rtfm_search_result_get_text (result);
+      const gchar *subtitle = rtfm_search_result_get_subtitle (result);
 
       gtk_label_set_label (self->label, text);
+      gtk_label_set_label (self->subtitle, subtitle);
     }
 }
 
@@ -150,6 +153,12 @@ rtfm_search_view_row_init (RtfmSearchViewRow *self)
                               "xalign", 0.0f,
                               NULL);
 
+  self->subtitle = g_object_new (GTK_TYPE_LABEL,
+                                 "visible", TRUE,
+                                 "xalign", 1.0f,
+                                 NULL);
+
   gtk_container_add (GTK_CONTAINER (box), GTK_WIDGET (self->label));
+  gtk_container_add (GTK_CONTAINER (box), GTK_WIDGET (self->subtitle));
   gtk_container_add (GTK_CONTAINER (self), GTK_WIDGET (box));
 }
