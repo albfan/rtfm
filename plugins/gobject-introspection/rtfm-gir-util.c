@@ -105,6 +105,7 @@ rtfm_gir_generate_id (gpointer instance)
 gfloat
 rtfm_gir_rescore (RtfmGirSearchResult *result)
 {
+  const gchar *text;
   gfloat score;
   GType type;
 
@@ -112,8 +113,14 @@ rtfm_gir_rescore (RtfmGirSearchResult *result)
 
   type = rtfm_gir_search_result_get_item_type (result);
   score = rtfm_search_result_get_score (RTFM_SEARCH_RESULT (result));
+  text = rtfm_search_result_get_text (RTFM_SEARCH_RESULT (result));
 
   score *= .1f;
+
+  /* Bury Private structures */
+  if (type == RTFM_GIR_TYPE_CLASS &&
+      (g_str_has_suffix (text, "Private") || g_str_has_suffix (text, "Priv")))
+    return score;
 
   if (FALSE) {}
   else if (g_type_is_a (type, RTFM_GIR_TYPE_NAMESPACE))
