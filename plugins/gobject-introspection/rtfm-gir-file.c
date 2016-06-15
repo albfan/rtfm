@@ -31,6 +31,8 @@
 #include "rtfm-gir-namespace.h"
 #include "rtfm-gir-record.h"
 
+#define INDEX_VERSION 2
+
 struct _RtfmGirFile
 {
   GObject            parent_instance;
@@ -574,6 +576,15 @@ check_index_version (FuzzyIndex  *index,
   g_assert (G_IS_FILE (file));
   g_assert (error != NULL);
 
+  if (INDEX_VERSION != fuzzy_index_get_metadata_uint32 (index, "version"))
+    {
+      g_set_error (error,
+                   G_IO_ERROR,
+                   G_IO_ERROR_WRONG_ETAG,
+                   "mtime from index is too old, requires index rebuild");
+      return FALSE;
+    }
+
   if (mtime != fuzzy_index_get_metadata_uint64 (index, "mtime"))
     {
       g_set_error (error,
@@ -681,6 +692,7 @@ rtfm_gir_file_load_index_worker (GTask        *task,
   fuzzy_index_builder_set_metadata_string (builder, "self", index_path);
   fuzzy_index_builder_set_metadata_uint64 (builder, "mtime", mtime);
   fuzzy_index_builder_set_metadata_string (builder, "namespace", nsname);
+  fuzzy_index_builder_set_metadata_uint32 (builder, "version", INDEX_VERSION);
   rtfm_gir_file_build_index (self, builder, repository);
 
   /*
