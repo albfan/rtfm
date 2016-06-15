@@ -35,6 +35,9 @@ struct _RtfmSearchView
   GtkStack          *stack;
   GtkListBox        *list_box;
   GtkScrolledWindow *scrolled_window;
+
+  /* Pool of rows to avoid creating new ones */
+  GQueue             trashed_rows;
 };
 
 G_DEFINE_TYPE (RtfmSearchView, rtfm_search_view, GTK_TYPE_BIN)
@@ -53,17 +56,26 @@ rtfm_search_view_create_row_func (gpointer item,
 {
   RtfmSearchView *self = user_data;
   RtfmSearchResult *result = item;
-  GtkWidget *ret;
+  RtfmSearchViewRow *ret;
 
   g_assert (RTFM_IS_SEARCH_RESULT (result));
   g_assert (RTFM_IS_SEARCH_VIEW (self));
 
-  ret = g_object_new (RTFM_TYPE_SEARCH_VIEW_ROW,
-                      "result", result,
-                      "visible", TRUE,
-                      NULL);
+  if (self->trashed_rows.length)
+    {
+      ret = g_queue_pop_tail (&self->trashed_rows);
+      rtfm_search_view_row_set_result (ret, result);
+      rtfm_g_object_unref_in_main (ret);
+    }
+  else
+    {
+      ret = g_object_new (RTFM_TYPE_SEARCH_VIEW_ROW,
+                          "result", result,
+                          "visible", TRUE,
+                          NULL);
+    }
 
-  return ret;
+  return GTK_WIDGET (ret);
 }
 
 static gboolean
@@ -190,6 +202,40 @@ rtfm_search_view_header_func (GtkListBoxRow *row,
 }
 
 static void
+rtfm_search_view_row_remove (RtfmSearchView    *self,
+                             RtfmSearchViewRow *row,
+                             GtkListBox        *list_box)
+{
+  g_assert (RTFM_IS_SEARCH_VIEW (self));
+
+  /* If we are in destroy, row might not be valid. */
+  if (gtk_widget_in_destruction (GTK_WIDGET (self)))
+    return;
+
+  g_assert (GTK_IS_LIST_BOX (list_box));
+  g_assert (RTFM_IS_SEARCH_VIEW_ROW (row));
+
+  if (self->trashed_rows.length < 25)
+    {
+      rtfm_search_view_row_set_result (row, NULL);
+      g_queue_push_head (&self->trashed_rows, g_object_ref (row));
+    }
+}
+
+static void
+rtfm_search_view_destroy (GtkWidget *widget)
+{
+  RtfmSearchView *self = (RtfmSearchView *)widget;
+
+  g_assert (GTK_IS_WIDGET (widget));
+
+  g_queue_foreach (&self->trashed_rows, (GFunc)g_object_unref, NULL);
+  g_queue_clear (&self->trashed_rows);
+
+  GTK_WIDGET_CLASS (rtfm_search_view_parent_class)->destroy (widget);
+}
+
+static void
 rtfm_search_view_finalize (GObject *object)
 {
   RtfmSearchView *self = (RtfmSearchView *)object;
@@ -253,6 +299,8 @@ rtfm_search_view_class_init (RtfmSearchViewClass *klass)
   object_class->get_property = rtfm_search_view_get_property;
   object_class->set_property = rtfm_search_view_set_property;
 
+  widget_class->destroy = rtfm_search_view_destroy;
+
   properties [PROP_SEARCH_RESULTS] =
     g_param_spec_object ("search-results",
                          "Search Results",
@@ -279,6 +327,14 @@ static void
 rtfm_search_view_init (RtfmSearchView *self)
 {
   gtk_widget_init_template (GTK_WIDGET (self));
+
+  g_queue_init (&self->trashed_rows);
+
+  g_signal_connect_object (self,
+                           "remove",
+                           G_CALLBACK (rtfm_search_view_row_remove),
+                           self,
+                           G_CONNECT_SWAPPED | G_CONNECT_AFTER);
 
   gtk_list_box_set_header_func (self->list_box,
                                 rtfm_search_view_header_func,
