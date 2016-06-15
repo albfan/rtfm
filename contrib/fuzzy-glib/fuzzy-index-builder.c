@@ -604,6 +604,17 @@ fuzzy_index_builder_set_metadata_string (FuzzyIndexBuilder *self,
 }
 
 void
+fuzzy_index_builder_set_metadata_uint32 (FuzzyIndexBuilder *self,
+                                         const gchar       *key,
+                                         guint32            value)
+{
+  g_return_if_fail (FUZZY_IS_INDEX_BUILDER (self));
+  g_return_if_fail (key != NULL);
+
+  fuzzy_index_builder_set_metadata (self, key, g_variant_new_uint32 (value));
+}
+
+void
 fuzzy_index_builder_set_metadata_uint64 (FuzzyIndexBuilder *self,
                                          const gchar       *key,
                                          guint64            value)

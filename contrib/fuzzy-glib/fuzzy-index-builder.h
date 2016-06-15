@@ -56,6 +56,9 @@ void               fuzzy_index_builder_set_metadata        (FuzzyIndexBuilder   
 void               fuzzy_index_builder_set_metadata_string (FuzzyIndexBuilder    *self,
                                                             const gchar          *key,
                                                             const gchar          *value);
+void               fuzzy_index_builder_set_metadata_uint32 (FuzzyIndexBuilder    *self,
+                                                            const gchar          *key,
+                                                            guint32               value);
 void               fuzzy_index_builder_set_metadata_uint64 (FuzzyIndexBuilder    *self,
                                                             const gchar          *key,
                                                             guint64               value);

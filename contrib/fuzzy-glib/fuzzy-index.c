@@ -400,6 +400,20 @@ fuzzy_index_get_metadata_uint64 (FuzzyIndex  *self,
   return G_GUINT64_CONSTANT (0);
 }
 
+guint32
+fuzzy_index_get_metadata_uint32 (FuzzyIndex  *self,
+                                 const gchar *key)
+{
+  g_autoptr(GVariant) ret = NULL;
+
+  ret = fuzzy_index_get_metadata (self, key);
+
+  if (ret != NULL)
+    return g_variant_get_uint32 (ret);
+
+  return G_GUINT64_CONSTANT (0);
+}
+
 const gchar *
 fuzzy_index_get_metadata_string (FuzzyIndex  *self,
                                  const gchar *key)

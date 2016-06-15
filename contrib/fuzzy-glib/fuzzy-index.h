@@ -51,6 +51,8 @@ GListModel  *fuzzy_index_query_finish        (FuzzyIndex           *self,
                                               GError              **error);
 GVariant    *fuzzy_index_get_metadata        (FuzzyIndex           *self,
                                               const gchar          *key);
+guint32      fuzzy_index_get_metadata_uint32 (FuzzyIndex           *self,
+                                              const gchar          *key);
 guint64      fuzzy_index_get_metadata_uint64 (FuzzyIndex           *self,
                                               const gchar          *key);
 const gchar *fuzzy_index_get_metadata_string (FuzzyIndex           *self,
