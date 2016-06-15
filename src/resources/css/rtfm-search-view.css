@@ -16,8 +16,7 @@ searchview list row:last-child {
 }
 
 searchview list > label {
-  font-size: 1.1em;
   font-weight: bold;
-  opacity: 0.40;
-  margin: 6px 8px 6px 8px;
+  opacity: 0.50;
+  margin: 12px 8px 6px 8px;
 }
