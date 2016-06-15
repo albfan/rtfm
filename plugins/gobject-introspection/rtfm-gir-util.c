@@ -116,6 +116,8 @@ rtfm_gir_rescore (RtfmGirSearchResult *result)
   score *= .1f;
 
   if (FALSE) {}
+  else if (g_type_is_a (type, RTFM_GIR_TYPE_NAMESPACE))
+    score += .6;
   else if (g_type_is_a (type, RTFM_GIR_TYPE_CLASS))
     score += .5;
   else if (g_type_is_a (type, RTFM_GIR_TYPE_RECORD))
