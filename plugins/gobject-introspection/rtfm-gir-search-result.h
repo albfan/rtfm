@@ -27,7 +27,8 @@ G_BEGIN_DECLS
 
 G_DECLARE_FINAL_TYPE (RtfmGirSearchResult, rtfm_gir_search_result, RTFM_GIR, SEARCH_RESULT, RtfmSearchResult)
 
-RtfmSearchResult *rtfm_gir_search_result_new           (GVariant            *document,
+RtfmSearchResult *rtfm_gir_search_result_new           (const gchar         *nsname,
+                                                        GVariant            *document,
                                                         gfloat               score);
 GType             rtfm_gir_search_result_get_item_type (RtfmGirSearchResult *self);
 

@@ -33,9 +33,7 @@
 struct _RtfmGirSearchResult
 {
   GObject   parent_instance;
-
   GType     item_type;
-
   GVariant *document;
 };
 
@@ -197,14 +195,16 @@ rtfm_gir_search_result_init (RtfmGirSearchResult *self)
 }
 
 RtfmSearchResult *
-rtfm_gir_search_result_new (GVariant *document,
-                            gfloat    score)
+rtfm_gir_search_result_new (const gchar *nsname,
+                            GVariant    *document,
+                            gfloat       score)
 {
   RtfmGirSearchResult *ret;
 
   g_return_val_if_fail (document != NULL, NULL);
 
   ret = g_object_new (RTFM_GIR_TYPE_SEARCH_RESULT,
+                      "subtitle", nsname,
                       "document", document,
                       "score", score,
                       NULL);

@@ -386,8 +386,11 @@ rtfm_gir_provider_query_cb (GObject      *object,
 
   if (NULL != (ret = fuzzy_index_query_finish (index, result, &error)))
     {
+      const gchar *nsname;
       guint n_items;
       guint i;
+
+      nsname = fuzzy_index_get_metadata_string (index, "namespace");
 
       n_items = g_list_model_get_n_items (ret);
 
@@ -406,7 +409,7 @@ rtfm_gir_provider_query_cb (GObject      *object,
           if (!rtfm_search_results_accepts_with_score (state->results, score))
             break;
 
-          res = rtfm_gir_search_result_new (variant, score);
+          res = rtfm_gir_search_result_new (nsname, variant, score);
 
           rtfm_search_results_add (state->results, res);
         }

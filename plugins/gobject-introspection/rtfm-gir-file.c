@@ -551,7 +551,7 @@ get_search_index_filename (GFile *file)
 
   uri = g_file_get_uri (file);
   checksum = g_checksum_new (G_CHECKSUM_SHA1);
-  g_checksum_update (checksum, uri, strlen (uri));
+  g_checksum_update (checksum, (const guint8 *)uri, strlen (uri));
   digest = g_checksum_get_string (checksum);
   name = g_strdup_printf ("%s.gvariant", digest);
 
@@ -599,8 +599,10 @@ rtfm_gir_file_load_index_worker (GTask        *task,
   g_autoptr(GFile) index_file = NULL;
   g_autoptr(GFileInfo) file_info = NULL;
   g_autofree gchar *index_path = NULL;
+  g_autofree gchar *nsname = NULL;
   RtfmGirFile *self = source_object;
   FuzzyIndex *result = NULL;
+  gchar *tmp;
   GSList *list;
   GSList *iter;
   GFile *file = task_data;
@@ -664,11 +666,21 @@ rtfm_gir_file_load_index_worker (GTask        *task,
     goto finish;
 
   /*
+   * Translate namespace "Foo-1.0.gir" to "Foo 1.0".
+   */
+  nsname = g_file_get_basename (file);
+  if (NULL != (tmp = strrchr (nsname, '.')))
+    *tmp = '\0';
+  if (NULL != (tmp = strchr (nsname, '-')))
+    *tmp = ' ';
+
+  /*
    * Now build our index from strings in the repository.
    */
   builder = fuzzy_index_builder_new ();
   fuzzy_index_builder_set_metadata_string (builder, "self", index_path);
   fuzzy_index_builder_set_metadata_uint64 (builder, "mtime", mtime);
+  fuzzy_index_builder_set_metadata_string (builder, "namespace", nsname);
   rtfm_gir_file_build_index (self, builder, repository);
 
   /*
