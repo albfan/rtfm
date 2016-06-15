@@ -53,7 +53,7 @@ rtfm_search_view_row_get_result (RtfmSearchViewRow *self)
   return self->result;
 }
 
-static void
+void
 rtfm_search_view_row_set_result (RtfmSearchViewRow *self,
                                  RtfmSearchResult  *result)
 {
@@ -132,7 +132,7 @@ rtfm_search_view_row_class_init (RtfmSearchViewRowClass *klass)
                          "Result",
                          "Result",
                          RTFM_TYPE_SEARCH_RESULT,
-                         (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+                         (G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS));
 
   g_object_class_install_properties (object_class, N_PROPS, properties);
 }

@@ -30,6 +30,8 @@ G_BEGIN_DECLS
 G_DECLARE_FINAL_TYPE (RtfmSearchViewRow, rtfm_search_view_row, RTFM, SEARCH_VIEW_ROW, GtkListBoxRow)
 
 RtfmSearchResult *rtfm_search_view_row_get_result (RtfmSearchViewRow *self);
+void              rtfm_search_view_row_set_result (RtfmSearchViewRow *self,
+                                                   RtfmSearchResult  *result);
 
 G_END_DECLS
 
