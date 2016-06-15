@@ -149,3 +149,18 @@ rtfm_gtk_widget_class_set_css_from_resource (GtkWidgetClass *widget_class,
 
   queue_reload ();
 }
+
+static gboolean
+do_unref_in_main (gpointer data)
+{
+  g_object_unref (data);
+  return G_SOURCE_REMOVE;
+}
+
+void
+rtfm_g_object_unref_in_main (gpointer instance)
+{
+  g_assert (G_IS_OBJECT (instance));
+
+  g_timeout_add (0, do_unref_in_main, instance);
+}

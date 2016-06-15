@@ -23,6 +23,7 @@
 
 G_BEGIN_DECLS
 
+void rtfm_g_object_unref_in_main                 (gpointer        instance);
 void rtfm_gtk_widget_class_set_css_from_resource (GtkWidgetClass *widget_class,
                                                   const gchar    *theme_name,
                                                   const gchar    *resource_path);
