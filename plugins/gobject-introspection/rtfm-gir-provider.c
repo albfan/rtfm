@@ -209,7 +209,6 @@ rtfm_gir_provider_load_directory (RtfmGirProvider *self,
   g_autoptr(GError) error = NULL;
   g_autofree gchar *index_dir = NULL;
   gpointer ptr;
-  guint i;
 
   g_assert (RTFM_IS_GIR_PROVIDER (self));
 
@@ -319,7 +318,6 @@ rtfm_gir_provider_populate_async (RtfmProvider        *provider,
   g_autoptr(GTask) task = NULL;
   RtfmGirProvider *self = (RtfmGirProvider *)provider;
   g_autoptr(RtfmPath) path = NULL;
-  RtfmItem *item;
 
   g_assert (RTFM_IS_GIR_PROVIDER (self));
   g_assert (RTFM_IS_COLLECTION (collection));
@@ -338,9 +336,9 @@ rtfm_gir_provider_populate_async (RtfmProvider        *provider,
       for (i = 0; i < self->files->len; i++)
         {
           RtfmGirFile *file = g_ptr_array_index (self->files, i);
-          g_autoptr(RtfmGirItem) item = rtfm_gir_item_new (G_OBJECT (file));
+          g_autoptr(RtfmGirItem) gir_item = rtfm_gir_item_new (G_OBJECT (file));
 
-          rtfm_collection_append (collection, RTFM_ITEM (item));
+          rtfm_collection_append (collection, RTFM_ITEM (gir_item));
         }
 
       g_task_return_boolean (task, TRUE);
@@ -475,7 +473,6 @@ rtfm_gir_provider_search_async (RtfmProvider        *provider,
   g_autoptr(GTask) task = NULL;
   SearchState *state;
   const gchar *search_text;
-  guint i;
 
   g_assert (RTFM_IS_GIR_PROVIDER (self));
   g_assert (RTFM_IS_SEARCH_SETTINGS (search_settings));

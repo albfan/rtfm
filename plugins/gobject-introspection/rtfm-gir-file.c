@@ -570,8 +570,6 @@ check_index_version (FuzzyIndex  *index,
                      guint64      mtime,
                      GError     **error)
 {
-  guint64 metadata_mtime;
-
   g_assert (FUZZY_IS_INDEX (index));
   g_assert (G_IS_FILE (file));
   g_assert (error != NULL);

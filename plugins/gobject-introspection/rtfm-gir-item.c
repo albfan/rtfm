@@ -185,7 +185,7 @@ rtfm_gir_item_finalize (GObject *object)
   RtfmGirItem *self = (RtfmGirItem *)object;
   RtfmGirItemPrivate *priv = rtfm_gir_item_get_instance_private (self);
 
-  g_clear_object (&object);
+  g_clear_object (&priv->object);
 
   G_OBJECT_CLASS (rtfm_gir_item_parent_class)->finalize (object);
 }
